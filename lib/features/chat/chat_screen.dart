@@ -95,6 +95,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> reportUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report this person?'),
+        content: const Text('A report ticket will be sent to support.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Report')),
+        ],
+      ),
+    );
+    if (ok != true) return;
     try {
       await dio.post('/auth/ticket', data: {
         'userId': Session.id,
@@ -112,13 +124,27 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> blockUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Block this person?'),
+        content: const Text('You will not see them in Search, Matches or Chat anymore.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
+        ],
+      ),
+    );
+    if (ok != true) return;
     try {
       await dio.post('/auth/block', data: {
         'userId': Session.id,
         'otherId': widget.otherId,
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User blocked')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Blocked. You will not see this person in matches or chat.')),
+      );
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;

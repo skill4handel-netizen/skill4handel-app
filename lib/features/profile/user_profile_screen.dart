@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bottom_nav.dart';
 import '../chat/chat_screen.dart';
@@ -77,6 +78,64 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } catch (_) {}
   }
 
+  Future<void> reportUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report this person?'),
+        content: const Text('A report ticket will be sent to support.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Report')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/ticket', data: {
+        'userId': Session.id,
+        'name': Session.name,
+        'type': 'Report',
+        'otherName': name,
+        'text': 'Reported from profile',
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report sent')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send report')));
+    }
+  }
+
+  Future<void> blockUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Block this person?'),
+        content: const Text('You will not see them in Search, Matches or Chat anymore.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/block', data: {
+        'userId': Session.id,
+        'otherId': widget.otherId,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Blocked. You will not see this person in matches or chat.')),
+      );
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not block user')));
+    }
+  }
+
   Widget pill(String text) {
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 8),
@@ -142,6 +201,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               style: AppTheme.solid(AppColors.green),
               child: const Text('Connect', style: TextStyle(color: Colors.white)),
             ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: reportUser,
+                  icon: const Icon(Icons.flag_outlined),
+                  label: const Text('Report'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: blockUser,
+                  icon: const Icon(Icons.block),
+                  label: const Text('Block'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 24),
           const Text('Reviews', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
