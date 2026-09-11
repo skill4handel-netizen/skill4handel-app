@@ -9,11 +9,13 @@ class CompleteSwapScreen extends StatefulWidget {
     required this.otherName,
     required this.chatId,
     this.photoUrl,
+    this.isCounter = false,
   });
 
   final String otherName;
   final int chatId;
   final String? photoUrl;
+  final bool isCounter;
 
   @override
   State<CompleteSwapScreen> createState() => _CompleteSwapScreenState();
@@ -72,23 +74,33 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
 
   Future<void> submit() async {
     if (skillRequested.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Write the skill you request')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the requested skill.')),
+      );
       return;
     }
     if (useSkill && skillOffered.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Write the skill you offer')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the skill offered in return.')),
+      );
       return;
     }
     if (useTokens && (int.tryParse(extraTokens.text) ?? 0) <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter tokens (1 to 10)')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter between 1 and 10 tokens.')),
+      );
       return;
     }
     if (when == null || when!.isBefore(minWhen)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The earliest time is 24 hours from now')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The earliest available time is 24 hours from now.')),
+      );
       return;
     }
     if (!acceptedQuality) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Confirm the quality responsibility')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')),
+      );
       return;
     }
     setState(() => working = true);
@@ -120,40 +132,44 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final types = <DropdownMenuItem<String>>[
+      const DropdownMenuItem(value: 'skill', child: Text('Skill for skill')),
+      const DropdownMenuItem(value: 'both', child: Text('Skill and S4H tokens')),
+      const DropdownMenuItem(value: 'tokens', child: Text('S4H tokens only')),
+      if (widget.isCounter) const DropdownMenuItem(value: 'volunteer', child: Text('Volunteer assistance')),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
-        title: Text('Offer to ${widget.otherName}'),
+        title: Text(widget.isCounter ? 'Counter-offer to ${widget.otherName}' : 'Offer to ${widget.otherName}'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
-          const Text(
-            'Choose how you want to exchange. The meeting must be at least 24 hours from now.',
+          Text(
+            widget.isCounter
+                ? 'Submit a counter-offer. Volunteer assistance may be selected by the recipient of the original offer. The meeting must be scheduled at least 24 hours from now.'
+                : 'Select the terms of the exchange. The meeting must be scheduled at least 24 hours from now.',
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             initialValue: payMode,
             decoration: const InputDecoration(labelText: 'Exchange type'),
-            items: const [
-              DropdownMenuItem(value: 'skill', child: Text('Skill for skill')),
-              DropdownMenuItem(value: 'both', child: Text('Skill + S4H tokens')),
-              DropdownMenuItem(value: 'tokens', child: Text('Only S4H tokens')),
-              DropdownMenuItem(value: 'volunteer', child: Text('Volunteer help')),
-            ],
+            items: types,
             onChanged: (value) => setState(() => payMode = value ?? 'skill'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: skillRequested,
-            decoration: const InputDecoration(labelText: 'Skill you request'),
+            decoration: const InputDecoration(labelText: 'Requested skill'),
           ),
           if (useSkill) ...[
             const SizedBox(height: 12),
             TextField(
               controller: skillOffered,
-              decoration: const InputDecoration(labelText: 'Skill you offer in return'),
+              decoration: const InputDecoration(labelText: 'Skill offered in return'),
             ),
           ],
           if (useTokens) ...[
@@ -161,7 +177,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             TextField(
               controller: extraTokens,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'S4H tokens (max 10 per hour)'),
+              decoration: const InputDecoration(labelText: 'S4H tokens (maximum 10 per hour)'),
             ),
           ],
           ListTile(
@@ -169,7 +185,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             title: const Text('Date and time', style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: Text(
               when == null
-                  ? 'Not set. Earliest: ${earliestLabel()}'
+                  ? 'Not set. Earliest available: ${earliestLabel()}'
                   : '${MaterialLocalizations.of(context).formatMediumDate(when!)}, ${TimeOfDay.fromDateTime(when!).format(context)}',
             ),
             trailing: const Icon(Icons.calendar_today_outlined),
@@ -198,7 +214,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: location,
-            decoration: const InputDecoration(labelText: 'Place or meeting note'),
+            decoration: const InputDecoration(labelText: 'Location or meeting note'),
           ),
           const SizedBox(height: 8),
           CheckboxListTile(
@@ -206,7 +222,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             value: acceptedQuality,
             onChanged: (value) => setState(() => acceptedQuality = value ?? false),
             controlAffinity: ListTileControlAffinity.trailing,
-            title: const Text('I understand the quality of this work is our responsibility, not Skill4Handel.'),
+            title: const Text('I understand that the quality of this work is the responsibility of the parties, not Skill4Handel.'),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -214,7 +230,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             child: ElevatedButton(
               onPressed: working ? null : submit,
               style: AppTheme.solid(AppColors.green),
-              child: Text(working ? 'Sending...' : 'Send offer', style: const TextStyle(color: Colors.white)),
+              child: Text(working ? 'Submitting...' : (widget.isCounter ? 'Submit counter-offer' : 'Submit offer'), style: const TextStyle(color: Colors.white)),
             ),
           ),
         ],

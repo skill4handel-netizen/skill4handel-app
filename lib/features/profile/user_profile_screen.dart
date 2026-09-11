@@ -4,6 +4,7 @@ import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bottom_nav.dart';
 import '../chat/chat_screen.dart';
+import '../support/support_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
@@ -79,40 +80,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> reportUser() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report this person?'),
-        content: const Text('A report ticket will be sent to support.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Report')),
-        ],
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SupportScreen(
+          initialType: 'report',
+          initialOtherName: name,
+        ),
       ),
     );
-    if (ok != true) return;
-    try {
-      await dio.post('/auth/ticket', data: {
-        'userId': Session.id,
-        'name': Session.name,
-        'type': 'Report',
-        'otherName': name,
-        'text': 'Reported from profile',
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report sent')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send report')));
-    }
   }
 
   Future<void> blockUser() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Block this person?'),
-        content: const Text('You will not see them in Search, Matches or Chat anymore.'),
+        title: const Text('Block this member?'),
+        content: const Text('This member will no longer appear in Search, Matches or Chat.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
@@ -127,12 +111,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Blocked. You will not see this person in matches or chat.')),
+        const SnackBar(content: Text('The member has been blocked and will no longer appear in matches or chat.')),
       );
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not block user')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The member could not be blocked.')),
+      );
     }
   }
 
@@ -180,10 +166,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           if (city.isNotEmpty) Text(city, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 16),
-          const Text('Skills to offer', style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           if (offerChips.isEmpty)
-            const Text('No skills listed yet.', style: TextStyle(color: AppColors.muted))
+            const Text('No skills have been listed.', style: TextStyle(color: AppColors.muted))
           else
             Wrap(children: [for (final skill in offerChips) pill(skill)]),
           const SizedBox(height: 20),
@@ -226,11 +212,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           const Text('Reviews', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           if (reviews.isEmpty)
-            const Text('No reviews yet.', style: TextStyle(color: AppColors.muted))
+            const Text('No reviews have been submitted.', style: TextStyle(color: AppColors.muted))
           else
             ...reviews.map((item) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: Text('${item['fromName'] ?? 'User'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})'),
+                  child: Text('${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})'),
                 )),
         ],
       ),

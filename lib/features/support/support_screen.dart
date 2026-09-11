@@ -17,7 +17,6 @@ class SupportScreen extends StatefulWidget {
 class _SupportScreenState extends State<SupportScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   final text = TextEditingController();
-  late final otherName = TextEditingController(text: widget.initialOtherName ?? '');
   late String type = widget.initialType ?? 'support';
   bool sending = false;
 
@@ -26,15 +25,17 @@ class _SupportScreenState extends State<SupportScreen> {
       final data = error.response?.data;
       if (data is Map && data['message'] != null) return data['message'].toString();
       if (error.response?.statusCode != null) {
-        return 'Could not send ticket (${error.response?.statusCode}). Try again.';
+        return 'The ticket could not be submitted (${error.response?.statusCode}). Please try again.';
       }
     }
-    return 'Could not send ticket. Try again.';
+    return 'The ticket could not be submitted. Please try again.';
   }
 
   Future<void> sendTicket() async {
     if (text.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Write your message first')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the details of your request.')),
+      );
       return;
     }
     setState(() => sending = true);
@@ -43,12 +44,14 @@ class _SupportScreenState extends State<SupportScreen> {
         'userId': Session.id,
         'name': Session.name,
         'type': type,
-        'otherName': otherName.text.trim(),
+        'otherName': widget.initialOtherName ?? '',
         'text': text.text.trim(),
       });
       text.clear();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ticket sent')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your ticket has been submitted.')),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(cleanError(e))));
@@ -73,7 +76,7 @@ class _SupportScreenState extends State<SupportScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Support'),
+        title: Text(type == 'report' ? 'Submit a report' : 'Support'),
         automaticallyImplyLeading: Navigator.canPop(context),
       ),
       body: ListView(
@@ -86,7 +89,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 await launchUrl(Uri.parse('mailto:info@skill4handel.com'));
               } catch (_) {}
             },
-            child: const Text('Email support'),
+            child: const Text('Contact support by email'),
           ),
           TextButton(
             onPressed: () async {
@@ -94,44 +97,51 @@ class _SupportScreenState extends State<SupportScreen> {
                 await launchUrl(Uri.parse('https://www.skill4handel.com'), mode: LaunchMode.externalApplication);
               } catch (_) {}
             },
-            child: const Text('Open skill4handel.com'),
+            child: const Text('Visit skill4handel.com'),
           ),
+          if ((widget.initialOtherName ?? '').isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text('Subject: ${widget.initialOtherName}', style: const TextStyle(color: AppColors.muted)),
+            ),
           DropdownButtonFormField<String>(
             initialValue: type,
-            decoration: const InputDecoration(labelText: 'Type'),
+            decoration: const InputDecoration(labelText: 'Request type'),
             items: const [
               DropdownMenuItem(value: 'support', child: Text('Support')),
               DropdownMenuItem(value: 'arbitration', child: Text('Arbitration')),
-              DropdownMenuItem(value: 'report', child: Text('Report a person')),
+              DropdownMenuItem(value: 'report', child: Text('Report a member')),
               DropdownMenuItem(value: 'fraud', child: Text('Fraud')),
             ],
             onChanged: (value) => setState(() => type = value ?? 'support'),
           ),
           const SizedBox(height: 12),
-          TextField(controller: otherName, decoration: const InputDecoration(labelText: 'Person involved')),
-          const SizedBox(height: 12),
-          TextField(controller: text, maxLines: 5, decoration: const InputDecoration(labelText: 'Details')),
+          TextField(
+            controller: text,
+            maxLines: 5,
+            decoration: const InputDecoration(labelText: 'Details'),
+          ),
           const SizedBox(height: 16),
           SizedBox(
             height: 52,
             child: ElevatedButton(
               onPressed: sending ? null : sendTicket,
               style: AppTheme.solid(AppColors.green),
-              child: Text(sending ? 'Sending...' : 'Send ticket', style: const TextStyle(color: Colors.white)),
+              child: Text(sending ? 'Submitting...' : 'Submit ticket', style: const TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(height: 24),
-          const Text('FAQ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          faq('What is Skill4Handel?', 'A place to exchange skills and practical help without paying each other. You share what you know and get what you need.'),
-          faq('Is it free?', 'Joining is free. Core skill swaps stay without cash between people. S4H tokens help when a direct swap is not possible.'),
-          faq('How does a swap work?', 'List what you can give and what you want. Find someone nearby or online. Meet, help each other, mark the task done, and leave a short review.'),
-          faq('Do I need a skill?', 'Yes. The idea is give and get. That can be language, a small repair, study help, everyday know-how, or volunteer help.'),
-          faq('Can I swap online?', 'Some skills work over a call or a screen. Others need a cafe or a doorstep. You choose in the offer.'),
-          faq('Who can use the app?', 'Users 16 and older. Read the profile first and meet where you feel safe.'),
-          faq('What is banned?', 'Sex work, pornography, violent work, weapons, illegal drugs, fraud, theft and other illegal activity. These accounts will be banned.'),
-          faq('Who is responsible for quality?', 'The two people in the swap. Skill4Handel is a matching platform, not the service provider.'),
-          faq('When can I cancel?', 'Until 24 hours before the agreed date and time.'),
-          faq('How do I ask for arbitration?', 'Choose Arbitration in the form, write what happened, and send the ticket. You can also email info@skill4handel.com.'),
+          const Text('Frequently asked questions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          faq('What is Skill4Handel?', 'Skill4Handel is a platform for exchanging skills and practical assistance without direct payment between members.'),
+          faq('Is the service free of charge?', 'Registration is free of charge. Core skill exchanges do not require cash between members. S4H tokens may be used when a direct exchange is not possible.'),
+          faq('How does an exchange work?', 'Members record the skills they can provide and the skills they require, send an offer, agree on the terms, complete the session, and submit a review.'),
+          faq('Is a skill required?', 'Yes. Participation is based on giving and receiving skills, including language, practical assistance, study support, or volunteer work.'),
+          faq('May exchanges take place online?', 'Yes. Members may select an online or in-person meeting when submitting an offer.'),
+          faq('Who may use the application?', 'The service is available to users aged 16 and over. Members are advised to review profiles and meet in a safe location.'),
+          faq('What activity is prohibited?', 'Sexual services, pornography, violence, weapons, illegal drugs, fraud, theft and other unlawful activity are prohibited and will result in account suspension.'),
+          faq('Who is responsible for quality?', 'The two parties to the exchange are responsible for the quality of the work. Skill4Handel provides matching services only and is not the service provider.'),
+          faq('When may an offer be cancelled?', 'An accepted offer may be cancelled up to 24 hours before the agreed date and time. A pending offer with no response is cancelled after 24 hours.'),
+          faq('How may arbitration be requested?', 'Select Arbitration, describe the matter, and submit the ticket. Correspondence may also be sent to info@skill4handel.com.'),
         ],
       ),
     );

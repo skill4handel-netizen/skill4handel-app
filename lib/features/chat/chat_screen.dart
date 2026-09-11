@@ -4,6 +4,7 @@ import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../profile/user_profile_screen.dart';
 import '../reviews/review_screen.dart';
+import '../support/support_screen.dart';
 import 'complete_swap_screen.dart';
 import 'history_screen.dart';
 
@@ -95,40 +96,23 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> reportUser() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report this person?'),
-        content: const Text('A report ticket will be sent to support.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Report')),
-        ],
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SupportScreen(
+          initialType: 'report',
+          initialOtherName: widget.name,
+        ),
       ),
     );
-    if (ok != true) return;
-    try {
-      await dio.post('/auth/ticket', data: {
-        'userId': Session.id,
-        'name': Session.name,
-        'type': 'Report',
-        'otherName': widget.name,
-        'text': 'Reported from chat',
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report sent')));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send report')));
-    }
   }
 
   Future<void> blockUser() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Block this person?'),
-        content: const Text('You will not see them in Search, Matches or Chat anymore.'),
+        title: const Text('Block this member?'),
+        content: const Text('This member will no longer appear in Search, Matches or Chat.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
@@ -143,12 +127,14 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Blocked. You will not see this person in matches or chat.')),
+        const SnackBar(content: Text('The member has been blocked and will no longer appear in matches or chat.')),
       );
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not block user')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The member could not be blocked.')),
+      );
     }
   }
 
@@ -169,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> startOffer() async {
+  Future<void> startOffer({bool isCounter = false}) async {
     if (chatId == null) return;
     final done = await Navigator.push(
       context,
@@ -178,6 +164,7 @@ class _ChatScreenState extends State<ChatScreen> {
           otherName: widget.name,
           chatId: chatId!,
           photoUrl: widget.photoUrl,
+          isCounter: isCounter,
         ),
       ),
     );
@@ -243,7 +230,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (!completed) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Review is only allowed after both sides mark the swap as done.')),
+        const SnackBar(content: Text('A review may be submitted only after both parties confirm completion.')),
       );
       return;
     }
@@ -287,19 +274,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String buttonText = 'Send offer';
+    String buttonText = 'Submit offer';
     VoidCallback? onPressed = working ? null : startOffer;
     if (completed && !iAlreadyReviewed) {
-      buttonText = 'Write review';
+      buttonText = 'Submit review';
       onPressed = working ? null : writeReview;
     } else if (completed && iAlreadyReviewed) {
-      buttonText = 'Reviewed';
+      buttonText = 'Review submitted';
       onPressed = null;
     } else if (accepted) {
-      buttonText = iAlreadyDone ? 'Waiting for the other person' : 'Mark as done';
+      buttonText = iAlreadyDone ? 'Awaiting the other party' : 'Confirm completion';
       onPressed = iAlreadyDone || working ? null : markDone;
     } else if (pending) {
-      buttonText = iProposed ? 'Waiting for response' : 'Respond above';
+      buttonText = iProposed ? 'Awaiting a response' : 'Respond above';
       onPressed = null;
     }
 
@@ -375,11 +362,11 @@ class _ChatScreenState extends State<ChatScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 6),
-                        Text('Offers: ${pendingSwap?['skillOffered'] ?? '-'}'),
+                        Text('Offered: ${pendingSwap?['skillOffered'] ?? '-'}'),
                         if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0')
                           Text('Tokens: ${pendingSwap?['extraTokens']}'),
                         if ((pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? '').toString().isNotEmpty)
-                          Text('When: ${pendingSwap?['scheduledAt'] ?? pendingSwap?['when']}'),
+                          Text('Scheduled: ${pendingSwap?['scheduledAt'] ?? pendingSwap?['when']}'),
                         Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''} • ${pendingSwap?['level'] ?? ''}'),
                         Text('Status: ${pendingSwap?['status']}'),
                         if (pending && iProposed)
@@ -388,8 +375,8 @@ class _ChatScreenState extends State<ChatScreen> {
                           Row(
                             children: [
                               TextButton(onPressed: working ? null : () => respond('accepted'), child: const Text('Accept')),
-                              TextButton(onPressed: working ? null : startOffer, child: const Text('Counter')),
-                              TextButton(onPressed: working ? null : () => respond('rejected'), child: const Text('Reject')),
+                              TextButton(onPressed: working ? null : () => startOffer(isCounter: true), child: const Text('Counter-offer')),
+                              TextButton(onPressed: working ? null : () => respond('rejected'), child: const Text('Decline')),
                             ],
                           ),
                       ],
@@ -397,7 +384,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 Expanded(
                   child: messages.isEmpty
-                      ? const Center(child: Text('No messages yet'))
+                      ? const Center(child: Text('No messages yet.'))
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: messages.length,
