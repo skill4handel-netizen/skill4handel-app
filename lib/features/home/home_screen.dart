@@ -25,7 +25,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   List<Map<String, dynamic>> chats = [];
-  List<Map<String, dynamic>> openReviews = [];
+  List<Map<String, dynamic>> history = [];
   int unread = 0;
 
   @override
@@ -55,13 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
       unread = 0;
     }
     try {
-      final history = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
-      openReviews = ((history.data as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .where((item) => item['status']?.toString() == 'completed' && !reviewedByMe(item))
-          .toList();
+      final response = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
+      history = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
     } catch (_) {
-      openReviews = [];
+      history = [];
     }
     if (mounted) setState(() {});
   }
@@ -79,11 +76,77 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
-  List<Map<String, dynamic>> activity() {
-    return chats.where((item) {
-      final status = item['pendingSwap']?['status']?.toString();
-      return item['unread'] == true || status == 'pending' || status == 'accepted';
-    }).toList();
+  List<Map<String, dynamic>> activityItems() {
+    final items = <Map<String, dynamic>>[];
+
+    for (final chat in chats) {
+      final swap = chat['pendingSwap'];
+      final status = swap is Map ? swap['status']?.toString() : '';
+      if (chat['unread'] == true) {
+        items.add({
+          'title': chat['name'] ?? 'Member',
+          'reason': 'New message',
+          'chat': chat,
+        });
+      }
+      if (status == 'pending') {
+        final mine = swap['proposedBy']?.toString() == Session.id.toString();
+        items.add({
+          'title': chat['name'] ?? 'Member',
+          'reason': mine
+              ? 'Offer sent. Awaiting a response within 24 hours.'
+              : 'An offer is awaiting your response.',
+          'chat': chat,
+        });
+      } else if (status == 'accepted') {
+        items.add({
+          'title': chat['name'] ?? 'Member',
+          'reason': 'Open session. Confirm completion after the scheduled time.',
+          'chat': chat,
+        });
+      } else if (chat['waitingForRequester'] == true) {
+        items.add({
+          'title': chat['name'] ?? 'Member',
+          'reason': 'A new request cannot be sent until the other member opens the chat or submits the first offer.',
+          'chat': chat,
+        });
+      }
+    }
+
+    for (final item in history) {
+      final status = item['status']?.toString();
+      if (status == 'completed' && !reviewedByMe(item)) {
+        items.add({
+          'title': item['otherName'] ?? 'Member',
+          'reason': 'Review pending after a completed exchange.',
+          'review': item,
+        });
+      } else if (status == 'cancelled') {
+        items.add({
+          'title': item['otherName'] ?? 'Member',
+          'reason': 'The previous offer was cancelled. Both members may start a new request.',
+          'chatId': item['chatId'],
+          'otherId': item['otherId'],
+          'name': item['otherName'],
+        });
+      }
+    }
+    return items;
+  }
+
+  void openChatFrom(Map<String, dynamic> item) {
+    final chat = item['chat'] as Map?;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          name: (chat?['name'] ?? item['name'] ?? 'Member').toString(),
+          otherId: int.tryParse('${chat?['otherId'] ?? item['otherId'] ?? 0}') ?? 0,
+          chatId: int.tryParse('${chat?['id'] ?? item['chatId'] ?? 0}'),
+          photoUrl: chat?['photoUrl']?.toString(),
+        ),
+      ),
+    ).then((_) => refresh());
   }
 
   @override
@@ -91,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final photo = Session.photoUrl.trim();
     final name = Session.name.isEmpty ? 'there' : Session.name;
     final offerSkills = skills();
-    final live = activity();
+    final live = activityItems();
 
     return Column(
       children: [
@@ -124,29 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (openReviews.isNotEmpty)
-                  Card(
-                    color: const Color(0xFFFFF4D6),
-                    child: ListTile(
-                      leading: const Icon(Icons.notifications_active, color: Colors.orange),
-                      title: const Text('Open session', style: TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: Text('Write your review for ${openReviews.first['otherName'] ?? 'your last swap'}'),
-                      onTap: () async {
-                        final item = openReviews.first;
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ReviewScreen(
-                              otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-                              otherName: item['otherName']?.toString() ?? 'User',
-                              skill: item['skillRequested']?.toString() ?? '',
-                            ),
-                          ),
-                        );
-                        await refresh();
-                      },
-                    ),
-                  ),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -177,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (Session.city.isNotEmpty) Text(Session.city, style: const TextStyle(color: AppColors.muted)),
                             if (offerSkills.isNotEmpty) ...[
                               const SizedBox(height: 12),
-                              const Text('Skills to offer', style: TextStyle(fontWeight: FontWeight.w800)),
+                              const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
                               const SizedBox(height: 8),
                               Wrap(
                                 children: [
@@ -224,58 +264,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                if (live.isEmpty && openReviews.isEmpty)
+                if (live.isEmpty)
                   const Text('No current activity.', style: TextStyle(color: AppColors.muted))
-                else ...[
+                else
                   ...live.map((item) {
-                    final swap = item['pendingSwap'] as Map?;
                     return Card(
                       child: ListTile(
-                        title: Text(item['name']?.toString() ?? 'User'),
-                        subtitle: Text([
-                          if (item['unread'] == true) 'New message',
-                          if (swap != null) swap['status'],
-                          if ((swap?['skillRequested'] ?? '').toString().isNotEmpty) swap?['skillRequested'],
-                        ].where((part) => part.toString().isNotEmpty).join(' • ')),
+                        title: Text(item['title']?.toString() ?? 'Member'),
+                        subtitle: Text(item['reason']?.toString() ?? ''),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChatScreen(
-                                name: item['name']?.toString() ?? 'User',
-                                otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-                                chatId: int.tryParse('${item['id'] ?? 0}'),
-                                photoUrl: item['photoUrl']?.toString(),
+                        onTap: () async {
+                          if (item['review'] is Map) {
+                            final review = item['review'] as Map;
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ReviewScreen(
+                                  otherId: int.tryParse('${review['otherId'] ?? 0}') ?? 0,
+                                  otherName: review['otherName']?.toString() ?? 'Member',
+                                  skill: review['skillRequested']?.toString() ?? '',
+                                ),
                               ),
-                            ),
-                          ).then((_) => refresh());
+                            );
+                            await refresh();
+                            return;
+                          }
+                          openChatFrom(item);
                         },
                       ),
                     );
                   }),
-                  ...openReviews.map((item) {
-                    return Card(
-                      child: ListTile(
-                        title: Text(item['otherName']?.toString() ?? 'User'),
-                        subtitle: const Text('Review pending'),
-                        trailing: const Icon(Icons.star_outline),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ReviewScreen(
-                                otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-                                otherName: item['otherName']?.toString() ?? 'User',
-                                skill: item['skillRequested']?.toString() ?? '',
-                              ),
-                            ),
-                          ).then((_) => refresh());
-                        },
-                      ),
-                    );
-                  }),
-                ],
               ],
             ),
           ),
