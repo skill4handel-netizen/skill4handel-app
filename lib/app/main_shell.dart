@@ -31,17 +31,25 @@ class _MainShellState extends State<MainShell> {
   Future<void> loadUnread() async {
     try {
       final response = await dio.get('/chats', queryParameters: {'userId': Session.id});
-      final chats = ((response.data as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map));
+      final chats = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map));
       final count = chats.where((chat) => chat['unread'] == true).length;
       if (mounted) setState(() => unreadChats = count);
     } catch (_) {}
   }
 
+  void goTo(int value) {
+    setState(() => index = value);
+    loadUnread();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
-      HomeScreen(onSearchTap: () => setState(() => index = 1)),
+      HomeScreen(
+        onSearchTap: () => goTo(1),
+        onChatTap: () => goTo(2),
+        onWalletTap: () => goTo(3),
+      ),
       const SearchScreen(),
       const ChatListScreen(),
       const WalletScreen(),
@@ -54,10 +62,7 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
         type: BottomNavigationBarType.fixed,
-        onTap: (value) {
-          setState(() => index = value);
-          loadUnread();
-        },
+        onTap: goTo,
         items: [
           const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
           const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
@@ -69,10 +74,7 @@ class _MainShellState extends State<MainShell> {
             ),
             label: 'Chat',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            label: 'Wallet',
-          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), label: 'Wallet'),
           const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
           const BottomNavigationBarItem(icon: Icon(Icons.support_agent), label: 'Support'),
         ],

@@ -2,15 +2,21 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
-import '../chat/chat_list_screen.dart';
 import '../chat/chat_screen.dart';
 import '../profile/profile_screen.dart';
-import '../wallet/wallet_screen.dart';
+import '../reviews/review_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.onSearchTap});
+  const HomeScreen({
+    super.key,
+    this.onSearchTap,
+    this.onChatTap,
+    this.onWalletTap,
+  });
 
   final VoidCallback? onSearchTap;
+  final VoidCallback? onChatTap;
+  final VoidCallback? onWalletTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,12 +25,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   List<Map<String, dynamic>> chats = [];
+  List<Map<String, dynamic>> openReviews = [];
   int unread = 0;
 
   @override
   void initState() {
     super.initState();
     refresh();
+  }
+
+  bool reviewedByMe(Map item) {
+    final reviewedBy = item['reviewedBy'];
+    if (reviewedBy is! List) return false;
+    return reviewedBy.any((value) => value.toString() == Session.id.toString());
   }
 
   Future<void> refresh() async {
@@ -40,6 +53,15 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       chats = [];
       unread = 0;
+    }
+    try {
+      final history = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
+      openReviews = ((history.data as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .where((item) => item['status']?.toString() == 'completed' && !reviewedByMe(item))
+          .toList();
+    } catch (_) {
+      openReviews = [];
     }
     if (mounted) setState(() {});
   }
@@ -102,6 +124,29 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                if (openReviews.isNotEmpty)
+                  Card(
+                    color: const Color(0xFFFFF4D6),
+                    child: ListTile(
+                      leading: const Icon(Icons.notifications_active, color: Colors.orange),
+                      title: const Text('Open session', style: TextStyle(fontWeight: FontWeight.w800)),
+                      subtitle: Text('Write your review for ${openReviews.first['otherName'] ?? 'your last swap'}'),
+                      onTap: () async {
+                        final item = openReviews.first;
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReviewScreen(
+                              otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
+                              otherName: item['otherName']?.toString() ?? 'User',
+                              skill: item['skillRequested']?.toString() ?? '',
+                            ),
+                          ),
+                        );
+                        await refresh();
+                      },
+                    ),
+                  ),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -169,23 +214,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: stat(Icons.chat_bubble_outline, '$unread', 'New messages', () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatListScreen())).then((_) => refresh());
-                    })),
+                    Expanded(child: stat(Icons.chat_bubble_outline, '$unread', 'New messages', widget.onChatTap ?? () {})),
                     const SizedBox(width: 8),
                     Expanded(child: stat(Icons.star, Session.rating.toStringAsFixed(1), 'Reviews', refresh)),
                     const SizedBox(width: 8),
-                    Expanded(child: stat(Icons.account_balance_wallet_outlined, '${Session.balance}', 'Wallet', () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen())).then((_) => refresh());
-                    })),
+                    Expanded(child: stat(Icons.account_balance_wallet_outlined, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {})),
                   ],
                 ),
                 const SizedBox(height: 20),
                 const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
-                if (live.isEmpty)
+                if (live.isEmpty && openReviews.isEmpty)
                   const Text('No current activity.', style: TextStyle(color: AppColors.muted))
-                else
+                else ...[
                   ...live.map((item) {
                     final swap = item['pendingSwap'] as Map?;
                     return Card(
@@ -213,6 +254,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   }),
+                  ...openReviews.map((item) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(item['otherName']?.toString() ?? 'User'),
+                        subtitle: const Text('Review pending'),
+                        trailing: const Icon(Icons.star_outline),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ReviewScreen(
+                                otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
+                                otherName: item['otherName']?.toString() ?? 'User',
+                                skill: item['skillRequested']?.toString() ?? '',
+                              ),
+                            ),
+                          ).then((_) => refresh());
+                        },
+                      ),
+                    );
+                  }),
+                ],
               ],
             ),
           ),
