@@ -2,9 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_bottom_nav.dart';
+import '../profile/user_profile_screen.dart';
 import '../reviews/review_screen.dart';
 import 'complete_swap_screen.dart';
+import 'history_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({
@@ -12,11 +13,13 @@ class ChatScreen extends StatefulWidget {
     required this.name,
     required this.otherId,
     this.chatId,
+    this.photoUrl,
   });
 
   final String name;
   final int otherId;
   final int? chatId;
+  final String? photoUrl;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -26,7 +29,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   int? chatId;
-  int? requesterId;
   Map<String, dynamic>? pendingSwap;
   List<Map<String, dynamic>> messages = [];
   bool loading = true;
@@ -41,7 +43,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void applyChat(dynamic data) {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
-    requesterId = int.tryParse(data['requesterId']?.toString() ?? '');
     pendingSwap = data['pendingSwap'] is Map
         ? Map<String, dynamic>.from(data['pendingSwap'] as Map)
         : null;
@@ -70,6 +71,55 @@ class _ChatScreenState extends State<ChatScreen> {
       messages = [];
     }
     if (mounted) setState(() => loading = false);
+  }
+
+  void openProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          name: widget.name,
+          email: '',
+          city: '',
+          offers: pendingSwap?['skillOffered']?.toString() ?? '',
+          needs: pendingSwap?['skillRequested']?.toString() ?? '',
+          otherId: widget.otherId,
+          photoUrl: widget.photoUrl,
+        ),
+      ),
+    );
+  }
+
+  Future<void> reportUser() async {
+    try {
+      await dio.post('/auth/ticket', data: {
+        'userId': Session.id,
+        'name': Session.name,
+        'type': 'Report',
+        'otherName': widget.name,
+        'text': 'Reported from chat',
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report sent')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not send report')));
+    }
+  }
+
+  Future<void> blockUser() async {
+    try {
+      await dio.post('/auth/block', data: {
+        'userId': Session.id,
+        'otherId': widget.otherId,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User blocked')));
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not block user')));
+    }
   }
 
   Future<void> send() async {
@@ -179,7 +229,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool get pending => pendingSwap?['status']?.toString() == 'pending';
   bool get accepted => pendingSwap?['status']?.toString() == 'accepted';
   bool get completed => pendingSwap?['status']?.toString() == 'completed';
-  bool get rejected => pendingSwap?['status']?.toString() == 'rejected';
   bool get iProposed => pendingSwap?['proposedBy']?.toString() == Session.id.toString();
 
   bool get iAlreadyDone {
@@ -194,75 +243,10 @@ class _ChatScreenState extends State<ChatScreen> {
     return reviewedBy.any((item) => item.toString() == Session.id.toString());
   }
 
-  Widget report() {
-    if (pendingSwap == null) return const SizedBox.shrink();
-    final offer = pendingSwap!;
-    final pay = offer['payWithTokens'] == true;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.soft,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Deal: ${offer['status']}', style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
-          Text('Needs: ${offer['skillRequested'] ?? ''}'),
-          Text(pay ? 'Pays: ${offer['extraTokens'] ?? 0} S4H' : 'Offers: ${offer['skillOffered'] ?? ''}'),
-          Text('${offer['duration'] ?? ''} min • ${offer['mode'] ?? ''}'),
-          if (pending && !iProposed) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: working ? null : () => respond('accepted'),
-                    style: AppTheme.solid(AppColors.green),
-                    child: const Text('Accept', style: TextStyle(color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: working ? null : startOffer,
-                    child: const Text('Counter'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextButton(
-                    onPressed: working ? null : () => respond('rejected'),
-                    child: const Text('Reject'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (pending && iProposed) ...[
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: working ? null : cancelOffer,
-                child: const Text('Cancel offer'),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     String buttonText = 'Send offer';
     VoidCallback? onPressed = working ? null : startOffer;
-
     if (completed && !iAlreadyReviewed) {
       buttonText = 'Write review';
       onPressed = working ? null : writeReview;
@@ -270,45 +254,127 @@ class _ChatScreenState extends State<ChatScreen> {
       buttonText = iAlreadyDone ? 'Waiting for the other person' : 'Mark as done';
       onPressed = iAlreadyDone || working ? null : markDone;
     } else if (pending) {
-      buttonText = iProposed ? 'Waiting for response' : 'Respond in the report above';
+      buttonText = iProposed ? 'Waiting for response' : 'Respond above';
       onPressed = null;
-    } else {
-      buttonText = 'Send offer';
-      onPressed = working ? null : startOffer;
     }
 
+    final photo = widget.photoUrl?.trim() ?? '';
     return Scaffold(
-      appBar: AppBar(title: Text(widget.name)),
-      bottomNavigationBar: const AppBottomNav(currentIndex: 2),
+      appBar: AppBar(
+        backgroundColor: AppColors.blue,
+        foregroundColor: Colors.white,
+        title: GestureDetector(
+          onTap: openProfile,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.amber,
+                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                child: photo.isEmpty ? Text(widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?') : null,
+              ),
+              const SizedBox(width: 8),
+              Flexible(child: Text(widget.name, overflow: TextOverflow.ellipsis)),
+            ],
+          ),
+        ),
+        actions: [
+          IconButton(onPressed: blockUser, icon: const Icon(Icons.block)),
+          IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
+          IconButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+            },
+            icon: const Icon(Icons.history),
+          ),
+        ],
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                report(),
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      final isMe = message['fromId'].toString() == Session.id.toString();
-                      return Align(
-                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isMe ? AppColors.blue : AppColors.soft,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            message['text']?.toString() ?? '',
-                            style: TextStyle(color: isMe ? Colors.white : AppColors.text),
-                          ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: openProfile,
+                          child: const Text('View profile'),
                         ),
-                      );
-                    },
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: writeReview,
+                          child: const Text('Read reviews'),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                if (pendingSwap != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF4FF),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${pendingSwap?['proposedByName'] ?? Session.name} requested ${pendingSwap?['skillRequested'] ?? ''}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 6),
+                        Text('Offer by: ${pendingSwap?['proposedByName'] ?? ''}'),
+                        Text('Offers: ${pendingSwap?['skillOffered'] ?? pendingSwap?['extraTokens'] ?? ''}'),
+                        if ((pendingSwap?['createdAt'] ?? '').toString().isNotEmpty)
+                          Text('When: ${pendingSwap?['createdAt']}'),
+                        Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''}'),
+                        Text('Status: ${pendingSwap?['status']}'),
+                        if (pending && iProposed)
+                          TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
+                        if (pending && !iProposed)
+                          Row(
+                            children: [
+                              TextButton(onPressed: working ? null : () => respond('accepted'), child: const Text('Accept')),
+                              TextButton(onPressed: working ? null : startOffer, child: const Text('Counter')),
+                              TextButton(onPressed: working ? null : () => respond('rejected'), child: const Text('Reject')),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                Expanded(
+                  child: messages.isEmpty
+                      ? const Center(child: Text('No messages yet'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final message = messages[index];
+                            final isMe = message['fromId'].toString() == Session.id.toString();
+                            return Align(
+                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: isMe ? AppColors.blue : AppColors.soft,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  message['text']?.toString() ?? '',
+                                  style: TextStyle(color: isMe ? Colors.white : AppColors.text),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -317,7 +383,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: onPressed,
-                      style: AppTheme.solid(AppColors.green),
+                      style: AppTheme.solid(onPressed == null ? Colors.grey : AppColors.green),
                       child: Text(buttonText, style: const TextStyle(color: Colors.white)),
                     ),
                   ),
@@ -333,7 +399,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             decoration: InputDecoration(
                               hintText: 'Write a message',
                               filled: true,
-                              fillColor: AppColors.soft,
+                              fillColor: const Color(0xFFEAF4FF),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,

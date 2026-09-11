@@ -2,7 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../profile/user_profile_screen.dart';
 import 'chat_screen.dart';
+import 'history_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -34,9 +36,78 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  Future<void> deleteChat(int id) async {
-    await dio.delete('/chats/$id', queryParameters: {'userId': Session.id});
-    await loadChats();
+  String subtitleOf(Map<String, dynamic> chat) {
+    final swap = chat['pendingSwap'];
+    if (swap is Map) {
+      final status = swap['status']?.toString() ?? '';
+      if (status == 'pending') return 'New swap offer';
+      if (status == 'accepted') return 'Swap accepted';
+      if (status == 'completed') return 'Swap completed';
+      if (status == 'rejected') return 'Offer rejected';
+      if (status == 'cancelled') return 'Offer cancelled';
+    }
+    return chat['last']?.toString() ?? '';
+  }
+
+  List<Map<String, dynamic>> get offers => chats.where((chat) {
+        final swap = chat['pendingSwap'];
+        return swap is Map && swap['status'] == 'pending';
+      }).toList();
+
+  List<Map<String, dynamic>> get others => chats.where((chat) {
+        final swap = chat['pendingSwap'];
+        return !(swap is Map && swap['status'] == 'pending');
+      }).toList();
+
+  void openProfile(Map<String, dynamic> chat) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          name: chat['name']?.toString() ?? 'User',
+          email: '',
+          city: '',
+          offers: '',
+          needs: '',
+          otherId: int.tryParse(chat['otherId'].toString()) ?? 0,
+          photoUrl: chat['photoUrl']?.toString(),
+        ),
+      ),
+    );
+  }
+
+  Widget row(Map<String, dynamic> chat) {
+    final name = chat['name']?.toString() ?? 'User';
+    final photo = chat['photoUrl']?.toString() ?? '';
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: GestureDetector(
+        onTap: () => openProfile(chat),
+        child: CircleAvatar(
+          backgroundColor: const Color(0xFFD7EBFF),
+          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+          child: photo.isEmpty ? const Icon(Icons.person, color: AppColors.blue) : null,
+        ),
+      ),
+      title: GestureDetector(
+        onTap: () => openProfile(chat),
+        child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+      ),
+      subtitle: Text(subtitleOf(chat)),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              name: name,
+              otherId: int.tryParse(chat['otherId'].toString()) ?? 0,
+              chatId: int.tryParse(chat['id'].toString()),
+              photoUrl: photo,
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -44,43 +115,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return RefreshIndicator(
       onRefresh: loadChats,
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          const Text('Chats', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 16),
-          if (chats.isEmpty)
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Chats', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                },
+                child: const Text('History'),
+              ),
+            ],
+          ),
+          if (offers.isNotEmpty) ...[
+            const Text('Your offers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 8),
+            ...offers.map(row),
+            const SizedBox(height: 16),
+          ],
+          const Text('Chats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          if (others.isEmpty && offers.isEmpty)
             const Text('No chats yet.', style: TextStyle(color: AppColors.muted))
           else
-            ...chats.map((chat) {
-              return Dismissible(
-                key: ValueKey(chat['id']),
-                direction: DismissDirection.endToStart,
-                onDismissed: (_) => deleteChat(int.tryParse(chat['id'].toString()) ?? 0),
-                background: Container(
-                  color: Colors.red,
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 16),
-                  child: const Icon(Icons.delete, color: Colors.white),
-                ),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(chat['name']?.toString() ?? 'User'),
-                  subtitle: Text(chat['last']?.toString() ?? ''),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChatScreen(
-                          name: chat['name']?.toString() ?? 'User',
-                          otherId: int.tryParse(chat['otherId'].toString()) ?? 0,
-                          chatId: int.tryParse(chat['id'].toString()),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }),
+            ...others.map(row),
         ],
       ),
     );

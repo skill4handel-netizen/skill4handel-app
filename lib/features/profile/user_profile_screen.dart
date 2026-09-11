@@ -14,6 +14,7 @@ class UserProfileScreen extends StatelessWidget {
     required this.otherId,
     this.rating = 0,
     this.reviews = const [],
+    this.photoUrl,
   });
 
   final String name;
@@ -24,18 +25,32 @@ class UserProfileScreen extends StatelessWidget {
   final int otherId;
   final double rating;
   final List<Map<String, dynamic>> reviews;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
+    final photo = photoUrl?.trim() ?? '';
     return Scaffold(
       appBar: AppBar(title: Text(name)),
       bottomNavigationBar: const AppBottomNav(currentIndex: 0),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text(name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+          Center(
+            child: CircleAvatar(
+              radius: 48,
+              backgroundColor: AppColors.soft,
+              backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+              child: photo.isEmpty
+                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 28))
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.star, color: Colors.amber),
               const SizedBox(width: 6),
@@ -43,8 +58,8 @@ class UserProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(email, style: const TextStyle(color: AppColors.muted)),
-          if (city.isNotEmpty) Text(city),
+          if (email.isNotEmpty) Text(email, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+          if (city.isNotEmpty) Text(city, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           const Text('Offers', style: TextStyle(fontWeight: FontWeight.w700)),
           Text(offers.isEmpty ? '-' : offers),
@@ -59,10 +74,7 @@ class UserProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ChatScreen(
-                      name: name,
-                      otherId: otherId,
-                    ),
+                    builder: (context) => ChatScreen(name: name, otherId: otherId),
                   ),
                 );
               },

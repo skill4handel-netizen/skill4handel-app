@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
-import '../chat/chat_screen.dart';
 import '../profile/user_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   List<Map<String, dynamic>> people = [];
-  List<Map<String, dynamic>> alerts = [];
+  int unread = 0;
 
   @override
   void initState() {
@@ -31,150 +30,184 @@ class _HomeScreenState extends State<HomeScreen> {
       final users = (usersRes.data as List)
           .map((item) => Map<String, dynamic>.from(item as Map))
           .toList();
-      final chatsRes = await dio.get('/chats', queryParameters: {'userId': Session.id});
-      final chats = ((chatsRes.data as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
+      var count = 0;
+      try {
+        final chatsRes = await dio.get('/chats', queryParameters: {'userId': Session.id});
+        final chats = ((chatsRes.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map));
+        count = chats.where((chat) {
+          final pending = chat['pendingSwap'] is Map && chat['pendingSwap']['status'] == 'pending';
+          return pending && chat['pendingSwap']['proposedBy'].toString() != Session.id.toString();
+        }).length;
+      } catch (_) {}
       setState(() {
         people = users;
-        alerts = chats;
+        unread = count;
       });
     } catch (e) {
-      setState(() {
-        people = [];
-        alerts = [];
-      });
+      setState(() => people = []);
     }
+  }
+
+  void openProfile(Map<String, dynamic> person) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          name: person['name']?.toString() ?? 'User',
+          email: person['email']?.toString() ?? '',
+          city: person['city']?.toString() ?? '',
+          offers: person['offers']?.toString() ?? '',
+          needs: person['needs']?.toString() ?? '',
+          otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
+          rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
+          reviews: ((person['reviews'] as List?) ?? [])
+              .map((item) => Map<String, dynamic>.from(item as Map))
+              .toList(),
+          photoUrl: person['photoUrl']?.toString(),
+        ),
+      ),
+    );
+  }
+
+  Widget photo(String name, String url, {double radius = 24}) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.blue,
+      backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
+      child: url.isEmpty
+          ? Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+            )
+          : null,
+    );
+  }
+
+  Widget chip(String text, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color),
+      ),
+      child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    final offers = Session.offers.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty);
+    final needs = Session.needs.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty);
+    return Column(
       children: [
-        Text(
-          Session.name.isNotEmpty ? 'Hello, ${Session.name}' : 'Hello',
-          style: const TextStyle(fontSize: 16, color: AppColors.muted),
-        ),
-        const SizedBox(height: 4),
-        const Text('What do you need today?', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 20),
-        GestureDetector(
-          onTap: widget.onSearchTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.soft, borderRadius: BorderRadius.circular(16)),
-            child: const Row(
+        Container(
+          width: double.infinity,
+          color: AppColors.blue,
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.search, color: AppColors.muted),
-                SizedBox(width: 10),
-                Text('Search a skill you need', style: TextStyle(color: AppColors.muted, fontSize: 16)),
+                Text(
+                  Session.name.isNotEmpty ? Session.name : 'Skill4Handel',
+                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  MaterialLocalizations.of(context).formatFullDate(DateTime.now()),
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
         ),
-        if (alerts.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          ...alerts.map((chat) {
-            final pending = chat['pendingSwap'] is Map && chat['pendingSwap']['status'] == 'pending';
-            final waitingForMe = pending &&
-                chat['pendingSwap']['proposedBy'].toString() != Session.id.toString();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        name: chat['name']?.toString() ?? 'User',
-                        otherId: int.tryParse(chat['otherId'].toString()) ?? 0,
-                        chatId: int.tryParse(chat['id'].toString()),
-                      ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            children: [
+              Row(
+                children: [
+                  photo(Session.name, Session.photoUrl, radius: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(Session.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                        Text(Session.email, style: const TextStyle(color: AppColors.muted)),
+                        if (Session.city.isNotEmpty) Text(Session.city),
+                      ],
                     ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: waitingForMe ? const Color(0xFFEAF7EE) : AppColors.soft,
-                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Text(
-                    waitingForMe
-                        ? 'New offer from ${chat['name']}'
-                        : 'Chat with ${chat['name']}: ${chat['last'] ?? ''}',
-                  ),
+                  IconButton(onPressed: widget.onSearchTap, icon: const Icon(Icons.search)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF4FF),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    _stat(Icons.star, Session.rating.toStringAsFixed(1), 'Rating'),
+                    _stat(Icons.account_balance_wallet_outlined, '${Session.balance}', 'S4H'),
+                    _stat(Icons.chat_bubble_outline, '$unread', 'Unread'),
+                  ],
                 ),
               ),
-            );
-          }),
-        ],
-        const SizedBox(height: 24),
-        const Text('Suggested matches', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        if (Session.offers.trim().isEmpty && Session.needs.trim().isEmpty)
-          const Text('Set your skills in Profile to see real matches.', style: TextStyle(color: AppColors.muted))
-        else if (people.isEmpty)
-          const Text('No skill matches yet.', style: TextStyle(color: AppColors.muted))
-        else
-          ...people.map((person) {
-            final name = person['name']?.toString() ?? 'User';
-            final otherId = int.tryParse(person['id'].toString()) ?? 0;
-            final reasons = ((person['reasons'] as List?) ?? []).map((item) => item.toString()).toList();
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UserProfileScreen(
-                        name: name,
-                        email: person['email']?.toString() ?? '',
-                        city: person['city']?.toString() ?? '',
-                        offers: person['offers']?.toString() ?? '',
-                        needs: person['needs']?.toString() ?? '',
-                        otherId: otherId,
-                        rating: double.tryParse(person['rating'].toString()) ?? 0,
-                        reviews: ((person['reviews'] as List?) ?? [])
-                            .map((item) => Map<String, dynamic>.from(item as Map))
-                            .toList(),
-                      ),
+              const SizedBox(height: 22),
+              const Text('Skills', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              const Text('Teaching'),
+              const SizedBox(height: 6),
+              Wrap(children: [for (final item in offers) chip(item, AppColors.green)]),
+              const Text('Learning'),
+              const SizedBox(height: 6),
+              Wrap(children: [for (final item in needs) chip(item, AppColors.blue)]),
+              const SizedBox(height: 12),
+              const Text('Matches', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              if (people.isEmpty)
+                const Text('No matches yet.', style: TextStyle(color: AppColors.muted))
+              else
+                ...people.map((person) {
+                  final name = person['name']?.toString() ?? 'User';
+                  final photoUrl = person['photoUrl']?.toString() ?? '';
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: GestureDetector(onTap: () => openProfile(person), child: photo(name, photoUrl)),
+                    title: GestureDetector(
+                      onTap: () => openProfile(person),
+                      child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
                     ),
+                    subtitle: Text(person['city']?.toString() ?? ''),
+                    trailing: Text(
+                      '${person['score'] ?? 0}%',
+                      style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w800),
+                    ),
+                    onTap: () => openProfile(person),
                   );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.line),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-                      Text('${person['score'] ?? 0}% match',
-                          style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w700)),
-                      if ((person['city'] ?? '').toString().isNotEmpty) Text(person['city'].toString()),
-                      if ((person['offers'] ?? '').toString().isNotEmpty) Text('Offers: ${person['offers']}'),
-                      if ((person['needs'] ?? '').toString().isNotEmpty) Text('Needs: ${person['needs']}'),
-                      if (reasons.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(reasons.join(' • '),
-                              style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
+                }),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _stat(IconData icon, String value, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.blue),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+        ],
+      ),
     );
   }
 }

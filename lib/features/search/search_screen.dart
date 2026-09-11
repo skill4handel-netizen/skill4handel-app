@@ -25,14 +25,21 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> loadUsers() async {
     try {
-      final response = await dio.get('/users');
-      final users = (response.data as List)
+      List users = [];
+      try {
+        final matches = await dio.get('/matches', queryParameters: {'userId': Session.id});
+        users = matches.data as List;
+      } catch (_) {
+        final response = await dio.get('/users');
+        users = response.data as List;
+      }
+      final mapped = users
           .map((item) => Map<String, dynamic>.from(item as Map))
           .where((item) => item['id'].toString() != Session.id.toString())
           .toList();
       setState(() {
-        all = users;
-        results = users;
+        all = mapped;
+        results = mapped;
       });
     } catch (e) {
       setState(() {
@@ -47,74 +54,103 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() {
       results = all.where((person) {
         final blob =
-            '${person['name']} ${person['email']} ${person['city']} ${person['offers']} ${person['needs']}'
+            '${person['name']} ${person['city']} ${person['offers']} ${person['needs']}'
                 .toLowerCase();
         return q.isEmpty || blob.contains(q);
       }).toList();
     });
   }
 
+  void openProfile(Map<String, dynamic> person) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          name: person['name']?.toString() ?? 'User',
+          email: person['email']?.toString() ?? '',
+          city: person['city']?.toString() ?? '',
+          offers: person['offers']?.toString() ?? '',
+          needs: person['needs']?.toString() ?? '',
+          otherId: int.tryParse(person['id'].toString()) ?? 0,
+          rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
+          reviews: const [],
+          photoUrl: person['photoUrl']?.toString(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return Column(
       children: [
-        const Text('Search', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 16),
-        TextField(
-          controller: controller,
-          onChanged: search,
-          decoration: const InputDecoration(
-            hintText: 'Name, city or skill',
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(),
+        Container(
+          width: double.infinity,
+          color: AppColors.blue,
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          child: const SafeArea(
+            bottom: false,
+            child: Text('Search', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
           ),
         ),
-        const SizedBox(height: 16),
-        if (results.isEmpty)
-          const Text('No users found.', style: TextStyle(color: AppColors.muted))
-        else
-          ...results.map((person) {
-            final name = person['name']?.toString() ?? 'User';
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UserProfileScreen(
-                        name: name,
-                        email: person['email']?.toString() ?? '',
-                        city: person['city']?.toString() ?? '',
-                        offers: person['offers']?.toString() ?? '',
-                        needs: person['needs']?.toString() ?? '',
-                        otherId: int.tryParse(person['id'].toString()) ?? 0,
-                        rating: double.tryParse(person['rating'].toString()) ?? 0,
-                        reviews: const [],
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.line),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      if ((person['city'] ?? '').toString().isNotEmpty) Text(person['city'].toString()),
-                      if ((person['offers'] ?? '').toString().isNotEmpty) Text('Offers: ${person['offers']}'),
-                      if ((person['needs'] ?? '').toString().isNotEmpty) Text('Needs: ${person['needs']}'),
-                    ],
-                  ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            children: [
+              TextField(
+                controller: controller,
+                onChanged: search,
+                decoration: const InputDecoration(
+                  hintText: 'Search by name, city or skill',
+                  prefixIcon: Icon(Icons.search),
+                  border: UnderlineInputBorder(),
                 ),
               ),
-            );
-          }),
+              const SizedBox(height: 12),
+              if (results.isEmpty)
+                const Text('No users found.', style: TextStyle(color: AppColors.muted))
+              else
+                ...results.map((person) {
+                  final name = person['name']?.toString() ?? 'User';
+                  final photo = person['photoUrl']?.toString() ?? '';
+                  final skills = [
+                    if ((person['offers'] ?? '').toString().isNotEmpty) person['offers'],
+                    if ((person['needs'] ?? '').toString().isNotEmpty) person['needs'],
+                  ].join(', ');
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: GestureDetector(
+                      onTap: () => openProfile(person),
+                      child: CircleAvatar(
+                        backgroundColor: AppColors.blue,
+                        backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                        child: photo.isEmpty
+                            ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white))
+                            : null,
+                      ),
+                    ),
+                    title: GestureDetector(
+                      onTap: () => openProfile(person),
+                      child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                    subtitle: Text(
+                      [
+                        if ((person['city'] ?? '').toString().isNotEmpty) person['city'],
+                        if (skills.isNotEmpty) skills,
+                      ].join(' • '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Text(
+                      '${person['score'] ?? 0}%',
+                      style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w800),
+                    ),
+                    onTap: () => openProfile(person),
+                  );
+                }),
+            ],
+          ),
+        ),
       ],
     );
   }
