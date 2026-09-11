@@ -1,0 +1,105 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'));
+  bool loading = false;
+  String message = '';
+
+  Future<void> submit() async {
+    setState(() {
+      loading = true;
+      message = '';
+    });
+
+    try {
+      await dio.post(
+        '/auth/forgot-password',
+        data: {
+          'email': emailController.text.trim().toLowerCase(),
+          'password': passwordController.text,
+        },
+      );
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() {
+        message = 'No account found with this email.';
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Forgot password')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Reset your password',
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enter the email of your account and choose a new password.',
+                style: TextStyle(color: AppColors.muted, fontSize: 16),
+              ),
+              const SizedBox(height: 28),
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(message, style: const TextStyle(color: Colors.red)),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  onPressed: loading ? null : submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(loading ? 'Please wait...' : 'Update password'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
