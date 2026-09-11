@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../chat/chat_screen.dart';
 import '../profile/user_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   List<Map<String, dynamic>> people = [];
-  int unread = 0;
+  int index = 0;
 
   @override
   void initState() {
@@ -27,69 +28,77 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> loadData() async {
     try {
       final usersRes = await dio.get('/matches', queryParameters: {'userId': Session.id});
-      final users = (usersRes.data as List)
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
-      var count = 0;
-      try {
-        final chatsRes = await dio.get('/chats', queryParameters: {'userId': Session.id});
-        final chats = ((chatsRes.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map));
-        count = chats.where((chat) {
-          final pending = chat['pendingSwap'] is Map && chat['pendingSwap']['status'] == 'pending';
-          return pending && chat['pendingSwap']['proposedBy'].toString() != Session.id.toString();
-        }).length;
-      } catch (_) {}
       setState(() {
-        people = users;
-        unread = count;
+        people = (usersRes.data as List).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        index = 0;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() => people = []);
     }
   }
 
-  void openProfile(Map<String, dynamic> person) {
+  Map<String, dynamic>? get person =>
+      people.isEmpty ? null : people[index.clamp(0, people.length - 1)];
+
+  List<String> chips(dynamic value) {
+    return value
+        .toString()
+        .split(RegExp(r'[,/]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  void openProfile() {
+    final item = person;
+    if (item == null) return;
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => UserProfileScreen(
-          name: person['name']?.toString() ?? 'User',
-          email: person['email']?.toString() ?? '',
-          city: person['city']?.toString() ?? '',
-          offers: person['offers']?.toString() ?? '',
-          needs: person['needs']?.toString() ?? '',
-          otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
-          rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
-          reviews: ((person['reviews'] as List?) ?? [])
-              .map((item) => Map<String, dynamic>.from(item as Map))
+          name: item['name']?.toString() ?? 'User',
+          email: item['email']?.toString() ?? '',
+          city: item['city']?.toString() ?? '',
+          offers: item['offers']?.toString() ?? '',
+          needs: item['needs']?.toString() ?? '',
+          otherId: int.tryParse('${item['id'] ?? 0}') ?? 0,
+          rating: double.tryParse('${item['rating'] ?? 0}') ?? 0,
+          reviews: ((item['reviews'] as List?) ?? [])
+              .map((row) => Map<String, dynamic>.from(row as Map))
               .toList(),
-          photoUrl: person['photoUrl']?.toString(),
+          photoUrl: item['photoUrl']?.toString(),
         ),
       ),
     );
   }
 
-  Widget photo(String name, String url, {double radius = 24}) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: AppColors.blue,
-      backgroundImage: url.isNotEmpty ? NetworkImage(url) : null,
-      child: url.isEmpty
-          ? Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-            )
-          : null,
+  void invite() {
+    final item = person;
+    if (item == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChatScreen(
+          name: item['name']?.toString() ?? 'User',
+          otherId: int.tryParse('${item['id'] ?? 0}') ?? 0,
+          photoUrl: item['photoUrl']?.toString(),
+        ),
+      ),
     );
   }
 
-  Widget chip(String text, Color color) {
+  void nextCard() {
+    if (people.isEmpty) return;
+    setState(() => index = (index + 1) % people.length);
+  }
+
+  Widget pill(String text, Color color) {
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color),
       ),
       child: Text(text, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
     );
@@ -97,116 +106,172 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final offers = Session.offers.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty);
-    final needs = Session.needs.split(',').map((item) => item.trim()).where((item) => item.isNotEmpty);
+    final item = person;
+    final photo = item?['photoUrl']?.toString() ?? '';
+    final name = item?['name']?.toString() ?? 'User';
+    final reviews = ((item?['reviews'] as List?) ?? []);
+    final rating = double.tryParse('${item?['rating'] ?? 0}') ?? 0;
+
     return Column(
       children: [
         Container(
           width: double.infinity,
           color: AppColors.blue,
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
           child: SafeArea(
             bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  Session.name.isNotEmpty ? Session.name : 'Skill4Handel',
-                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+                const Expanded(
+                  child: Text('Home', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800)),
                 ),
-                Text(
-                  MaterialLocalizations.of(context).formatFullDate(DateTime.now()),
-                  style: const TextStyle(color: Colors.white70),
-                ),
+                IconButton(onPressed: loadData, icon: const Icon(Icons.refresh, color: Colors.white)),
+                IconButton(onPressed: widget.onSearchTap, icon: const Icon(Icons.search, color: Colors.white)),
               ],
             ),
           ),
         ),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            children: [
-              Row(
-                children: [
-                  photo(Session.name, Session.photoUrl, radius: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(Session.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                        Text(Session.email, style: const TextStyle(color: AppColors.muted)),
-                        if (Session.city.isNotEmpty) Text(Session.city),
-                      ],
-                    ),
-                  ),
-                  IconButton(onPressed: widget.onSearchTap, icon: const Icon(Icons.search)),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF4FF),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
+          child: item == null
+              ? const Center(child: Text('No profiles yet.'))
+              : ListView(
+                  padding: const EdgeInsets.all(16),
                   children: [
-                    _stat(Icons.star, Session.rating.toStringAsFixed(1), 'Rating'),
-                    _stat(Icons.account_balance_wallet_outlined, '${Session.balance}', 'S4H'),
-                    _stat(Icons.chat_bubble_outline, '$unread', 'Unread'),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 6))],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                GestureDetector(
+                                  onTap: openProfile,
+                                  child: photo.isNotEmpty
+                                      ? Image.network(photo, fit: BoxFit.cover)
+                                      : Container(
+                                          color: AppColors.soft,
+                                          child: Center(
+                                            child: Text(
+                                              name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                              style: const TextStyle(fontSize: 72, color: AppColors.blue),
+                                            ),
+                                          ),
+                                        ),
+                                ),
+                                const Positioned(
+                                  top: 12,
+                                  right: 12,
+                                  child: Chip(
+                                    backgroundColor: Color(0xFF4CC84A),
+                                    label: Text('Online', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 12,
+                                  left: 12,
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.black54,
+                                    child: IconButton(
+                                      onPressed: nextCard,
+                                      icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: openProfile,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(name, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+                                      ),
+                                      const Icon(Icons.star, color: Colors.amber),
+                                      const SizedBox(width: 4),
+                                      Text(rating.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                ),
+                                if ((item['city'] ?? '').toString().isNotEmpty)
+                                  Text(item['city'].toString(), style: const TextStyle(color: AppColors.muted)),
+                                const SizedBox(height: 12),
+                                const Text('Teaches', style: TextStyle(fontWeight: FontWeight.w800)),
+                                Wrap(children: [for (final skill in chips(item['offers'])) pill(skill, const Color(0xFF7B61FF))]),
+                                const Text('Wants', style: TextStyle(fontWeight: FontWeight.w800)),
+                                Wrap(children: [for (final skill in chips(item['needs'])) pill(skill, AppColors.blue)]),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(child: stat('${item['score'] ?? 0}%', 'Match')),
+                                    Expanded(child: stat('${reviews.length}', 'Reviews')),
+                                    Expanded(child: stat((item['city'] ?? '-').toString(), 'City')),
+                                  ],
+                                ),
+                                if (reviews.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Text(
+                                      '${reviews.first['fromName'] ?? 'User'}: ${reviews.first['text'] ?? ''}',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: AppColors.muted),
+                                    ),
+                                  ),
+                                const SizedBox(height: 14),
+                                Row(
+                                  children: [
+                                    _round(Icons.close, Colors.red, nextCard),
+                                    const SizedBox(width: 12),
+                                    _round(Icons.info_outline, AppColors.blue, openProfile),
+                                    const SizedBox(width: 12),
+                                    _round(Icons.favorite, AppColors.green, invite),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 22),
-              const Text('Skills', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              const Text('Teaching'),
-              const SizedBox(height: 6),
-              Wrap(children: [for (final item in offers) chip(item, AppColors.green)]),
-              const Text('Learning'),
-              const SizedBox(height: 6),
-              Wrap(children: [for (final item in needs) chip(item, AppColors.blue)]),
-              const SizedBox(height: 12),
-              const Text('Matches', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              if (people.isEmpty)
-                const Text('No matches yet.', style: TextStyle(color: AppColors.muted))
-              else
-                ...people.map((person) {
-                  final name = person['name']?.toString() ?? 'User';
-                  final photoUrl = person['photoUrl']?.toString() ?? '';
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: GestureDetector(onTap: () => openProfile(person), child: photo(name, photoUrl)),
-                    title: GestureDetector(
-                      onTap: () => openProfile(person),
-                      child: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    ),
-                    subtitle: Text(person['city']?.toString() ?? ''),
-                    trailing: Text(
-                      '${person['score'] ?? 0}%',
-                      style: const TextStyle(color: AppColors.green, fontWeight: FontWeight.w800),
-                    ),
-                    onTap: () => openProfile(person),
-                  );
-                }),
-            ],
-          ),
         ),
       ],
     );
   }
 
-  Widget _stat(IconData icon, String value, String label) {
+  Widget stat(String value, String label) {
+    return Column(
+      children: [
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+      ],
+    );
+  }
+
+  Widget _round(IconData icon, Color color, VoidCallback onTap) {
     return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.blue),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-          Text(label, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-        ],
+      child: InkWell(
+        onTap: onTap,
+        child: CircleAvatar(
+          radius: 26,
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(icon, color: color),
+        ),
       ),
     );
   }
