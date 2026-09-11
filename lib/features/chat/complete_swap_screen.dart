@@ -27,10 +27,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   String duration = '60';
   String mode = 'Online';
   String level = 'Normal';
-  bool payWithTokens = false;
-  bool volunteer = false;
+  String payMode = 'skill';
   bool working = false;
   DateTime when = DateTime.now().add(const Duration(days: 1));
+
+  bool get useSkill => payMode == 'skill' || payMode == 'both';
+  bool get useTokens => payMode == 'tokens' || payMode == 'both';
+  bool get volunteer => payMode == 'volunteer';
 
   Future<void> pickWhen() async {
     final date = await showDatePicker(
@@ -54,8 +57,12 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Write the requested skill')));
       return;
     }
-    if (!payWithTokens && !volunteer && skillOffered.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Offer a skill, volunteer, or pay with tokens')));
+    if (useSkill && skillOffered.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Write the skill you offer')));
+      return;
+    }
+    if (useTokens && (int.tryParse(extraTokens.text) ?? 0) <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter tokens (1 to 10 per hour)')));
       return;
     }
     setState(() => working = true);
@@ -64,16 +71,15 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         'userId': Session.id,
         'proposedByName': Session.name,
         'skillRequested': skillRequested.text.trim(),
-        'skillOffered': payWithTokens || volunteer ? '' : skillOffered.text.trim(),
-        'payWithTokens': payWithTokens,
+        'skillOffered': volunteer ? 'Volunteer help' : (useSkill ? skillOffered.text.trim() : ''),
+        'payWithTokens': useTokens,
         'volunteer': volunteer,
-        'extraTokens': int.tryParse(extraTokens.text) ?? 0,
+        'extraTokens': useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0,
         'duration': duration,
         'mode': mode,
-        'level': level,
+        'level': volunteer ? 'Volunteer' : level,
         'when': when.toIso8601String(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'expiresAt': DateTime.now().add(const Duration(hours: 24)).toIso8601String(),
+        'scheduledAt': when.toIso8601String(),
       });
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -100,36 +106,33 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             controller: skillRequested,
             decoration: const InputDecoration(labelText: 'Skill you need', prefixIcon: Icon(Icons.flag_outlined)),
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Pay with tokens'),
-            value: payWithTokens,
-            onChanged: (value) => setState(() {
-              payWithTokens = value;
-              if (value) volunteer = false;
-            }),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: payMode,
+            decoration: const InputDecoration(labelText: 'What you give', prefixIcon: Icon(Icons.swap_horiz)),
+            items: const [
+              DropdownMenuItem(value: 'skill', child: Text('Skill only')),
+              DropdownMenuItem(value: 'tokens', child: Text('Tokens only')),
+              DropdownMenuItem(value: 'both', child: Text('Skill + tokens')),
+              DropdownMenuItem(value: 'volunteer', child: Text('Volunteer')),
+            ],
+            onChanged: (value) => setState(() => payMode = value ?? 'skill'),
           ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Volunteer'),
-            subtitle: const Text('Offer help without a return skill'),
-            value: volunteer,
-            onChanged: (value) => setState(() {
-              volunteer = value;
-              if (value) payWithTokens = false;
-            }),
-          ),
-          if (!payWithTokens && !volunteer)
+          if (useSkill) ...[
+            const SizedBox(height: 12),
             TextField(
               controller: skillOffered,
               decoration: const InputDecoration(labelText: 'Skill you offer', prefixIcon: Icon(Icons.handshake_outlined)),
-            )
-          else if (payWithTokens)
+            ),
+          ],
+          if (useTokens) ...[
+            const SizedBox(height: 12),
             TextField(
               controller: extraTokens,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Tokens (max 10 per hour)', prefixIcon: Icon(Icons.token_outlined)),
             ),
+          ],
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.event),
@@ -157,17 +160,19 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             ],
             onChanged: (value) => setState(() => mode = value ?? 'Online'),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: level,
-            decoration: const InputDecoration(labelText: 'Level', prefixIcon: Icon(Icons.tune)),
-            items: const [
-              DropdownMenuItem(value: 'Beginner', child: Text('Beginner')),
-              DropdownMenuItem(value: 'Normal', child: Text('Normal')),
-              DropdownMenuItem(value: 'Advanced', child: Text('Advanced')),
-            ],
-            onChanged: (value) => setState(() => level = value ?? 'Normal'),
-          ),
+          if (!volunteer) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: level,
+              decoration: const InputDecoration(labelText: 'Level', prefixIcon: Icon(Icons.tune)),
+              items: const [
+                DropdownMenuItem(value: 'Beginner', child: Text('Beginner')),
+                DropdownMenuItem(value: 'Normal', child: Text('Normal')),
+                DropdownMenuItem(value: 'Advanced', child: Text('Advanced')),
+              ],
+              onChanged: (value) => setState(() => level = value ?? 'Normal'),
+            ),
+          ],
           const SizedBox(height: 24),
           SizedBox(
             height: 52,

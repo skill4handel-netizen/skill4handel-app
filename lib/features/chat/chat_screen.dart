@@ -30,6 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   int? chatId;
   Map<String, dynamic>? pendingSwap;
+  Map<String, dynamic>? lastCompleted;
   List<Map<String, dynamic>> messages = [];
   bool loading = true;
   bool working = false;
@@ -45,6 +46,9 @@ class _ChatScreenState extends State<ChatScreen> {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
     pendingSwap = data['pendingSwap'] is Map
         ? Map<String, dynamic>.from(data['pendingSwap'] as Map)
+        : null;
+    lastCompleted = data['lastCompleted'] is Map
+        ? Map<String, dynamic>.from(data['lastCompleted'] as Map)
         : null;
     final loaded = (data['messages'] as List?) ?? [];
     messages = loaded
@@ -64,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         applyChat(response.data);
       } else {
-        final response = await dio.get('/chats/$chatId');
+        final response = await dio.get('/chats/$chatId', queryParameters: {'userId': Session.id});
         applyChat(response.data);
       }
     } catch (e) {
@@ -81,8 +85,8 @@ class _ChatScreenState extends State<ChatScreen> {
           name: widget.name,
           email: '',
           city: '',
-          offers: pendingSwap?['skillOffered']?.toString() ?? '',
-          needs: pendingSwap?['skillRequested']?.toString() ?? '',
+          offers: '',
+          needs: '',
           otherId: widget.otherId,
           photoUrl: widget.photoUrl,
         ),
@@ -147,6 +151,7 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context) => CompleteSwapScreen(
           otherName: widget.name,
           chatId: chatId!,
+          photoUrl: widget.photoUrl,
         ),
       ),
     );
@@ -197,7 +202,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       applyChat(chat.data);
       await openChat();
-      if (pendingSwap?['status']?.toString() == 'completed' && !iAlreadyReviewed) {
+      if (completed && !iAlreadyReviewed) {
         await writeReview();
       }
     } catch (e) {
@@ -209,6 +214,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> writeReview() async {
+    if (!completed) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Review is only allowed after both sides mark the swap as done.')),
+      );
+      return;
+    }
     if (widget.otherId == 0) return;
     final saved = await Navigator.push(
       context,
@@ -216,7 +228,7 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context) => ReviewScreen(
           otherId: widget.otherId,
           otherName: widget.name,
-          skill: pendingSwap?['skillRequested']?.toString() ?? '',
+          skill: (lastCompleted?['skillRequested'] ?? pendingSwap?['skillRequested'] ?? '').toString(),
         ),
       ),
     );
@@ -228,17 +240,21 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool get pending => pendingSwap?['status']?.toString() == 'pending';
   bool get accepted => pendingSwap?['status']?.toString() == 'accepted';
-  bool get completed => pendingSwap?['status']?.toString() == 'completed';
+  bool get completed {
+    if (pendingSwap?['status']?.toString() == 'completed') return true;
+    return lastCompleted != null;
+  }
+
   bool get iProposed => pendingSwap?['proposedBy']?.toString() == Session.id.toString();
 
   bool get iAlreadyDone {
-    final doneBy = pendingSwap?['doneBy'];
+    final doneBy = pendingSwap?['doneBy'] ?? lastCompleted?['doneBy'];
     if (doneBy is! List) return false;
     return doneBy.any((item) => item.toString() == Session.id.toString());
   }
 
   bool get iAlreadyReviewed {
-    final reviewedBy = pendingSwap?['reviewedBy'];
+    final reviewedBy = pendingSwap?['reviewedBy'] ?? lastCompleted?['reviewedBy'];
     if (reviewedBy is! List) return false;
     return reviewedBy.any((item) => item.toString() == Session.id.toString());
   }
@@ -250,6 +266,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (completed && !iAlreadyReviewed) {
       buttonText = 'Write review';
       onPressed = working ? null : writeReview;
+    } else if (completed && iAlreadyReviewed) {
+      buttonText = 'Reviewed';
+      onPressed = null;
     } else if (accepted) {
       buttonText = iAlreadyDone ? 'Waiting for the other person' : 'Mark as done';
       onPressed = iAlreadyDone || working ? null : markDone;
@@ -283,7 +302,7 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
           IconButton(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
             },
             icon: const Icon(Icons.history),
           ),
@@ -306,8 +325,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: writeReview,
-                          child: const Text('Read reviews'),
+                          onPressed: openProfile,
+                          child: const Text('View reviews'),
                         ),
                       ),
                     ],
@@ -330,11 +349,12 @@ class _ChatScreenState extends State<ChatScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 6),
-                        Text('Offer by: ${pendingSwap?['proposedByName'] ?? ''}'),
-                        Text('Offers: ${pendingSwap?['skillOffered'] ?? pendingSwap?['extraTokens'] ?? ''}'),
-                        if ((pendingSwap?['createdAt'] ?? '').toString().isNotEmpty)
-                          Text('When: ${pendingSwap?['createdAt']}'),
-                        Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''}'),
+                        Text('Offers: ${pendingSwap?['skillOffered'] ?? '-'}'),
+                        if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0')
+                          Text('Tokens: ${pendingSwap?['extraTokens']}'),
+                        if ((pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? '').toString().isNotEmpty)
+                          Text('When: ${pendingSwap?['scheduledAt'] ?? pendingSwap?['when']}'),
+                        Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''} • ${pendingSwap?['level'] ?? ''}'),
                         Text('Status: ${pendingSwap?['status']}'),
                         if (pending && iProposed)
                           TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),

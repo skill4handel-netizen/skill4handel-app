@@ -1,9 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bottom_nav.dart';
 import '../chat/chat_screen.dart';
 
-class UserProfileScreen extends StatelessWidget {
+class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
     super.key,
     required this.name,
@@ -28,8 +29,69 @@ class UserProfileScreen extends StatelessWidget {
   final String? photoUrl;
 
   @override
+  State<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  late String name = widget.name;
+  late String email = widget.email;
+  late String city = widget.city;
+  late String offers = widget.offers;
+  late String needs = widget.needs;
+  late String photo = widget.photoUrl?.trim() ?? '';
+  late double rating = widget.rating;
+  late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(widget.reviews);
+
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
+  List<String> chips(String value) {
+    return value.split(RegExp(r'[,/]')).map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+  }
+
+  Future<void> loadProfile() async {
+    if (widget.otherId == 0) return;
+    try {
+      final response = await dio.get('/users/${widget.otherId}');
+      final user = response.data is Map ? (response.data['user'] ?? response.data) : null;
+      if (user is! Map) return;
+      setState(() {
+        name = user['name']?.toString() ?? name;
+        email = user['email']?.toString() ?? email;
+        city = user['city']?.toString() ?? city;
+        offers = user['offers']?.toString() ?? offers;
+        needs = user['needs']?.toString() ?? needs;
+        photo = user['photoUrl']?.toString() ?? photo;
+        rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
+        if (user['reviews'] is List) {
+          reviews = (user['reviews'] as List)
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      });
+    } catch (_) {}
+  }
+
+  Widget pill(String text) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF7B61FF).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(text, style: const TextStyle(color: Color(0xFF7B61FF), fontWeight: FontWeight.w600)),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final photo = photoUrl?.trim() ?? '';
+    final offerChips = chips(offers);
     return Scaffold(
       appBar: AppBar(title: Text(name)),
       bottomNavigationBar: const AppBottomNav(currentIndex: 0),
@@ -57,15 +119,14 @@ class UserProfileScreen extends StatelessWidget {
               Text(rating.toStringAsFixed(1)),
             ],
           ),
-          const SizedBox(height: 8),
-          if (email.isNotEmpty) Text(email, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
-          if (city.isNotEmpty) Text(city, textAlign: TextAlign.center),
+          if (city.isNotEmpty) Text(city, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 16),
-          const Text('Offers', style: TextStyle(fontWeight: FontWeight.w700)),
-          Text(offers.isEmpty ? '-' : offers),
-          const SizedBox(height: 12),
-          const Text('Needs', style: TextStyle(fontWeight: FontWeight.w700)),
-          Text(needs.isEmpty ? '-' : needs),
+          const Text('Skills to offer', style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          if (offerChips.isEmpty)
+            const Text('No skills listed yet.', style: TextStyle(color: AppColors.muted))
+          else
+            Wrap(children: [for (final skill in offerChips) pill(skill)]),
           const SizedBox(height: 20),
           SizedBox(
             height: 52,
@@ -74,7 +135,7 @@ class UserProfileScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ChatScreen(name: name, otherId: otherId),
+                    builder: (context) => ChatScreen(name: name, otherId: widget.otherId, photoUrl: photo),
                   ),
                 );
               },
