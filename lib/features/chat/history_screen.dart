@@ -110,13 +110,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ).then((_) => loadAll());
   }
 
-  Widget chip(String value, String label) {
+  Widget chip(String value, String label, IconData icon, Color color) {
     final selected = filter == value;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: 8, bottom: 8),
       child: ChoiceChip(
-        label: Text(label),
+        avatar: Icon(icon, size: 16, color: selected ? Colors.white : color),
+        label: Text(
+          label,
+          style: TextStyle(color: selected ? Colors.white : Colors.black, fontWeight: FontWeight.w800),
+        ),
         selected: selected,
+        selectedColor: color,
+        backgroundColor: color.withValues(alpha: 0.12),
         onSelected: (_) => setState(() => filter = value),
       ),
     );
@@ -125,39 +131,44 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text('History')),
       body: RefreshIndicator(
         onRefresh: loadAll,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
           children: [
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: () => setState(() => tab = 0),
                     style: AppTheme.solid(tab == 0 ? AppColors.blue : Colors.grey),
-                    child: const Text('Offers', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(Icons.swap_horiz, color: Colors.white),
+                    label: const Text('Offers', style: TextStyle(color: Colors.white)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: ElevatedButton(
+                  child: ElevatedButton.icon(
                     onPressed: () => setState(() => tab = 1),
                     style: AppTheme.solid(tab == 1 ? AppColors.blue : Colors.grey),
-                    child: const Text('Wallet', style: TextStyle(color: Colors.white)),
+                    icon: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white),
+                    label: const Text('Wallet', style: TextStyle(color: Colors.white)),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             if (tab == 0) ...[
-              Wrap(children: [
-                chip('all', 'All'),
-                chip('pending', 'Pending'),
-                chip('open', 'Open'),
-                chip('closed', 'Closed'),
-              ]),
+              Wrap(
+                children: [
+                  chip('all', 'All', Icons.apps, AppColors.blue),
+                  chip('pending', 'Pending', Icons.hourglass_top, const Color(0xFFE3A008)),
+                  chip('open', 'Open', Icons.check_circle, AppColors.green),
+                  chip('closed', 'Closed', Icons.cancel, const Color(0xFFD92D20)),
+                ],
+              ),
               const SizedBox(height: 12),
               if (visible.isEmpty)
                 const Text('No items in this filter.', style: TextStyle(color: AppColors.muted))
@@ -176,9 +187,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member',
-                            style: const TextStyle(fontWeight: FontWeight.w800)),
-                        Text(group == 'pending' ? 'Pending offer' : group == 'open' ? 'Open session' : item['status']?.toString() ?? ''),
+                        Text(
+                          item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          group == 'pending'
+                              ? 'Pending offer'
+                              : group == 'open'
+                                  ? 'Open session'
+                                  : item['status']?.toString() ?? '',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                         if ((item['skillRequested'] ?? '').toString().isNotEmpty) Text('Requested: ${item['skillRequested']}'),
                         if ((item['skillOffered'] ?? '').toString().isNotEmpty) Text('In return: ${item['skillOffered']}'),
                         if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
@@ -187,10 +207,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         if (group != 'closed')
                           TextButton(onPressed: () => openChat(item), child: const Text('Open chat')),
                         if (canReview)
-                          ElevatedButton(
+                          ElevatedButton.icon(
                             onPressed: () => writeReview(item),
                             style: AppTheme.solid(AppColors.green),
-                            child: const Text('Write review', style: TextStyle(color: Colors.white)),
+                            icon: const Icon(Icons.star, color: Colors.white),
+                            label: const Text('Write review', style: TextStyle(color: Colors.white)),
                           ),
                       ],
                     ),
@@ -205,6 +226,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               else
                 ...walletItems.map((item) => ListTile(
                       contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.toll),
                       title: Text(item['title']?.toString() ?? 'Movement'),
                       trailing: Text(item['amount']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
                     )),

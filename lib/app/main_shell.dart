@@ -59,7 +59,11 @@ class _MainShellState extends State<MainShell> {
     ];
 
     return Scaffold(
-      body: pages[index],
+      resizeToAvoidBottomInset: true,
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: pages[index],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: index,
         type: BottomNavigationBarType.fixed,

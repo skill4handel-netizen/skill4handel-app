@@ -97,7 +97,7 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
       children: [
         const Text('Search', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),

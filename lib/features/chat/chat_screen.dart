@@ -90,13 +90,30 @@ class _ChatScreenState extends State<ChatScreen> {
     return '${local.day} ${months[local.month - 1]} ${local.year}, ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
-  DateTime? get scheduledAt {
-    return DateTime.tryParse('${pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? ''}');
-  }
-
+  DateTime? get scheduledAt => DateTime.tryParse('${pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? ''}');
   bool get timeReached {
     final time = scheduledAt;
     return time != null && !time.isAfter(DateTime.now());
+  }
+
+  List<Map<String, String>> counterChanges() {
+    final current = pendingSwap;
+    final previous = current?['previous'];
+    if (current == null || previous is! Map) return [];
+    final changes = <Map<String, String>>[];
+    void add(String label, dynamic before, dynamic after) {
+      final left = (before ?? '—').toString().trim();
+      final right = (after ?? '—').toString().trim();
+      if (left != right) changes.add({'label': label, 'from': left.isEmpty ? '—' : left, 'to': right.isEmpty ? '—' : right});
+    }
+
+    add('Return skill', previous['skillOffered'], current['skillOffered']);
+    add('Tokens', previous['extraTokens'], current['extraTokens']);
+    add('Duration', previous['duration'], current['duration']);
+    add('Mode', previous['mode'], current['mode']);
+    add('Type', previous['level'], current['level']);
+    add('Schedule', formatWhen(previous['scheduledAt'] ?? previous['when']), formatWhen(current['scheduledAt'] ?? current['when']));
+    return changes;
   }
 
   void openProfile() {
@@ -230,13 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> writeReview() async {
-    if (!completed) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A review may be submitted only after both parties confirm completion.')),
-      );
-      return;
-    }
+    if (!completed) return;
     final saved = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -267,23 +278,42 @@ class _ChatScreenState extends State<ChatScreen> {
     return reviewedBy is List && reviewedBy.any((item) => item.toString() == Session.id.toString());
   }
 
-  Color statusColor() {
-    if (accepted) return const Color(0xFF067647);
-    if (pending) return const Color(0xFFB54708);
-    return AppColors.blue;
-  }
+  bool get isCounterOffer => pendingSwap?['rawStatus']?.toString() == 'COUNTERED' || counterChanges().isNotEmpty;
 
   String statusLabel() {
-    if (accepted && !timeReached) return 'Agreed  •  waiting for the scheduled time';
-    if (accepted && iAlreadyDone) return 'You confirmed  •  waiting for the other member';
+    if (accepted && !timeReached) return 'Agreed session';
+    if (accepted && iAlreadyDone) return 'Waiting for the other member';
     if (accepted) return 'Agreed session';
+    if (isCounterOffer && iProposed) return 'Counter-offer sent';
+    if (isCounterOffer) return 'Counter-offer received';
     if (pending && iProposed) return 'Offer sent';
     if (pending) return 'New offer';
     return (pendingSwap?['status'] ?? '').toString();
   }
 
+  Widget actionButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    return Expanded(
+      child: ElevatedButton.icon(
+        onPressed: working ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+        icon: Icon(icon, size: 16),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final keyboard = MediaQuery.of(context).viewInsets.bottom;
     String buttonText = 'Create offer';
     VoidCallback? onPressed = working ? null : () => startOffer();
     if (completed && !iAlreadyReviewed) {
@@ -305,8 +335,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
     final photo = widget.photoUrl?.trim() ?? '';
     final requested = pendingSwap?['skillRequested']?.toString() ?? '';
+    final offered = pendingSwap?['skillOffered']?.toString() ?? '';
+    final changes = counterChanges();
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
@@ -359,41 +392,48 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(statusLabel(), style: TextStyle(color: statusColor(), fontWeight: FontWeight.w800)),
-                        const SizedBox(height: 4),
-                        Text(requested.isEmpty ? widget.name : requested, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        Text(statusLabel(), style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        Text(requested, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w800, fontSize: 16)),
+                        if (offered.isNotEmpty)
+                          Text('In return: $offered', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
+                        if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0')
+                          Text('Tokens: ${pendingSwap?['extraTokens']}', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w700)),
                         if (formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when']).isNotEmpty)
-                          Text(
-                            formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when']),
-                            style: const TextStyle(color: AppColors.muted),
-                          ),
+                          Text(formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when']), style: const TextStyle(color: Colors.black87)),
+                        if (changes.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          const Text('What changed', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 6),
+                          for (final change in changes)
+                            Container(
+                              width: double.infinity,
+                              margin: const EdgeInsets.only(bottom: 6),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(change['label'] ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
+                                  Text('${change['from']}  →  ${change['to']}'),
+                                ],
+                              ),
+                            ),
+                        ],
                         if (pending && iProposed)
                           TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
                         if (pending && !iProposed)
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: working ? null : () => respond('accepted'),
-                                  style: AppTheme.solid(AppColors.green),
-                                  child: const Text('Accept', style: TextStyle(color: Colors.white)),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: working ? null : () => startOffer(isCounter: true),
-                                  child: const Text('Counter'),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: working ? null : () => respond('rejected'),
-                                  child: const Text('Decline'),
-                                ),
-                              ),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              children: [
+                                actionButton(label: 'Accept', icon: Icons.check_circle, color: AppColors.green, onTap: () => respond('accepted')),
+                                const SizedBox(width: 6),
+                                actionButton(label: 'Counter', icon: Icons.sync_alt, color: const Color(0xFFE3A008), onTap: () => startOffer(isCounter: true)),
+                                const SizedBox(width: 6),
+                                actionButton(label: 'Decline', icon: Icons.cancel, color: const Color(0xFFD92D20), onTap: () => respond('rejected')),
+                              ],
+                            ),
                           ),
                       ],
                     ),
@@ -402,7 +442,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: messages.isEmpty
                       ? const Center(child: Text('No messages yet.'))
                       : ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
                             final message = messages[index];
@@ -414,15 +454,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 width: double.infinity,
                                 margin: const EdgeInsets.only(bottom: 10),
                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEEF2F6),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  message['text']?.toString() ?? '',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
-                                ),
+                                decoration: BoxDecoration(color: const Color(0xFFEEF2F6), borderRadius: BorderRadius.circular(12)),
+                                child: Text(message['text']?.toString() ?? '', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
                               );
                             }
                             return Align(
@@ -434,10 +467,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   color: isMe ? AppColors.blue : const Color(0xFFFFF4D6),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Text(
-                                  message['text']?.toString() ?? '',
-                                  style: TextStyle(color: isMe ? Colors.white : AppColors.text),
-                                ),
+                                child: Text(message['text']?.toString() ?? '', style: TextStyle(color: isMe ? Colors.white : Colors.black)),
                               ),
                             );
                           },
@@ -455,30 +485,28 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ),
-                SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controller,
-                            decoration: InputDecoration(
-                              hintText: 'Write a message',
-                              filled: true,
-                              fillColor: const Color(0xFFEAF4FF),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                            ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + keyboard),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          decoration: InputDecoration(
+                            hintText: 'Write a message',
+                            filled: true,
+                            fillColor: const Color(0xFFEAF4FF),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        IconButton.filled(
-                          onPressed: send,
-                          style: IconButton.styleFrom(backgroundColor: AppColors.blue),
-                          icon: const Icon(Icons.send, color: Colors.white),
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        onPressed: send,
+                        style: IconButton.styleFrom(backgroundColor: AppColors.blue),
+                        icon: const Icon(Icons.send, color: Colors.white),
+                      ),
+                    ],
                   ),
                 ),
               ],
