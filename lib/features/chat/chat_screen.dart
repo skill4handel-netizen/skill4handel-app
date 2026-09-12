@@ -41,6 +41,14 @@ class _ChatScreenState extends State<ChatScreen> {
     openChat();
   }
 
+  String apiError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) return data['message'].toString();
+    }
+    return 'The request could not be completed.';
+  }
+
   void applyChat(dynamic data) {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
     pendingSwap = data['pendingSwap'] is Map ? Map<String, dynamic>.from(data['pendingSwap'] as Map) : null;
@@ -85,6 +93,39 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> reportUser() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SupportScreen(initialType: 'report', initialOtherName: widget.name),
+      ),
+    );
+  }
+
+  Future<void> blockUser() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Block this member?'),
+        content: const Text('This member will no longer appear in Search, Matches or Chat.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/block', data: {'userId': Session.id, 'otherId': widget.otherId});
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This member has been blocked.')));
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
+    }
   }
 
   Future<void> openOffer() async {
@@ -155,6 +196,8 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
+          IconButton(onPressed: blockUser, icon: const Icon(Icons.block)),
+          IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
           IconButton(
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
@@ -200,7 +243,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                 margin: const EdgeInsets.only(bottom: 10),
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(color: const Color(0xFFEEF2F6), borderRadius: BorderRadius.circular(12)),
-                                child: Text(message['text']?.toString() ?? '', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                child: Text(
+                                  message['text']?.toString() ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                                ),
                               );
                             }
                             return Align(
@@ -212,7 +259,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                   color: isMe ? AppColors.blue : const Color(0xFFFFF4D6),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Text(message['text']?.toString() ?? '', style: TextStyle(color: isMe ? Colors.white : Colors.black)),
+                                child: Text(
+                                  message['text']?.toString() ?? '',
+                                  style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                                ),
                               ),
                             );
                           },
