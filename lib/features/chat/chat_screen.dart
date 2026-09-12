@@ -45,12 +45,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void applyChat(dynamic data) {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
-    pendingSwap = data['pendingSwap'] is Map
-        ? Map<String, dynamic>.from(data['pendingSwap'] as Map)
-        : null;
-    lastCompleted = data['lastCompleted'] is Map
-        ? Map<String, dynamic>.from(data['lastCompleted'] as Map)
-        : null;
+    pendingSwap = data['pendingSwap'] is Map ? Map<String, dynamic>.from(data['pendingSwap'] as Map) : null;
+    lastCompleted = data['lastCompleted'] is Map ? Map<String, dynamic>.from(data['lastCompleted'] as Map) : null;
     final loaded = (data['messages'] as List?) ?? [];
     messages = loaded
         .map((item) => Map<String, dynamic>.from(item as Map))
@@ -78,6 +74,38 @@ class _ChatScreenState extends State<ChatScreen> {
     if (mounted) setState(() => loading = false);
   }
 
+  String formatWhen(dynamic raw) {
+    final parsed = DateTime.tryParse(raw?.toString() ?? '');
+    if (parsed == null) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final local = parsed.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return '${local.day} ${months[local.month - 1]} ${local.year}, $hour:$minute';
+  }
+
+  List<String> counterChanges() {
+    final current = pendingSwap;
+    final previous = current?['previous'];
+    if (current == null || previous is! Map) return [];
+    final changes = <String>[];
+    void add(String label, dynamic a, dynamic b) {
+      final left = (a ?? '—').toString();
+      final right = (b ?? '—').toString();
+      if (left != right) changes.add('$label: $left → $right');
+    }
+
+    add('Offered', previous['skillOffered'], current['skillOffered']);
+    add('Tokens', previous['extraTokens'], current['extraTokens']);
+    add('Duration', previous['duration'], current['duration']);
+    add('Mode', previous['mode'], current['mode']);
+    add('Type', previous['level'], current['level']);
+    final oldWhen = formatWhen(previous['scheduledAt'] ?? previous['when']);
+    final newWhen = formatWhen(current['scheduledAt'] ?? current['when']);
+    if (oldWhen != newWhen) changes.add('Schedule: $oldWhen → $newWhen');
+    return changes;
+  }
+
   void openProfile() {
     Navigator.push(
       context,
@@ -99,10 +127,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SupportScreen(
-          initialType: 'report',
-          initialOtherName: widget.name,
-        ),
+        builder: (context) => SupportScreen(initialType: 'report', initialOtherName: widget.name),
       ),
     );
   }
@@ -121,10 +146,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (ok != true) return;
     try {
-      await dio.post('/auth/block', data: {
-        'userId': Session.id,
-        'otherId': widget.otherId,
-      });
+      await dio.post('/auth/block', data: {'userId': Session.id, 'otherId': widget.otherId});
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('The member has been blocked and will no longer appear in matches or chat.')),
@@ -132,9 +154,7 @@ class _ChatScreenState extends State<ChatScreen> {
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The member could not be blocked.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The member could not be blocked.')));
     }
   }
 
@@ -143,15 +163,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty || chatId == null) return;
     controller.clear();
     try {
-      final response = await dio.post('/chats/$chatId/messages', data: {
-        'fromId': Session.id,
-        'text': text,
-      });
+      final response = await dio.post('/chats/$chatId/messages', data: {'fromId': Session.id, 'text': text});
       setState(() => applyChat(response.data));
     } catch (e) {
-      setState(() {
-        messages.add({'type': 'text', 'fromId': Session.id, 'text': text});
-      });
+      setState(() => messages.add({'type': 'text', 'fromId': Session.id, 'text': text}));
     }
   }
 
@@ -163,6 +178,7 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context) => CompleteSwapScreen(
           otherName: widget.name,
           chatId: chatId!,
+          otherId: widget.otherId,
           photoUrl: widget.photoUrl,
           isCounter: isCounter,
           initialSkillRequested: pendingSwap?['skillRequested']?.toString() ?? '',
@@ -176,10 +192,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chatId == null) return;
     setState(() => working = true);
     try {
-      final chat = await dio.post('/chats/$chatId/swap/respond', data: {
-        'userId': Session.id,
-        'action': action,
-      });
+      final chat = await dio.post('/chats/$chatId/swap/respond', data: {'userId': Session.id, 'action': action});
       applyChat(chat.data);
       await openChat();
     } catch (e) {
@@ -194,9 +207,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chatId == null) return;
     setState(() => working = true);
     try {
-      final chat = await dio.post('/chats/$chatId/swap/cancel', data: {
-        'userId': Session.id,
-      });
+      final chat = await dio.post('/chats/$chatId/swap/cancel', data: {'userId': Session.id});
       applyChat(chat.data);
       await openChat();
     } catch (e) {
@@ -211,14 +222,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (chatId == null) return;
     setState(() => working = true);
     try {
-      final chat = await dio.post('/chats/$chatId/swap/done', data: {
-        'userId': Session.id,
-      });
+      final chat = await dio.post('/chats/$chatId/swap/done', data: {'userId': Session.id});
       applyChat(chat.data);
       await openChat();
-      if (completed && !iAlreadyReviewed) {
-        await writeReview();
-      }
+      if (completed && !iAlreadyReviewed) await writeReview();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
@@ -260,7 +267,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   bool get iProposed => pendingSwap?['proposedBy']?.toString() == Session.id.toString();
-
   bool get iAlreadyDone {
     final doneBy = pendingSwap?['doneBy'] ?? lastCompleted?['doneBy'];
     if (doneBy is! List) return false;
@@ -330,19 +336,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: openProfile,
-                          child: const Text('View profile'),
-                        ),
-                      ),
+                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('View profile'))),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: openProfile,
-                          child: const Text('View reviews'),
-                        ),
-                      ),
+                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('View reviews'))),
                     ],
                   ),
                 ),
@@ -351,10 +347,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF4FF),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFEAF4FF), borderRadius: BorderRadius.circular(16)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -363,13 +356,17 @@ class _ChatScreenState extends State<ChatScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 6),
-                        Text('Offered: ${pendingSwap?['skillOffered'] ?? '-'}'),
-                        if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0')
-                          Text('Tokens: ${pendingSwap?['extraTokens']}'),
+                        Text('Offered: ${(pendingSwap?['skillOffered'] ?? '').toString().isEmpty ? '—' : pendingSwap?['skillOffered']}'),
+                        if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0') Text('Tokens: ${pendingSwap?['extraTokens']}'),
                         if ((pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? '').toString().isNotEmpty)
-                          Text('Scheduled: ${pendingSwap?['scheduledAt'] ?? pendingSwap?['when']}'),
+                          Text('Scheduled: ${formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when'])}'),
                         Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''} • ${pendingSwap?['level'] ?? ''}'),
                         Text('Status: ${pendingSwap?['status']}'),
+                        if (counterChanges().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          const Text('Changed in this counter-offer', style: TextStyle(fontWeight: FontWeight.w800)),
+                          for (final line in counterChanges()) Text(line),
+                        ],
                         if (pending && iProposed)
                           TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
                         if (pending && !iProposed)
@@ -434,10 +431,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               hintText: 'Write a message',
                               filled: true,
                               fillColor: const Color(0xFFEAF4FF),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                             ),
                           ),
                         ),

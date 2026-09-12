@@ -8,6 +8,7 @@ class CompleteSwapScreen extends StatefulWidget {
     super.key,
     required this.otherName,
     required this.chatId,
+    this.otherId = 0,
     this.photoUrl,
     this.isCounter = false,
     this.initialSkillRequested = '',
@@ -15,6 +16,7 @@ class CompleteSwapScreen extends StatefulWidget {
 
   final String otherName;
   final int chatId;
+  final int otherId;
   final String? photoUrl;
   final bool isCounter;
   final String initialSkillRequested;
@@ -32,6 +34,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   String duration = '60';
   String mode = 'Online';
   String payMode = 'skill';
+  String selectedOffer = '';
+  List<String> otherSkills = [];
   bool acceptedQuality = false;
   bool working = false;
   DateTime? when;
@@ -42,6 +46,23 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isCounter) loadOtherSkills();
+  }
+
+  Future<void> loadOtherSkills() async {
+    if (widget.otherId == 0) return;
+    try {
+      final response = await dio.get('/users/${widget.otherId}');
+      final user = response.data is Map ? (response.data['user'] ?? response.data) : null;
+      final raw = user is Map ? (user['offers']?.toString() ?? '') : '';
+      final list = raw.split(RegExp(r'[,/]')).map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+      if (mounted) setState(() => otherSkills = list);
+    } catch (_) {}
+  }
+
   Future<void> pickWhen() async {
     final min = minWhen;
     final date = await showDatePicker(
@@ -51,23 +72,14 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(when ?? min),
-    );
-    final next = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time?.hour ?? min.hour,
-      time?.minute ?? min.minute,
-    );
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(when ?? min));
+    final next = DateTime(date.year, date.month, date.day, time?.hour ?? min.hour, time?.minute ?? min.minute);
     setState(() => when = next.isBefore(min) ? min : next);
   }
 
   String earliestLabel() {
     final min = minWhen;
-    return '${min.day} ${_month(min.month)}, ${TimeOfDay.fromDateTime(min).format(context)}';
+    return '${min.day} ${_month(min.month)} ${min.year}, ${TimeOfDay.fromDateTime(min).format(context)}';
   }
 
   String _month(int month) {
@@ -76,43 +88,32 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   }
 
   Future<void> submit() async {
-    final requested = widget.isCounter
-        ? widget.initialSkillRequested.trim()
-        : skillRequested.text.trim();
+    final requested = widget.isCounter ? widget.initialSkillRequested.trim() : skillRequested.text.trim();
+    final offered = widget.isCounter ? selectedOffer : skillOffered.text.trim();
     if (requested.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The requested skill is missing.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The requested skill is missing.')));
       return;
     }
-    if (useSkill && skillOffered.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the skill offered in return.')),
-      );
+    if (useSkill && offered.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.isCounter
+            ? 'Please select one skill from the original member’s list.'
+            : 'Please enter the skill offered in return.'),
+      ));
       return;
     }
     if (useTokens && (int.tryParse(extraTokens.text) ?? 0) <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter between 1 and 10 tokens.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter between 1 and 10 tokens.')));
       return;
     }
     if (when == null || when!.isBefore(minWhen)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isCounter
-                ? 'Please select a date and time.'
-                : 'The earliest available time is 24 hours from now.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(widget.isCounter ? 'Please select a date and time.' : 'The earliest available time is 24 hours from now.'),
+      ));
       return;
     }
     if (!acceptedQuality) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')));
       return;
     }
     setState(() => working = true);
@@ -121,7 +122,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         'userId': Session.id,
         'proposedByName': Session.name,
         'skillRequested': requested,
-        'skillOffered': volunteer ? 'Volunteer help' : (useSkill ? skillOffered.text.trim() : ''),
+        'skillOffered': volunteer ? '' : offered,
         'payWithTokens': useTokens,
         'volunteer': volunteer,
         'extraTokens': useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0,
@@ -162,7 +163,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         children: [
           Text(
             widget.isCounter
-                ? 'Respond with different terms. The original requested skill stays the same.'
+                ? 'The original requested skill stays the same. You may accept it as volunteer assistance, or choose one skill from the other member’s list, with or without tokens.'
                 : 'Select the terms of the exchange. The meeting must be scheduled at least 24 hours from now.',
           ),
           const SizedBox(height: 16),
@@ -186,7 +187,22 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               controller: skillRequested,
               decoration: const InputDecoration(labelText: 'Requested skill'),
             ),
-          if (useSkill) ...[
+          if (useSkill && widget.isCounter) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: selectedOffer.isEmpty ? null : selectedOffer,
+              decoration: const InputDecoration(labelText: 'Skill you ask from their list'),
+              items: [
+                for (final skill in otherSkills) DropdownMenuItem(value: skill, child: Text(skill)),
+              ],
+              onChanged: (value) => setState(() => selectedOffer = value ?? ''),
+            ),
+            if (otherSkills.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('This member has not listed skills to offer.', style: TextStyle(color: AppColors.muted)),
+              ),
+          ] else if (useSkill) ...[
             const SizedBox(height: 12),
             TextField(
               controller: skillOffered,
@@ -235,17 +251,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: location,
-            decoration: InputDecoration(
-              labelText: mode == 'Online' ? 'Meeting link or note' : 'Meeting place',
-            ),
+            decoration: InputDecoration(labelText: mode == 'Online' ? 'Meeting link or note' : 'Meeting place'),
           ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: acceptedQuality,
             onChanged: (value) => setState(() => acceptedQuality = value ?? false),
-            title: const Text(
-              'I understand that the quality and outcome of this exchange are the responsibility of the parties.',
-            ),
+            title: const Text('I understand that the quality and outcome of this exchange are the responsibility of the parties.'),
           ),
           const SizedBox(height: 12),
           SizedBox(
