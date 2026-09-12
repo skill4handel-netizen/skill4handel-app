@@ -342,19 +342,9 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                  child: Row(
-                    children: [
-                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Profile'))),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
-                          },
-                          child: const Text('Activity'),
-                        ),
-                      ),
-                    ],
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(onPressed: openProfile, child: const Text('Profile')),
                   ),
                 ),
                 if (pendingSwap != null)
@@ -379,15 +369,6 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         if (pending && iProposed)
                           TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
-                            },
-                            child: const Text('Open activity'),
-                          ),
-                        ),
                         if (pending && !iProposed)
                           Row(
                             children: [
@@ -425,14 +406,32 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
                             final message = messages[index];
-                            final isMe = message['fromId'].toString() == Session.id.toString();
+                            final fromId = int.tryParse('${message['fromId'] ?? 0}') ?? 0;
+                            final isSystem = fromId == 0;
+                            final isMe = fromId == Session.id;
+                            if (isSystem) {
+                              return Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 10),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2F6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  message['text']?.toString() ?? '',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                                ),
+                              );
+                            }
                             return Align(
                               alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 10),
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isMe ? AppColors.blue : AppColors.soft,
+                                  color: isMe ? AppColors.blue : const Color(0xFFFFF4D6),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(

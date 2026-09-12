@@ -14,9 +14,9 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
-  List<Map<String, dynamic>> openItems = [];
-  List<Map<String, dynamic>> closedItems = [];
+  List<Map<String, dynamic>> allItems = [];
   List<Map<String, dynamic>> walletItems = [];
+  String filter = 'all';
   int tab = 0;
 
   @override
@@ -34,26 +34,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> loadAll() async {
+    final merged = <Map<String, dynamic>>[];
     try {
       final chats = await dio.get('/chats', queryParameters: {'userId': Session.id});
-      openItems = ((chats.data as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .where((item) {
-            final status = item['pendingSwap'] is Map ? item['pendingSwap']['status']?.toString() : '';
-            return status == 'pending' || status == 'accepted';
-          })
-          .toList();
-    } catch (_) {
-      openItems = [];
-    }
+      for (final raw in ((chats.data as List?) ?? [])) {
+        final item = Map<String, dynamic>.from(raw as Map);
+        final swap = item['pendingSwap'] is Map ? Map<String, dynamic>.from(item['pendingSwap'] as Map) : null;
+        final status = swap?['status']?.toString() ?? '';
+        if (status == 'pending' || status == 'accepted') {
+          merged.add({
+            ...item,
+            ...?swap,
+            'otherName': item['name'],
+            'group': status == 'accepted' ? 'open' : 'pending',
+          });
+        }
+      }
+    } catch (_) {}
     try {
       final history = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
-      closedItems = ((history.data as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
-    } catch (_) {
-      closedItems = [];
-    }
+      for (final raw in ((history.data as List?) ?? [])) {
+        final item = Map<String, dynamic>.from(raw as Map);
+        merged.add({...item, 'group': 'closed'});
+      }
+    } catch (_) {}
     try {
       final me = await dio.get('/auth/me', queryParameters: {'userId': Session.id});
       final user = me.data is Map ? (me.data['user'] ?? me.data) : null;
@@ -62,7 +66,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {
       walletItems = List<Map<String, dynamic>>.from(Session.history);
     }
-    if (mounted) setState(() {});
+    if (mounted) setState(() => allItems = merged);
+  }
+
+  List<Map<String, dynamic>> get visible {
+    if (filter == 'all') return allItems;
+    return allItems.where((item) => item['group'] == filter).toList();
   }
 
   bool alreadyReviewed(Map item) {
@@ -101,79 +110,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ).then((_) => loadAll());
   }
 
-  Widget sectionButton(int value, String label, int count) {
-    final selected = tab == value;
-    return Expanded(
-      child: InkWell(
-        onTap: () => setState(() => tab = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.blue : AppColors.soft,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              Text('$count', style: TextStyle(color: selected ? Colors.white : AppColors.text, fontWeight: FontWeight.w800)),
-              Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.muted, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget card({
-    required String title,
-    required String subtitle,
-    required List<String> lines,
-    String? badge,
-    Color? badgeColor,
-    Widget? action,
-    VoidCallback? onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE4E7EC)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-                if (badge != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: (badgeColor ?? AppColors.blue).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(badge, style: TextStyle(color: badgeColor ?? AppColors.blue, fontWeight: FontWeight.w700, fontSize: 12)),
-                  ),
-              ],
-            ),
-            if (subtitle.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(subtitle, style: const TextStyle(color: AppColors.muted)),
-            ],
-            const SizedBox(height: 8),
-            for (final line in lines)
-              if (line.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(line),
-                ),
-            if (action != null) ...[const SizedBox(height: 8), action],
-          ],
-        ),
+  Widget chip(String value, String label) {
+    final selected = filter == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => setState(() => filter = value),
       ),
     );
   }
@@ -181,7 +125,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Activity')),
+      appBar: AppBar(title: const Text('History')),
       body: RefreshIndicator(
         onRefresh: loadAll,
         child: ListView(
@@ -189,80 +133,81 @@ class _HistoryScreenState extends State<HistoryScreen> {
           children: [
             Row(
               children: [
-                sectionButton(0, 'Open', openItems.length),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => tab = 0),
+                    style: AppTheme.solid(tab == 0 ? AppColors.blue : Colors.grey),
+                    child: const Text('Offers', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                sectionButton(1, 'History', closedItems.length),
-                const SizedBox(width: 8),
-                sectionButton(2, 'Wallet', walletItems.length),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => tab = 1),
+                    style: AppTheme.solid(tab == 1 ? AppColors.blue : Colors.grey),
+                    child: const Text('Wallet', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
             if (tab == 0) ...[
-              if (openItems.isEmpty)
-                const Text('No open requests or sessions.', style: TextStyle(color: AppColors.muted))
+              Wrap(children: [
+                chip('all', 'All'),
+                chip('pending', 'Pending'),
+                chip('open', 'Open'),
+                chip('closed', 'Closed'),
+              ]),
+              const SizedBox(height: 12),
+              if (visible.isEmpty)
+                const Text('No items in this filter.', style: TextStyle(color: AppColors.muted))
               else
-                ...openItems.map((item) {
-                  final swap = item['pendingSwap'] is Map ? Map<String, dynamic>.from(item['pendingSwap'] as Map) : {};
-                  final status = swap['status']?.toString() ?? '';
-                  return card(
-                    title: item['name']?.toString() ?? 'Member',
-                    subtitle: status == 'accepted' ? 'Agreed session' : 'Open request',
-                    badge: status == 'accepted' ? 'Session' : 'Offer',
-                    badgeColor: status == 'accepted' ? AppColors.green : const Color(0xFFB54708),
-                    lines: [
-                      if ((swap['skillRequested'] ?? '').toString().isNotEmpty) 'Requested: ${swap['skillRequested']}',
-                      if ((swap['skillOffered'] ?? '').toString().isNotEmpty) 'In return: ${swap['skillOffered']}',
-                      if ((swap['extraTokens'] ?? 0).toString() != '0') 'Tokens: ${swap['extraTokens']}',
-                      if ((swap['scheduledAt'] ?? swap['when'] ?? '').toString().isNotEmpty)
-                        'When: ${formatWhen(swap['scheduledAt'] ?? swap['when'])}',
-                    ],
-                    onTap: () => openChat(item),
+                ...visible.map((item) {
+                  final group = item['group']?.toString() ?? '';
+                  final canReview = group == 'closed' && item['status']?.toString() == 'completed' && !alreadyReviewed(item);
+                  return Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFFE4E7EC)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member',
+                            style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Text(group == 'pending' ? 'Pending offer' : group == 'open' ? 'Open session' : item['status']?.toString() ?? ''),
+                        if ((item['skillRequested'] ?? '').toString().isNotEmpty) Text('Requested: ${item['skillRequested']}'),
+                        if ((item['skillOffered'] ?? '').toString().isNotEmpty) Text('In return: ${item['skillOffered']}'),
+                        if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
+                          Text(formatWhen(item['scheduledAt'] ?? item['when'])),
+                        const SizedBox(height: 8),
+                        if (group != 'closed')
+                          TextButton(onPressed: () => openChat(item), child: const Text('Open chat')),
+                        if (canReview)
+                          ElevatedButton(
+                            onPressed: () => writeReview(item),
+                            style: AppTheme.solid(AppColors.green),
+                            child: const Text('Write review', style: TextStyle(color: Colors.white)),
+                          ),
+                      ],
+                    ),
                   );
                 }),
             ],
             if (tab == 1) ...[
-              if (closedItems.isEmpty)
-                const Text('No completed or cancelled exchanges yet.', style: TextStyle(color: AppColors.muted))
-              else
-                ...closedItems.map((item) {
-                  final status = item['status']?.toString() ?? '';
-                  final canReview = status == 'completed' && !alreadyReviewed(item);
-                  return card(
-                    title: item['otherName']?.toString() ?? 'Member',
-                    subtitle: item['skillRequested']?.toString() ?? '',
-                    badge: status,
-                    badgeColor: status == 'completed' ? AppColors.green : const Color(0xFFB42318),
-                    lines: [
-                      if ((item['skillOffered'] ?? '').toString().isNotEmpty) 'In return: ${item['skillOffered']}',
-                      if ((item['extraTokens'] ?? 0).toString() != '0') 'Tokens: ${item['extraTokens']}',
-                      if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
-                        'When: ${formatWhen(item['scheduledAt'] ?? item['when'])}',
-                      '${item['duration'] ?? ''} min • ${item['mode'] ?? ''}',
-                    ],
-                    action: canReview
-                        ? ElevatedButton(
-                            onPressed: () => writeReview(item),
-                            style: AppTheme.solid(AppColors.green),
-                            child: const Text('Write review', style: TextStyle(color: Colors.white)),
-                          )
-                        : null,
-                  );
-                }),
-            ],
-            if (tab == 2) ...[
               Text('Balance  ${Session.balance} S4H', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 12),
               if (walletItems.isEmpty)
                 const Text('No wallet movements yet.', style: TextStyle(color: AppColors.muted))
               else
-                ...walletItems.map((item) {
-                  return card(
-                    title: item['title']?.toString() ?? 'Movement',
-                    subtitle: item['amount']?.toString() ?? '',
-                    badge: 'S4H',
-                    lines: const [],
-                  );
-                }),
+                ...walletItems.map((item) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(item['title']?.toString() ?? 'Movement'),
+                      trailing: Text(item['amount']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    )),
             ],
           ],
         ),
