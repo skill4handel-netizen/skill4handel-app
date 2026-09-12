@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/user_photo.dart';
 import '../profile/user_profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -62,12 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget avatar(String name, String photo, bool online) {
     return Stack(
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.blue,
-          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-          child: photo.isEmpty ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(color: Colors.white)) : null,
-        ),
+        UserPhoto(url: photo, radius: 24, letter: name.isNotEmpty ? name[0] : '?'),
         Positioned(
           right: 0,
           bottom: 0,
@@ -107,7 +103,7 @@ class _SearchScreenState extends State<SearchScreen> {
         else
           ...results.map((person) {
             final name = person['name']?.toString() ?? 'User';
-            final photo = person['photoUrl']?.toString() ?? '';
+            final photo = (person['photoUrl'] ?? person['photo_url'] ?? '').toString();
             final online = isOnline(person);
             return ListTile(
               contentPadding: EdgeInsets.zero,
@@ -130,7 +126,9 @@ class _SearchScreenState extends State<SearchScreen> {
                       needs: person['needs']?.toString() ?? '',
                       otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
                       rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
-                      reviews: ((person['reviews'] as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList(),
+                      reviews: ((person['reviews'] as List?) ?? [])
+                          .map((item) => Map<String, dynamic>.from(item as Map))
+                          .toList(),
                       photoUrl: photo,
                     ),
                   ),

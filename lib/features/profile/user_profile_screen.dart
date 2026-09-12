@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_bottom_nav.dart';
+import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
 import '../support/support_screen.dart';
 
@@ -67,7 +68,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         city = user['city']?.toString() ?? city;
         offers = user['offers']?.toString() ?? offers;
         needs = user['needs']?.toString() ?? needs;
-        photo = user['photoUrl']?.toString() ?? photo;
+        photo = (user['photoUrl'] ?? user['photo_url'] ?? photo).toString();
         rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
         if (user['reviews'] is List) {
           reviews = (user['reviews'] as List)
@@ -143,16 +144,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Center(
-            child: CircleAvatar(
-              radius: 48,
-              backgroundColor: AppColors.soft,
-              backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-              child: photo.isEmpty
-                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : '?', style: const TextStyle(fontSize: 28))
-                  : null,
-            ),
-          ),
+          Center(child: UserPhoto(url: photo, radius: 48, letter: name.isNotEmpty ? name[0] : '?')),
           const SizedBox(height: 16),
           Text(name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
