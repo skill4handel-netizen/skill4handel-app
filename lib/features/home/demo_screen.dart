@@ -13,81 +13,125 @@ class DemoScreen extends StatefulWidget {
 
 class _DemoScreenState extends State<DemoScreen> {
   int page = 0;
-  final pages = const [
-    (
-      'Create your profile',
-      'Write the skills you can give and the skills you need. Add a photo, city, age and gender.',
+
+  final slides = const [
+    _Slide(
+      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
+      title: 'Create a profile',
+      text: 'Add a photograph, your city and the skills you can offer.',
     ),
-    (
-      'Find a match',
-      'Search by name, city or skill. Open a profile, read reviews, then connect and chat.',
+    _Slide(
+      image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80',
+      title: 'Find a member',
+      text: 'Search by name, city or skill. Open the profile before you connect.',
     ),
-    (
-      'Agree and swap',
-      'Send an offer with skill, optional tokens, date and time. You can cancel until 24 hours before.',
+    _Slide(
+      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80',
+      title: 'Send an offer',
+      text: 'Propose a skill exchange, optional tokens, a date and a meeting format.',
     ),
-    (
-      'Stay safe',
-      'No cash between you. Quality is your responsibility. Sex work, violence and illegal jobs are banned.',
+    _Slide(
+      image: 'https://images.unsplash.com/photo-1529156069898-49953e654a00?auto=format&fit=crop&w=1400&q=80',
+      title: 'Complete the exchange',
+      text: 'Meet as agreed. Both members confirm completion after the scheduled time.',
+    ),
+    _Slide(
+      image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80',
+      title: 'Review and tokens',
+      text: 'Leave a review after completion. Tokens are used only when a direct skill swap is not possible.',
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final item = pages[page];
+    final item = slides[page];
+    final last = page == slides.length - 1;
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Welcome${widget.userName == null ? '' : ', ${widget.userName}'}',
-                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              const Text('A short tour before you start.', style: TextStyle(color: AppColors.muted)),
-              const Spacer(),
-              Text(item.$1, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.blue)),
-              const SizedBox(height: 12),
-              Text(item.$2, style: const TextStyle(fontSize: 16)),
-              const Spacer(),
-              Row(
-                children: List.generate(
-                  pages.length,
-                  (index) => Container(
-                    width: 10,
-                    height: 10,
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: index == page ? AppColors.green : AppColors.line,
-                      shape: BoxShape.circle,
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            item.image,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stack) => Container(color: AppColors.blue),
+          ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x66000000), Color(0x00000000), Color(0xCC000000)],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.userName == null || widget.userName!.isEmpty
+                        ? 'Welcome'
+                        : 'Welcome, ${widget.userName}',
+                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                  ),
+                  const Text(
+                    'How Skill4Handel works',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const Spacer(),
+                  Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  Text(item.text, style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.35)),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: List.generate(
+                      slides.length,
+                      (index) => Container(
+                        width: index == page ? 18 : 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 6),
+                        decoration: BoxDecoration(
+                          color: index == page ? Colors.white : Colors.white38,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (!last) {
+                          setState(() => page++);
+                        } else {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => MainShell(userName: widget.userName)),
+                          );
+                        }
+                      },
+                      style: AppTheme.solid(AppColors.green),
+                      child: Text(last ? 'Continue' : 'Next', style: const TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (page < pages.length - 1) {
-                      setState(() => page++);
-                    } else {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (context) => MainShell(userName: widget.userName)),
-                      );
-                    }
-                  },
-                  style: AppTheme.solid(AppColors.green),
-                  child: Text(page < pages.length - 1 ? 'Next' : 'Start', style: const TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class _Slide {
+  const _Slide({required this.image, required this.title, required this.text});
+  final String image;
+  final String title;
+  final String text;
 }
