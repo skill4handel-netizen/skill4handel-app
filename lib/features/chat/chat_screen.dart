@@ -99,27 +99,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return time != null && !time.isAfter(DateTime.now());
   }
 
-  List<String> counterChanges() {
-    final current = pendingSwap;
-    final previous = current?['previous'];
-    if (current == null || previous is! Map) return [];
-    final changes = <String>[];
-    void add(String label, dynamic a, dynamic b) {
-      final left = (a ?? '—').toString();
-      final right = (b ?? '—').toString();
-      if (left != right) changes.add('$label: $left → $right');
-    }
-    add('Return skill', previous['skillOffered'], current['skillOffered']);
-    add('Tokens', previous['extraTokens'], current['extraTokens']);
-    add('Duration', previous['duration'], current['duration']);
-    add('Mode', previous['mode'], current['mode']);
-    add('Type', previous['level'], current['level']);
-    final oldWhen = formatWhen(previous['scheduledAt'] ?? previous['when']);
-    final newWhen = formatWhen(current['scheduledAt'] ?? current['when']);
-    if (oldWhen != newWhen) changes.add('Schedule: $oldWhen → $newWhen');
-    return changes;
-  }
-
   void openProfile() {
     Navigator.push(
       context,
@@ -282,34 +261,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final doneBy = pendingSwap?['doneBy'] ?? lastCompleted?['doneBy'];
     return doneBy is List && doneBy.any((item) => item.toString() == Session.id.toString());
   }
+
   bool get iAlreadyReviewed {
     final reviewedBy = pendingSwap?['reviewedBy'] ?? lastCompleted?['reviewedBy'];
     return reviewedBy is List && reviewedBy.any((item) => item.toString() == Session.id.toString());
-  }
-
-  Widget infoRow(IconData icon, String label, String value) {
-    if (value.trim().isEmpty || value == '—') return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: AppColors.blue),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(color: AppColors.text, fontSize: 14),
-                children: [
-                  TextSpan(text: '$label  ', style: const TextStyle(color: AppColors.muted)),
-                  TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Color statusColor() {
@@ -321,9 +276,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String statusLabel() {
     if (accepted && !timeReached) return 'Agreed  •  waiting for the scheduled time';
     if (accepted && iAlreadyDone) return 'You confirmed  •  waiting for the other member';
-    if (accepted) return 'Agreed  •  ready after the scheduled time';
-    if (pending && iProposed) return 'Sent  •  waiting for a reply';
-    if (pending) return 'New offer  •  reply below';
+    if (accepted) return 'Agreed session';
+    if (pending && iProposed) return 'Offer sent';
+    if (pending) return 'New offer';
     return (pendingSwap?['status'] ?? '').toString();
   }
 
@@ -344,13 +299,12 @@ class _ChatScreenState extends State<ChatScreen> {
       buttonText = iAlreadyDone ? 'Waiting for the other member' : 'Confirm completion';
       onPressed = iAlreadyDone || working ? null : markDone;
     } else if (pending) {
-      buttonText = iProposed ? 'Waiting for a reply' : 'Use the buttons on the offer';
+      buttonText = iProposed ? 'Waiting for a reply' : 'Reply on the offer above';
       onPressed = null;
     }
 
     final photo = widget.photoUrl?.trim() ?? '';
     final requested = pendingSwap?['skillRequested']?.toString() ?? '';
-    final offered = pendingSwap?['skillOffered']?.toString() ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -375,7 +329,9 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(onPressed: blockUser, icon: const Icon(Icons.block)),
           IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
           IconButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+            },
             icon: const Icon(Icons.history),
           ),
         ],
@@ -390,7 +346,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     children: [
                       Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Profile'))),
                       const SizedBox(width: 8),
-                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Reviews'))),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+                          },
+                          child: const Text('Activity'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -398,76 +361,58 @@ class _ChatScreenState extends State<ChatScreen> {
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFE4E7EC)),
+                      color: const Color(0xFFEAF4FF),
+                      borderRadius: BorderRadius.circular(18),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: statusColor().withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
+                        Text(statusLabel(), style: TextStyle(color: statusColor(), fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 4),
+                        Text(requested.isEmpty ? widget.name : requested, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        if (formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when']).isNotEmpty)
+                          Text(
+                            formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when']),
+                            style: const TextStyle(color: AppColors.muted),
                           ),
-                          child: Text(statusLabel(), style: TextStyle(color: statusColor(), fontWeight: FontWeight.w800)),
-                        ),
-                        const SizedBox(height: 12),
-                        infoRow(Icons.flag_outlined, 'They request', requested),
-                        infoRow(Icons.handshake_outlined, 'In return', offered.isEmpty ? 'Volunteer / no return skill' : offered),
-                        infoRow(Icons.toll, 'Tokens', '${pendingSwap?['extraTokens'] ?? 0}'),
-                        infoRow(Icons.schedule, 'When', formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when'])),
-                        infoRow(Icons.timer_outlined, 'Length', '${pendingSwap?['duration'] ?? ''} min'),
-                        infoRow(modeIcon(), 'How', '${pendingSwap?['mode'] ?? ''}'),
-                        if (counterChanges().isNotEmpty) ...[
-                          const Divider(),
-                          const Text('What changed', style: TextStyle(fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 6),
-                          for (final line in counterChanges())
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.change_circle_outlined, size: 16, color: AppColors.green),
-                                  const SizedBox(width: 6),
-                                  Expanded(child: Text(line)),
-                                ],
-                              ),
-                            ),
-                        ],
                         if (pending && iProposed)
-                          TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel this offer')),
+                          TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+                            },
+                            child: const Text('Open activity'),
+                          ),
+                        ),
                         if (pending && !iProposed)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton(
-                                    onPressed: working ? null : () => respond('accepted'),
-                                    style: AppTheme.solid(AppColors.green),
-                                    child: const Text('Accept', style: TextStyle(color: Colors.white)),
-                                  ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: working ? null : () => respond('accepted'),
+                                  style: AppTheme.solid(AppColors.green),
+                                  child: const Text('Accept', style: TextStyle(color: Colors.white)),
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: working ? null : () => startOffer(isCounter: true),
-                                    child: const Text('Counter'),
-                                  ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: working ? null : () => startOffer(isCounter: true),
+                                  child: const Text('Counter'),
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: working ? null : () => respond('rejected'),
-                                    child: const Text('Decline'),
-                                  ),
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: working ? null : () => respond('rejected'),
+                                  child: const Text('Decline'),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                       ],
                     ),
@@ -540,9 +485,5 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
     );
-  }
-
-  IconData modeIcon() {
-    return pendingSwap?['mode']?.toString() == 'In person' ? Icons.place_outlined : Icons.videocam_outlined;
   }
 }
