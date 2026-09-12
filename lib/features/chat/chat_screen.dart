@@ -165,6 +165,7 @@ class _ChatScreenState extends State<ChatScreen> {
           chatId: chatId!,
           photoUrl: widget.photoUrl,
           isCounter: isCounter,
+          initialSkillRequested: pendingSwap?['skillRequested']?.toString() ?? '',
         ),
       ),
     );
@@ -275,7 +276,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     String buttonText = 'Submit offer';
-    VoidCallback? onPressed = working ? null : startOffer;
+    VoidCallback? onPressed = working ? null : () => startOffer();
     if (completed && !iAlreadyReviewed) {
       buttonText = 'Submit review';
       onPressed = working ? null : writeReview;
@@ -302,7 +303,7 @@ class _ChatScreenState extends State<ChatScreen> {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: Colors.amber,
-                backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                backgroundImage: photo.isNotEmpty && !photo.startsWith('data:') ? NetworkImage(photo) : null,
                 child: photo.isEmpty ? Text(widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?') : null,
               ),
               const SizedBox(width: 8),

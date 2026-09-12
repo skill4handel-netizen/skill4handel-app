@@ -10,19 +10,21 @@ class CompleteSwapScreen extends StatefulWidget {
     required this.chatId,
     this.photoUrl,
     this.isCounter = false,
+    this.initialSkillRequested = '',
   });
 
   final String otherName;
   final int chatId;
   final String? photoUrl;
   final bool isCounter;
+  final String initialSkillRequested;
 
   @override
   State<CompleteSwapScreen> createState() => _CompleteSwapScreenState();
 }
 
 class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
-  final skillRequested = TextEditingController();
+  late final skillRequested = TextEditingController(text: widget.initialSkillRequested);
   final skillOffered = TextEditingController();
   final extraTokens = TextEditingController();
   final location = TextEditingController();
@@ -34,7 +36,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool working = false;
   DateTime? when;
 
-  DateTime get minWhen => DateTime.now().add(const Duration(hours: 24));
+  DateTime get minWhen =>
+      widget.isCounter ? DateTime.now() : DateTime.now().add(const Duration(hours: 24));
   bool get useSkill => payMode == 'skill' || payMode == 'both';
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
@@ -44,7 +47,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: (when ?? min).isAfter(min) ? (when ?? min) : min,
-      firstDate: min,
+      firstDate: DateTime(min.year, min.month, min.day),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (date == null || !mounted) return;
@@ -73,9 +76,12 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   }
 
   Future<void> submit() async {
-    if (skillRequested.text.trim().isEmpty) {
+    final requested = widget.isCounter
+        ? widget.initialSkillRequested.trim()
+        : skillRequested.text.trim();
+    if (requested.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the requested skill.')),
+        const SnackBar(content: Text('The requested skill is missing.')),
       );
       return;
     }
@@ -93,7 +99,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     }
     if (when == null || when!.isBefore(minWhen)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The earliest available time is 24 hours from now.')),
+        SnackBar(
+          content: Text(
+            widget.isCounter
+                ? 'Please select a date and time.'
+                : 'The earliest available time is 24 hours from now.',
+          ),
+        ),
       );
       return;
     }
@@ -108,7 +120,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       await dio.post('/chats/${widget.chatId}/swap', data: {
         'userId': Session.id,
         'proposedByName': Session.name,
-        'skillRequested': skillRequested.text.trim(),
+        'skillRequested': requested,
         'skillOffered': volunteer ? 'Volunteer help' : (useSkill ? skillOffered.text.trim() : ''),
         'payWithTokens': useTokens,
         'volunteer': volunteer,
@@ -150,7 +162,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         children: [
           Text(
             widget.isCounter
-                ? 'Submit a counter-offer. Volunteer assistance may be selected by the recipient of the original offer. The meeting must be scheduled at least 24 hours from now.'
+                ? 'Respond with different terms. The original requested skill stays the same.'
                 : 'Select the terms of the exchange. The meeting must be scheduled at least 24 hours from now.',
           ),
           const SizedBox(height: 16),
@@ -161,10 +173,19 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             onChanged: (value) => setState(() => payMode = value ?? 'skill'),
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: skillRequested,
-            decoration: const InputDecoration(labelText: 'Requested skill'),
-          ),
+          if (widget.isCounter)
+            InputDecorator(
+              decoration: const InputDecoration(labelText: 'Requested skill'),
+              child: Text(
+                widget.initialSkillRequested.isEmpty ? '—' : widget.initialSkillRequested,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            )
+          else
+            TextField(
+              controller: skillRequested,
+              decoration: const InputDecoration(labelText: 'Requested skill'),
+            ),
           if (useSkill) ...[
             const SizedBox(height: 12),
             TextField(
@@ -185,7 +206,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             title: const Text('Date and time', style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: Text(
               when == null
-                  ? 'Not set. Earliest available: ${earliestLabel()}'
+                  ? (widget.isCounter ? 'Not set' : 'Not set. Earliest available: ${earliestLabel()}')
                   : '${MaterialLocalizations.of(context).formatMediumDate(when!)}, ${TimeOfDay.fromDateTime(when!).format(context)}',
             ),
             trailing: const Icon(Icons.calendar_today_outlined),
@@ -214,23 +235,28 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 12),
           TextField(
             controller: location,
-            decoration: const InputDecoration(labelText: 'Location or meeting note'),
+            decoration: InputDecoration(
+              labelText: mode == 'Online' ? 'Meeting link or note' : 'Meeting place',
+            ),
           ),
-          const SizedBox(height: 8),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: acceptedQuality,
             onChanged: (value) => setState(() => acceptedQuality = value ?? false),
-            controlAffinity: ListTileControlAffinity.trailing,
-            title: const Text('I understand that the quality of this work is the responsibility of the parties, not Skill4Handel.'),
+            title: const Text(
+              'I understand that the quality and outcome of this exchange are the responsibility of the parties.',
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           SizedBox(
             height: 52,
             child: ElevatedButton(
               onPressed: working ? null : submit,
               style: AppTheme.solid(AppColors.green),
-              child: Text(working ? 'Submitting...' : (widget.isCounter ? 'Submit counter-offer' : 'Submit offer'), style: const TextStyle(color: Colors.white)),
+              child: Text(
+                working ? 'Sending…' : (widget.isCounter ? 'Send counter-offer' : 'Send offer'),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],
