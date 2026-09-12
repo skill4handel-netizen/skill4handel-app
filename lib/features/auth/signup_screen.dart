@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../home/demo_screen.dart';
 import 'terms_screen.dart';
@@ -37,7 +38,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   String birthLabel() {
     final date = birthDate;
-    if (date == null) return 'Date of birth';
+    if (date == null) return S.t('selectDate');
     const months = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December',
@@ -54,7 +55,7 @@ class _SignupScreenState extends State<SignupScreen> {
       initialDate: birthDate ?? last,
       firstDate: first,
       lastDate: last,
-      helpText: 'Date of birth',
+      helpText: S.t('dateOfBirth'),
     );
     if (selected != null) setState(() => birthDate = selected);
   }
@@ -93,10 +94,13 @@ class _SignupScreenState extends State<SignupScreen> {
         'password': password.text,
         'age': age,
         'birthDate': birthDate!.toIso8601String(),
+        'language': Session.language,
         'acceptedTerms': true,
       });
       Session.apply(Map<String, dynamic>.from(response.data['user'] as Map));
+      Session.language = Session.language == 'nl' ? 'nl' : 'en';
       if (response.data['token'] != null) Session.token = response.data['token'].toString();
+      await Session.save();
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
@@ -112,39 +116,39 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   InputDecoration field(String emoji, String label, {Widget? suffix}) {
-    return InputDecoration(
-      labelText: '$emoji  $label',
-      suffixIcon: suffix,
-    );
+    return InputDecoration(labelText: '$emoji  $label', suffixIcon: suffix);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create account')),
+      appBar: AppBar(title: Text(S.t('createAccount'))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           const Text('🤝', textAlign: TextAlign.center, style: TextStyle(fontSize: 42)),
           const SizedBox(height: 8),
-          const Text(
-            'Share what you know. Get what you need.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+          Text(S.t('welcomeLine1'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(S.t('welcomeLine2'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
-          const Text(
-            'A simple way to exchange skills without money.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.muted),
-          ),
+          Text(S.t('welcomeTag'), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 20),
-          TextField(controller: name, decoration: field('👤', 'Name')),
+          DropdownButtonFormField<String>(
+            initialValue: Session.language == 'nl' ? 'nl' : 'en',
+            decoration: InputDecoration(labelText: S.t('language')),
+            items: [
+              DropdownMenuItem(value: 'en', child: Text(S.t('english'))),
+              DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
+            ],
+            onChanged: (value) => setState(() => Session.language = value ?? 'en'),
+          ),
+          const SizedBox(height: 12),
+          TextField(controller: name, decoration: field('👤', S.t('name'))),
           const SizedBox(height: 12),
           TextField(
             controller: email,
             keyboardType: TextInputType.emailAddress,
-            decoration: field('✉️', 'Email'),
+            decoration: field('✉️', S.t('email')),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -152,7 +156,7 @@ class _SignupScreenState extends State<SignupScreen> {
             obscureText: !showPass,
             decoration: field(
               '🔑',
-              'Password',
+              S.t('password'),
               suffix: IconButton(
                 onPressed: () => setState(() => showPass = !showPass),
                 icon: Icon(showPass ? Icons.visibility_off : Icons.visibility),
@@ -165,7 +169,7 @@ class _SignupScreenState extends State<SignupScreen> {
             obscureText: !showConfirm,
             decoration: field(
               '🔐',
-              'Confirm password',
+              S.t('confirmPassword'),
               suffix: IconButton(
                 onPressed: () => setState(() => showConfirm = !showConfirm),
                 icon: Icon(showConfirm ? Icons.visibility_off : Icons.visibility),
@@ -176,17 +180,14 @@ class _SignupScreenState extends State<SignupScreen> {
           InkWell(
             onTap: pickBirthDate,
             child: InputDecorator(
-              decoration: const InputDecoration(
-                labelText: '📅  Date of birth',
-                helperText: '18 years or older',
-                suffixIcon: Icon(Icons.calendar_month),
+              decoration: InputDecoration(
+                labelText: '📅  ${S.t('dateOfBirth')}',
+                helperText: S.t('ageRule'),
+                suffixIcon: const Icon(Icons.calendar_month),
               ),
               child: Text(
-                birthDate == null ? 'Select date' : birthLabel(),
-                style: TextStyle(
-                  fontSize: 16,
-                  color: birthDate == null ? AppColors.muted : null,
-                ),
+                birthLabel(),
+                style: TextStyle(fontSize: 16, color: birthDate == null ? AppColors.muted : null),
               ),
             ),
           ),
@@ -195,14 +196,14 @@ class _SignupScreenState extends State<SignupScreen> {
             contentPadding: EdgeInsets.zero,
             value: accepted,
             onChanged: (value) => setState(() => accepted = value ?? false),
-            title: const Text('I have read and accept the terms and community rules.'),
+            title: Text(S.t('acceptTerms')),
             secondary: const Text('📜', style: TextStyle(fontSize: 22)),
           ),
           TextButton(
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()));
             },
-            child: const Text('Read the terms'),
+            child: Text(S.t('readTerms')),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -210,7 +211,7 @@ class _SignupScreenState extends State<SignupScreen> {
             child: ElevatedButton(
               onPressed: loading ? null : signup,
               style: AppTheme.solid(AppColors.green),
-              child: Text(loading ? 'Creating account…' : 'Create account', style: const TextStyle(color: Colors.white)),
+              child: Text(loading ? S.t('saving') : S.t('createAccount'), style: const TextStyle(color: Colors.white)),
             ),
           ),
         ],

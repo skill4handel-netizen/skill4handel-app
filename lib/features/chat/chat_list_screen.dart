@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/user_photo.dart';
 import '../profile/user_profile_screen.dart';
 import 'chat_screen.dart';
 import 'history_screen.dart';
@@ -83,11 +84,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       contentPadding: EdgeInsets.zero,
       leading: GestureDetector(
         onTap: () => openProfile(chat),
-        child: CircleAvatar(
-          backgroundColor: const Color(0xFFD7EBFF),
-          backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-          child: photo.isEmpty ? const Icon(Icons.person, color: AppColors.blue) : null,
-        ),
+        child: UserPhoto(url: photo, letter: name.isNotEmpty ? name[0] : '?'),
       ),
       title: GestureDetector(
         onTap: () => openProfile(chat),
@@ -124,7 +121,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
                 },
                 child: const Text('History'),
               ),

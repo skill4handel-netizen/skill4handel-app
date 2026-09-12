@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
@@ -52,17 +53,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() {});
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Photo could not be saved. Try a smaller image.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('photoError'))));
     }
   }
 
   Future<void> save() async {
     final parsedAge = int.tryParse(age.text.trim()) ?? 0;
-    if (parsedAge > 0 && parsedAge < 16) {
+    if (parsedAge > 0 && parsedAge < 18) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Skill4Handel is only for users 16 and older.')),
+        const SnackBar(content: Text('Skill4Handel is only for users 18 and older.')),
       );
       return;
     }
@@ -76,15 +75,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'needs': needs.text,
         'gender': gender,
         'age': parsedAge,
+        'language': Session.language,
       });
       final user = response.data is Map ? response.data['user'] : response.data;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
+      await Session.save();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('saved'))));
       setState(() {});
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not save profile')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('saveError'))));
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -106,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 48, 20, 24),
       children: [
-        const Text('Profile', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+        Text(S.t('profile'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
         Center(
           child: Stack(
@@ -135,18 +136,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        TextField(controller: name, decoration: const InputDecoration(labelText: 'Name')),
+        DropdownButtonFormField<String>(
+          initialValue: Session.language == 'nl' ? 'nl' : 'en',
+          decoration: InputDecoration(labelText: S.t('language')),
+          items: [
+            DropdownMenuItem(value: 'en', child: Text(S.t('english'))),
+            DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
+          ],
+          onChanged: (value) => setState(() => Session.language = value ?? 'en'),
+        ),
         const SizedBox(height: 12),
-        TextField(controller: city, decoration: const InputDecoration(labelText: 'City')),
+        TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'))),
+        const SizedBox(height: 12),
+        TextField(controller: city, decoration: InputDecoration(labelText: S.t('city'))),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: gender,
-          decoration: const InputDecoration(labelText: 'Gender'),
-          items: const [
-            DropdownMenuItem(value: 'female', child: Text('Female')),
-            DropdownMenuItem(value: 'male', child: Text('Male')),
-            DropdownMenuItem(value: 'other', child: Text('Other')),
-            DropdownMenuItem(value: 'prefer_not', child: Text('Prefer not to say')),
+          decoration: InputDecoration(labelText: S.t('gender')),
+          items: [
+            DropdownMenuItem(value: 'female', child: Text(S.t('female'))),
+            DropdownMenuItem(value: 'male', child: Text(S.t('male'))),
+            DropdownMenuItem(value: 'other', child: Text(S.t('other'))),
+            DropdownMenuItem(value: 'prefer_not', child: Text(S.t('preferNot'))),
           ],
           onChanged: (value) => setState(() => gender = value ?? 'prefer_not'),
         ),
@@ -154,24 +165,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextField(
           controller: age,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: 'Age', helperText: 'You must be 16 or older'),
+          decoration: InputDecoration(labelText: S.t('ageRule')),
         ),
         const SizedBox(height: 12),
-        TextField(controller: offers, decoration: const InputDecoration(labelText: 'Skills you offer')),
+        TextField(controller: offers, decoration: InputDecoration(labelText: S.t('skillsOffer'))),
         const SizedBox(height: 12),
-        TextField(controller: needs, decoration: const InputDecoration(labelText: 'Skills you need')),
+        TextField(controller: needs, decoration: InputDecoration(labelText: S.t('skillsNeed'))),
         const SizedBox(height: 20),
         SizedBox(
           height: 52,
           child: ElevatedButton(
             onPressed: saving ? null : save,
             style: AppTheme.solid(AppColors.green),
-            child: Text(saving ? 'Saving...' : 'Save', style: const TextStyle(color: Colors.white)),
+            child: Text(saving ? S.t('saving') : S.t('save'), style: const TextStyle(color: Colors.white)),
           ),
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: const Text('Dark mode'),
+          title: Text(S.t('darkMode')),
           value: Session.themeMode.value == ThemeMode.dark,
           onChanged: (value) {
             Session.themeMode.value = value ? ThemeMode.dark : ThemeMode.light;
@@ -182,24 +193,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen()));
           },
-          child: const Text('Blocked people'),
+          child: Text(S.t('blocked')),
         ),
         TextButton(
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()));
           },
-          child: const Text('Terms and rules'),
+          child: Text(S.t('terms')),
         ),
         TextButton(
           onPressed: () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
           },
-          child: const Text('Support'),
+          child: Text(S.t('support')),
         ),
         const SizedBox(height: 8),
         SizedBox(
           height: 52,
-          child: OutlinedButton(onPressed: logout, child: const Text('Log out')),
+          child: OutlinedButton(onPressed: logout, child: Text(S.t('logOut'))),
         ),
       ],
     );

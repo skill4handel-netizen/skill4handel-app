@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
-import '../profile/profile_screen.dart';
 import '../reviews/review_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,11 +12,13 @@ class HomeScreen extends StatefulWidget {
     this.onSearchTap,
     this.onChatTap,
     this.onWalletTap,
+    this.onProfileTap,
   });
 
   final VoidCallback? onSearchTap;
   final VoidCallback? onChatTap;
   final VoidCallback? onWalletTap;
+  final VoidCallback? onProfileTap;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -78,16 +80,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   List<Map<String, dynamic>> activityItems() {
     final items = <Map<String, dynamic>>[];
-
     for (final chat in chats) {
       final swap = chat['pendingSwap'];
       final status = swap is Map ? swap['status']?.toString() : '';
       if (chat['unread'] == true) {
-        items.add({
-          'title': chat['name'] ?? 'Member',
-          'reason': 'New message',
-          'chat': chat,
-        });
+        items.add({'title': chat['name'] ?? 'Member', 'reason': 'New message', 'chat': chat});
       }
       if (status == 'pending') {
         final mine = swap['proposedBy']?.toString() == Session.id.toString();
@@ -112,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     }
-
     for (final item in history) {
       final status = item['status']?.toString();
       if (status == 'completed' && !reviewedByMe(item)) {
@@ -152,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final photo = Session.photoUrl.trim();
+    final image = userPhoto(photo);
     final name = Session.name.isEmpty ? 'there' : Session.name;
     final offerSkills = skills();
     final live = activityItems();
@@ -199,8 +196,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       AspectRatio(
                         aspectRatio: 4 / 3,
-                        child: photo.isNotEmpty
-                            ? Image.network(photo, fit: BoxFit.cover)
+                        child: image != null
+                            ? Image(image: image, fit: BoxFit.cover)
                             : Container(
                                 color: AppColors.soft,
                                 child: Center(
@@ -236,12 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ],
                             const SizedBox(height: 8),
                             OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => ProfileScreen(userName: Session.name)),
-                                ).then((_) => refresh());
-                              },
+                              onPressed: widget.onProfileTap,
                               icon: const Icon(Icons.edit),
                               label: const Text('Edit profile'),
                             ),
@@ -307,10 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.soft,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(color: AppColors.soft, borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
             Icon(icon, color: AppColors.blue),

@@ -49,6 +49,7 @@ class _MainShellState extends State<MainShell> {
         onSearchTap: () => goTo(1),
         onChatTap: () => goTo(2),
         onWalletTap: () => goTo(3),
+        onProfileTap: () => goTo(4),
       ),
       const SearchScreen(),
       const ChatListScreen(),
