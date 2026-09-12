@@ -110,16 +110,34 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ).then((_) => loadAll());
   }
 
+  Future<void> deleteItem(Map item) async {
+    final chatId = item['id'] ?? item['chatId'];
+    if (chatId == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete this record?'),
+        content: const Text('The related conversation will be removed.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.delete('/chats/$chatId', queryParameters: {'userId': Session.id});
+      await loadAll();
+    } catch (_) {}
+  }
+
   Widget chip(String value, String label, IconData icon, Color color) {
     final selected = filter == value;
     return Padding(
       padding: const EdgeInsets.only(right: 8, bottom: 8),
       child: ChoiceChip(
         avatar: Icon(icon, size: 16, color: selected ? Colors.white : color),
-        label: Text(
-          label,
-          style: TextStyle(color: selected ? Colors.white : Colors.black, fontWeight: FontWeight.w800),
-        ),
+        label: Text(label, style: TextStyle(color: selected ? Colors.white : Colors.black, fontWeight: FontWeight.w800)),
         selected: selected,
         selectedColor: color,
         backgroundColor: color.withValues(alpha: 0.12),
@@ -161,14 +179,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             const SizedBox(height: 16),
             if (tab == 0) ...[
-              Wrap(
-                children: [
-                  chip('all', 'All', Icons.apps, AppColors.blue),
-                  chip('pending', 'Pending', Icons.hourglass_top, const Color(0xFFE3A008)),
-                  chip('open', 'Open', Icons.check_circle, AppColors.green),
-                  chip('closed', 'Closed', Icons.cancel, const Color(0xFFD92D20)),
-                ],
-              ),
+              Wrap(children: [
+                chip('all', 'All', Icons.apps, AppColors.blue),
+                chip('pending', 'Pending', Icons.hourglass_top, const Color(0xFFE3A008)),
+                chip('open', 'Open', Icons.check_circle, AppColors.green),
+                chip('closed', 'Closed', Icons.cancel, const Color(0xFFD92D20)),
+              ]),
               const SizedBox(height: 12),
               if (visible.isEmpty)
                 const Text('No items in this filter.', style: TextStyle(color: AppColors.muted))
@@ -187,25 +203,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          group == 'pending'
-                              ? 'Pending offer'
-                              : group == 'open'
-                                  ? 'Open session'
-                                  : item['status']?.toString() ?? '',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
+                        Text(item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member', style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Text(group == 'pending' ? 'Pending offer' : group == 'open' ? 'Open session' : item['status']?.toString() ?? ''),
                         if ((item['skillRequested'] ?? '').toString().isNotEmpty) Text('Requested: ${item['skillRequested']}'),
                         if ((item['skillOffered'] ?? '').toString().isNotEmpty) Text('In return: ${item['skillOffered']}'),
                         if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
                           Text(formatWhen(item['scheduledAt'] ?? item['when'])),
                         const SizedBox(height: 8),
-                        if (group != 'closed')
-                          TextButton(onPressed: () => openChat(item), child: const Text('Open chat')),
+                        Row(
+                          children: [
+                            if (group != 'closed') TextButton(onPressed: () => openChat(item), child: const Text('Open chat')),
+                            TextButton(onPressed: () => deleteItem(item), child: const Text('Delete')),
+                          ],
+                        ),
                         if (canReview)
                           ElevatedButton.icon(
                             onPressed: () => writeReview(item),
