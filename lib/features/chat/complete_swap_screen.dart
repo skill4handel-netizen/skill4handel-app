@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/skill_picker.dart';
 
 class CompleteSwapScreen extends StatefulWidget {
   const CompleteSwapScreen({
@@ -28,14 +27,13 @@ class CompleteSwapScreen extends StatefulWidget {
 
 class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   late final skillRequested = TextEditingController(text: widget.initialSkillRequested);
-  final skillOffered = TextEditingController();
   final extraTokens = TextEditingController();
   final location = TextEditingController();
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   String duration = '60';
   String mode = 'Online';
   String payMode = 'skill';
-  String selectedOffer = '';
+  String selectedSkill = '';
   List<String> otherSkills = [];
   bool acceptedQuality = false;
   bool working = false;
@@ -50,7 +48,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.isCounter) loadOtherSkills();
+    loadOtherSkills();
   }
 
   String apiError(Object error) {
@@ -88,29 +86,18 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
 
   String prettyWhen(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '${date.day} ${months[date.month - 1]} ${date.year}  •  $hour:$minute';
-  }
-
-  Future<void> chooseRequestedSkill() async {
-    final chosen = await pickSkill(context, alreadySelected: const []);
-    if (chosen != null) setState(() => skillRequested.text = chosen);
+    return '${date.day} ${months[date.month - 1]} ${date.year}  •  ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> submit() async {
-    final requested = widget.isCounter ? widget.initialSkillRequested.trim() : skillRequested.text.trim();
-    final offered = widget.isCounter ? selectedOffer : skillOffered.text.trim();
-    if (requested.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select the requested skill.')));
+    final requested = widget.isCounter ? widget.initialSkillRequested.trim() : selectedSkill;
+    final offered = widget.isCounter && useSkill ? selectedSkill : '';
+    if (!widget.isCounter && requested.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a skill from their list.')));
       return;
     }
-    if (useSkill && offered.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(widget.isCounter
-            ? 'Please select one skill from the original member’s list.'
-            : 'Please enter the skill offered in return.'),
-      ));
+    if (widget.isCounter && useSkill && offered.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a skill from their list.')));
       return;
     }
     if (useTokens && (int.tryParse(extraTokens.text) ?? 0) <= 0) {
@@ -124,9 +111,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       return;
     }
     if (!acceptedQuality) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')));
       return;
     }
     setState(() => working = true);
@@ -210,18 +195,17 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 6),
           Text(
             widget.isCounter
-                ? 'The requested skill stays the same. Choose how you want to respond.'
-                : 'Choose what you ask for, what you give, and when you can meet.',
+                ? 'The requested skill stays the same. Choose one skill from their list, or use tokens or volunteer assistance.'
+                : 'Select the skill you need from their list.',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
-          typeCard('skill', Icons.swap_horiz, 'Skill for skill', 'Exchange one skill for another'),
-          typeCard('both', Icons.toll, 'Skill and tokens', 'A skill plus S4H tokens'),
-          typeCard('tokens', Icons.account_balance_wallet_outlined, 'Tokens only', 'Pay with S4H tokens'),
-          if (widget.isCounter)
+          if (widget.isCounter) ...[
+            typeCard('skill', Icons.swap_horiz, 'Skill from their list', 'Ask for one of their skills in return'),
+            typeCard('both', Icons.toll, 'Skill and tokens', 'A skill plus S4H tokens'),
+            typeCard('tokens', Icons.account_balance_wallet_outlined, 'Tokens only', 'Pay with S4H tokens'),
             typeCard('volunteer', Icons.volunteer_activism, 'Volunteer assistance', 'Do the requested skill with no return'),
-          const SizedBox(height: 8),
-          if (widget.isCounter)
+            const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(color: const Color(0xFFEAF4FF), borderRadius: BorderRadius.circular(16)),
@@ -243,40 +227,25 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                   ),
                 ],
               ),
-            )
-          else
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Skill you request', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(skillRequested.text.isEmpty ? 'Select from the list' : skillRequested.text),
-              trailing: const Icon(Icons.expand_more),
-              onTap: chooseRequestedSkill,
-            ),
-          if (useSkill && widget.isCounter) ...[
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: selectedOffer.isEmpty ? null : selectedOffer,
-              decoration: const InputDecoration(
-                labelText: 'Skill you ask from their list',
-                prefixIcon: Icon(Icons.list_alt),
-              ),
-              items: [for (final skill in otherSkills) DropdownMenuItem(value: skill, child: Text(skill))],
-              onChanged: (value) => setState(() => selectedOffer = value ?? ''),
-            ),
-          ] else if (useSkill) ...[
-            const SizedBox(height: 12),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Skill you offer in return', style: TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(skillOffered.text.isEmpty ? 'Select from the list' : skillOffered.text),
-              trailing: const Icon(Icons.expand_more),
-              onTap: () async {
-                final chosen = await pickSkill(context, alreadySelected: const []);
-                if (chosen != null) setState(() => skillOffered.text = chosen);
-              },
             ),
           ],
-          if (useTokens) ...[
+          if (!widget.isCounter || useSkill) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: otherSkills.contains(selectedSkill) ? selectedSkill : null,
+              decoration: InputDecoration(
+                labelText: widget.isCounter ? 'Skill you ask from their list' : 'Skill you need from their list',
+              ),
+              items: [for (final skill in otherSkills) DropdownMenuItem(value: skill, child: Text(skill))],
+              onChanged: (value) => setState(() => selectedSkill = value ?? ''),
+            ),
+            if (otherSkills.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text('This member has not listed skills to offer.', style: TextStyle(color: AppColors.muted)),
+              ),
+          ],
+          if (widget.isCounter && useTokens) ...[
             const SizedBox(height: 12),
             TextField(
               controller: extraTokens,

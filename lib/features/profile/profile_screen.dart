@@ -26,7 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   late final name = TextEditingController(text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''));
   late final city = TextEditingController(text: Session.city);
-  late final age = TextEditingController(text: Session.age > 0 ? '${Session.age}' : '');
   String gender = Session.gender.isNotEmpty ? Session.gender : 'prefer_not';
   late List<String> selectedSkills = Session.offers
       .split(RegExp(r'[,/]'))
@@ -97,13 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> save() async {
-    final parsedAge = int.tryParse(age.text.trim()) ?? 0;
-    if (parsedAge > 0 && parsedAge < 18) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Skill4Handel is only for users 18 and older.')),
-      );
-      return;
-    }
     setState(() => saving = true);
     try {
       final response = await dio.post('/auth/profile', data: {
@@ -113,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'offers': selectedSkills.join(', '),
         'needs': '',
         'gender': gender,
-        'age': parsedAge,
+        'age': Session.age,
         'language': Session.language,
       });
       final user = response.data is Map ? response.data['user'] : response.data;
@@ -203,10 +195,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onChanged: (value) => setState(() => gender = value ?? 'prefer_not'),
         ),
         const SizedBox(height: 12),
-        TextField(
-          controller: age,
-          keyboardType: TextInputType.number,
+        InputDecorator(
           decoration: InputDecoration(labelText: S.t('ageRule')),
+          child: Text(
+            Session.age > 0 ? '${Session.age}' : 'Set at registration',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
         ),
         const SizedBox(height: 16),
         Text(S.t('skillsOffer'), style: const TextStyle(fontWeight: FontWeight.w800)),
