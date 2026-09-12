@@ -52,6 +52,14 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     if (widget.isCounter) loadOtherSkills();
   }
 
+  String apiError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) return data['message'].toString();
+    }
+    return 'The request could not be sent.';
+  }
+
   Future<void> loadOtherSkills() async {
     if (widget.otherId == 0) return;
     try {
@@ -77,14 +85,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     setState(() => when = next.isBefore(min) ? min : next);
   }
 
-  String earliestLabel() {
-    final min = minWhen;
-    return '${min.day} ${_month(min.month)} ${min.year}, ${TimeOfDay.fromDateTime(min).format(context)}';
-  }
-
-  String _month(int month) {
+  String prettyWhen(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '${date.day} ${months[date.month - 1]} ${date.year}  •  $hour:$minute';
   }
 
   Future<void> submit() async {
@@ -108,7 +113,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     }
     if (when == null || when!.isBefore(minWhen)) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(widget.isCounter ? 'Please select a date and time.' : 'The earliest available time is 24 hours from now.'),
+        content: Text(widget.isCounter ? 'Please select a date and time.' : 'Please choose a time at least 24 hours from now.'),
       ));
       return;
     }
@@ -137,76 +142,120 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
     } finally {
       if (mounted) setState(() => working = false);
     }
   }
 
+  Widget typeCard(String value, IconData icon, String title, String subtitle) {
+    final selected = payMode == value;
+    return InkWell(
+      onTap: () => setState(() => payMode = value),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFE8F8EF) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: selected ? AppColors.green : const Color(0xFFE4E7EC)),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: selected ? AppColors.green : AppColors.soft,
+              child: Icon(icon, color: selected ? Colors.white : AppColors.blue),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                ],
+              ),
+            ),
+            Icon(selected ? Icons.check_circle : Icons.circle_outlined, color: selected ? AppColors.green : Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final types = <DropdownMenuItem<String>>[
-      const DropdownMenuItem(value: 'skill', child: Text('Skill for skill')),
-      const DropdownMenuItem(value: 'both', child: Text('Skill and S4H tokens')),
-      const DropdownMenuItem(value: 'tokens', child: Text('S4H tokens only')),
-      if (widget.isCounter) const DropdownMenuItem(value: 'volunteer', child: Text('Volunteer assistance')),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
-        title: Text(widget.isCounter ? 'Counter-offer to ${widget.otherName}' : 'Offer to ${widget.otherName}'),
+        title: Text(widget.isCounter ? 'Counter-offer' : 'New offer'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
         children: [
           Text(
+            widget.isCounter ? 'Reply to ${widget.otherName}' : 'Offer to ${widget.otherName}',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          Text(
             widget.isCounter
-                ? 'The original requested skill stays the same. You may accept it as volunteer assistance, or choose one skill from the other member’s list, with or without tokens.'
-                : 'Select the terms of the exchange. The meeting must be scheduled at least 24 hours from now.',
+                ? 'The requested skill stays the same. Choose how you want to respond.'
+                : 'Choose what you ask for, what you give, and when you can meet.',
+            style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: payMode,
-            decoration: const InputDecoration(labelText: 'Exchange type'),
-            items: types,
-            onChanged: (value) => setState(() => payMode = value ?? 'skill'),
-          ),
-          const SizedBox(height: 12),
+          typeCard('skill', Icons.swap_horiz, 'Skill for skill', 'Exchange one skill for another'),
+          typeCard('both', Icons.toll, 'Skill and tokens', 'A skill plus S4H tokens'),
+          typeCard('tokens', Icons.account_balance_wallet_outlined, 'Tokens only', 'Pay with S4H tokens'),
           if (widget.isCounter)
-            InputDecorator(
-              decoration: const InputDecoration(labelText: 'Requested skill'),
-              child: Text(
-                widget.initialSkillRequested.isEmpty ? '—' : widget.initialSkillRequested,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+            typeCard('volunteer', Icons.volunteer_activism, 'Volunteer assistance', 'Do the requested skill with no return'),
+          const SizedBox(height: 8),
+          if (widget.isCounter)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(color: const Color(0xFFEAF4FF), borderRadius: BorderRadius.circular(16)),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline, color: AppColors.blue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Requested skill', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                        Text(
+                          widget.initialSkillRequested.isEmpty ? '—' : widget.initialSkillRequested,
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             )
           else
             TextField(
               controller: skillRequested,
-              decoration: const InputDecoration(labelText: 'Requested skill'),
+              decoration: const InputDecoration(labelText: 'Skill you request', prefixIcon: Icon(Icons.flag_outlined)),
             ),
           if (useSkill && widget.isCounter) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: selectedOffer.isEmpty ? null : selectedOffer,
-              decoration: const InputDecoration(labelText: 'Skill you ask from their list'),
-              items: [
-                for (final skill in otherSkills) DropdownMenuItem(value: skill, child: Text(skill)),
-              ],
+              decoration: const InputDecoration(
+                labelText: 'Skill you ask from their list',
+                prefixIcon: Icon(Icons.list_alt),
+              ),
+              items: [for (final skill in otherSkills) DropdownMenuItem(value: skill, child: Text(skill))],
               onChanged: (value) => setState(() => selectedOffer = value ?? ''),
             ),
-            if (otherSkills.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text('This member has not listed skills to offer.', style: TextStyle(color: AppColors.muted)),
-              ),
           ] else if (useSkill) ...[
             const SizedBox(height: 12),
             TextField(
               controller: skillOffered,
-              decoration: const InputDecoration(labelText: 'Skill offered in return'),
+              decoration: const InputDecoration(labelText: 'Skill you offer in return', prefixIcon: Icon(Icons.handshake_outlined)),
             ),
           ],
           if (useTokens) ...[
@@ -214,52 +263,78 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             TextField(
               controller: extraTokens,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'S4H tokens (maximum 10 per hour)'),
+              decoration: const InputDecoration(labelText: 'S4H tokens (1–10)', prefixIcon: Icon(Icons.toll)),
             ),
           ],
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: const Text('Date and time', style: TextStyle(fontWeight: FontWeight.w700)),
-            subtitle: Text(
-              when == null
-                  ? (widget.isCounter ? 'Not set' : 'Not set. Earliest available: ${earliestLabel()}')
-                  : '${MaterialLocalizations.of(context).formatMediumDate(when!)}, ${TimeOfDay.fromDateTime(when!).format(context)}',
-            ),
-            trailing: const Icon(Icons.calendar_today_outlined),
+          const SizedBox(height: 12),
+          InkWell(
             onTap: pickWhen,
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: duration,
-            decoration: const InputDecoration(labelText: 'Duration (minutes)'),
-            items: const [
-              DropdownMenuItem(value: '30', child: Text('30')),
-              DropdownMenuItem(value: '60', child: Text('60')),
-              DropdownMenuItem(value: '90', child: Text('90')),
-            ],
-            onChanged: (value) => setState(() => duration = value ?? '60'),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFFE4E7EC)),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_available, color: AppColors.blue),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      when == null
+                          ? (widget.isCounter ? 'Choose date and time' : 'Choose a time at least 24 hours from now')
+                          : prettyWhen(when!),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: when == null ? AppColors.muted : null),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: mode,
-            decoration: const InputDecoration(labelText: 'Mode'),
-            items: const [
-              DropdownMenuItem(value: 'Online', child: Text('Online')),
-              DropdownMenuItem(value: 'In person', child: Text('In person')),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: duration,
+                  decoration: const InputDecoration(labelText: 'Minutes'),
+                  items: const [
+                    DropdownMenuItem(value: '30', child: Text('30')),
+                    DropdownMenuItem(value: '60', child: Text('60')),
+                    DropdownMenuItem(value: '90', child: Text('90')),
+                  ],
+                  onChanged: (value) => setState(() => duration = value ?? '60'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: mode,
+                  decoration: const InputDecoration(labelText: 'How'),
+                  items: const [
+                    DropdownMenuItem(value: 'Online', child: Text('Online')),
+                    DropdownMenuItem(value: 'In person', child: Text('In person')),
+                  ],
+                  onChanged: (value) => setState(() => mode = value ?? 'Online'),
+                ),
+              ),
             ],
-            onChanged: (value) => setState(() => mode = value ?? 'Online'),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: location,
-            decoration: InputDecoration(labelText: mode == 'Online' ? 'Meeting link or note' : 'Meeting place'),
+            decoration: InputDecoration(
+              labelText: mode == 'Online' ? 'Link or note' : 'Meeting place',
+              prefixIcon: Icon(mode == 'Online' ? Icons.link : Icons.place_outlined),
+            ),
           ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: acceptedQuality,
             onChanged: (value) => setState(() => acceptedQuality = value ?? false),
-            title: const Text('I understand that the quality and outcome of this exchange are the responsibility of the parties.'),
+            title: const Text('I accept responsibility for the quality of this exchange.'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           SizedBox(
             height: 52,
             child: ElevatedButton(

@@ -43,6 +43,14 @@ class _ChatScreenState extends State<ChatScreen> {
     openChat();
   }
 
+  String apiError(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map && data['message'] != null) return data['message'].toString();
+    }
+    return 'The request could not be completed.';
+  }
+
   void applyChat(dynamic data) {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
     pendingSwap = data['pendingSwap'] is Map ? Map<String, dynamic>.from(data['pendingSwap'] as Map) : null;
@@ -68,7 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
         final response = await dio.get('/chats/$chatId', queryParameters: {'userId': Session.id});
         applyChat(response.data);
       }
-    } catch (e) {
+    } catch (_) {
       messages = [];
     }
     if (mounted) setState(() => loading = false);
@@ -79,9 +87,16 @@ class _ChatScreenState extends State<ChatScreen> {
     if (parsed == null) return '';
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final local = parsed.toLocal();
-    final hour = local.hour.toString().padLeft(2, '0');
-    final minute = local.minute.toString().padLeft(2, '0');
-    return '${local.day} ${months[local.month - 1]} ${local.year}, $hour:$minute';
+    return '${local.day} ${months[local.month - 1]} ${local.year}, ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  DateTime? get scheduledAt {
+    return DateTime.tryParse('${pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? ''}');
+  }
+
+  bool get timeReached {
+    final time = scheduledAt;
+    return time != null && !time.isAfter(DateTime.now());
   }
 
   List<String> counterChanges() {
@@ -94,8 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final right = (b ?? '—').toString();
       if (left != right) changes.add('$label: $left → $right');
     }
-
-    add('Offered', previous['skillOffered'], current['skillOffered']);
+    add('Return skill', previous['skillOffered'], current['skillOffered']);
     add('Tokens', previous['extraTokens'], current['extraTokens']);
     add('Duration', previous['duration'], current['duration']);
     add('Mode', previous['mode'], current['mode']);
@@ -126,9 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> reportUser() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => SupportScreen(initialType: 'report', initialOtherName: widget.name),
-      ),
+      MaterialPageRoute(builder: (context) => SupportScreen(initialType: 'report', initialOtherName: widget.name)),
     );
   }
 
@@ -148,13 +160,11 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       await dio.post('/auth/block', data: {'userId': Session.id, 'otherId': widget.otherId});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The member has been blocked and will no longer appear in matches or chat.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This member has been blocked.')));
       Navigator.pop(context);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The member could not be blocked.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
     }
   }
 
@@ -165,7 +175,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       final response = await dio.post('/chats/$chatId/messages', data: {'fromId': Session.id, 'text': text});
       setState(() => applyChat(response.data));
-    } catch (e) {
+    } catch (_) {
       setState(() => messages.add({'type': 'text', 'fromId': Session.id, 'text': text}));
     }
   }
@@ -197,7 +207,7 @@ class _ChatScreenState extends State<ChatScreen> {
       await openChat();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
     } finally {
       if (mounted) setState(() => working = false);
     }
@@ -212,7 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
       await openChat();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
     } finally {
       if (mounted) setState(() => working = false);
     }
@@ -220,6 +230,12 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> markDone() async {
     if (chatId == null) return;
+    if (!timeReached) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Completion can be confirmed after ${formatWhen(scheduledAt)}.')),
+      );
+      return;
+    }
     setState(() => working = true);
     try {
       final chat = await dio.post('/chats/$chatId/swap/done', data: {'userId': Session.id});
@@ -228,7 +244,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (completed && !iAlreadyReviewed) await writeReview();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
     } finally {
       if (mounted) setState(() => working = false);
     }
@@ -242,7 +258,6 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       return;
     }
-    if (widget.otherId == 0) return;
     final saved = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -261,43 +276,82 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool get pending => pendingSwap?['status']?.toString() == 'pending';
   bool get accepted => pendingSwap?['status']?.toString() == 'accepted';
-  bool get completed {
-    if (pendingSwap?['status']?.toString() == 'completed') return true;
-    return lastCompleted != null;
-  }
-
+  bool get completed => pendingSwap?['status']?.toString() == 'completed' || lastCompleted != null;
   bool get iProposed => pendingSwap?['proposedBy']?.toString() == Session.id.toString();
   bool get iAlreadyDone {
     final doneBy = pendingSwap?['doneBy'] ?? lastCompleted?['doneBy'];
-    if (doneBy is! List) return false;
-    return doneBy.any((item) => item.toString() == Session.id.toString());
+    return doneBy is List && doneBy.any((item) => item.toString() == Session.id.toString());
   }
-
   bool get iAlreadyReviewed {
     final reviewedBy = pendingSwap?['reviewedBy'] ?? lastCompleted?['reviewedBy'];
-    if (reviewedBy is! List) return false;
-    return reviewedBy.any((item) => item.toString() == Session.id.toString());
+    return reviewedBy is List && reviewedBy.any((item) => item.toString() == Session.id.toString());
+  }
+
+  Widget infoRow(IconData icon, String label, String value) {
+    if (value.trim().isEmpty || value == '—') return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.blue),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(color: AppColors.text, fontSize: 14),
+                children: [
+                  TextSpan(text: '$label  ', style: const TextStyle(color: AppColors.muted)),
+                  TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color statusColor() {
+    if (accepted) return const Color(0xFF067647);
+    if (pending) return const Color(0xFFB54708);
+    return AppColors.blue;
+  }
+
+  String statusLabel() {
+    if (accepted && !timeReached) return 'Agreed  •  waiting for the scheduled time';
+    if (accepted && iAlreadyDone) return 'You confirmed  •  waiting for the other member';
+    if (accepted) return 'Agreed  •  ready after the scheduled time';
+    if (pending && iProposed) return 'Sent  •  waiting for a reply';
+    if (pending) return 'New offer  •  reply below';
+    return (pendingSwap?['status'] ?? '').toString();
   }
 
   @override
   Widget build(BuildContext context) {
-    String buttonText = 'Submit offer';
+    String buttonText = 'Create offer';
     VoidCallback? onPressed = working ? null : () => startOffer();
     if (completed && !iAlreadyReviewed) {
-      buttonText = 'Submit review';
+      buttonText = 'Write review';
       onPressed = working ? null : writeReview;
     } else if (completed && iAlreadyReviewed) {
       buttonText = 'Review submitted';
       onPressed = null;
+    } else if (accepted && !timeReached) {
+      buttonText = 'Available after ${formatWhen(scheduledAt)}';
+      onPressed = null;
     } else if (accepted) {
-      buttonText = iAlreadyDone ? 'Awaiting the other party' : 'Confirm completion';
+      buttonText = iAlreadyDone ? 'Waiting for the other member' : 'Confirm completion';
       onPressed = iAlreadyDone || working ? null : markDone;
     } else if (pending) {
-      buttonText = iProposed ? 'Awaiting a response' : 'Respond above';
+      buttonText = iProposed ? 'Waiting for a reply' : 'Use the buttons on the offer';
       onPressed = null;
     }
 
     final photo = widget.photoUrl?.trim() ?? '';
+    final requested = pendingSwap?['skillRequested']?.toString() ?? '';
+    final offered = pendingSwap?['skillOffered']?.toString() ?? '';
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.blue,
@@ -321,9 +375,7 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(onPressed: blockUser, icon: const Icon(Icons.block)),
           IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
           IconButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
-            },
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())),
             icon: const Icon(Icons.history),
           ),
         ],
@@ -336,9 +388,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
                     children: [
-                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('View profile'))),
+                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Profile'))),
                       const SizedBox(width: 8),
-                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('View reviews'))),
+                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Reviews'))),
                     ],
                   ),
                 ),
@@ -347,35 +399,75 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: const Color(0xFFEAF4FF), borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE4E7EC)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '${pendingSwap?['proposedByName'] ?? Session.name} requested ${pendingSwap?['skillRequested'] ?? ''}',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: statusColor().withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(statusLabel(), style: TextStyle(color: statusColor(), fontWeight: FontWeight.w800)),
                         ),
-                        const SizedBox(height: 6),
-                        Text('Offered: ${(pendingSwap?['skillOffered'] ?? '').toString().isEmpty ? '—' : pendingSwap?['skillOffered']}'),
-                        if ((pendingSwap?['extraTokens'] ?? 0).toString() != '0') Text('Tokens: ${pendingSwap?['extraTokens']}'),
-                        if ((pendingSwap?['scheduledAt'] ?? pendingSwap?['when'] ?? '').toString().isNotEmpty)
-                          Text('Scheduled: ${formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when'])}'),
-                        Text('${pendingSwap?['duration'] ?? ''} min • ${pendingSwap?['mode'] ?? ''} • ${pendingSwap?['level'] ?? ''}'),
-                        Text('Status: ${pendingSwap?['status']}'),
+                        const SizedBox(height: 12),
+                        infoRow(Icons.flag_outlined, 'They request', requested),
+                        infoRow(Icons.handshake_outlined, 'In return', offered.isEmpty ? 'Volunteer / no return skill' : offered),
+                        infoRow(Icons.toll, 'Tokens', '${pendingSwap?['extraTokens'] ?? 0}'),
+                        infoRow(Icons.schedule, 'When', formatWhen(pendingSwap?['scheduledAt'] ?? pendingSwap?['when'])),
+                        infoRow(Icons.timer_outlined, 'Length', '${pendingSwap?['duration'] ?? ''} min'),
+                        infoRow(modeIcon(), 'How', '${pendingSwap?['mode'] ?? ''}'),
                         if (counterChanges().isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          const Text('Changed in this counter-offer', style: TextStyle(fontWeight: FontWeight.w800)),
-                          for (final line in counterChanges()) Text(line),
+                          const Divider(),
+                          const Text('What changed', style: TextStyle(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 6),
+                          for (final line in counterChanges())
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.change_circle_outlined, size: 16, color: AppColors.green),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: Text(line)),
+                                ],
+                              ),
+                            ),
                         ],
                         if (pending && iProposed)
-                          TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel offer')),
+                          TextButton(onPressed: working ? null : cancelOffer, child: const Text('Cancel this offer')),
                         if (pending && !iProposed)
-                          Row(
-                            children: [
-                              TextButton(onPressed: working ? null : () => respond('accepted'), child: const Text('Accept')),
-                              TextButton(onPressed: working ? null : () => startOffer(isCounter: true), child: const Text('Counter-offer')),
-                              TextButton(onPressed: working ? null : () => respond('rejected'), child: const Text('Decline')),
-                            ],
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: working ? null : () => respond('accepted'),
+                                    style: AppTheme.solid(AppColors.green),
+                                    child: const Text('Accept', style: TextStyle(color: Colors.white)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: working ? null : () => startOffer(isCounter: true),
+                                    child: const Text('Counter'),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: working ? null : () => respond('rejected'),
+                                    child: const Text('Decline'),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                       ],
                     ),
@@ -415,7 +507,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: ElevatedButton(
                       onPressed: onPressed,
                       style: AppTheme.solid(onPressed == null ? Colors.grey : AppColors.green),
-                      child: Text(buttonText, style: const TextStyle(color: Colors.white)),
+                      child: Text(buttonText, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)),
                     ),
                   ),
                 ),
@@ -448,5 +540,9 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             ),
     );
+  }
+
+  IconData modeIcon() {
+    return pendingSwap?['mode']?.toString() == 'In person' ? Icons.place_outlined : Icons.videocam_outlined;
   }
 }
