@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/skill_picker.dart';
 
 class CompleteSwapScreen extends StatefulWidget {
   const CompleteSwapScreen({
@@ -92,11 +93,16 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     return '${date.day} ${months[date.month - 1]} ${date.year}  •  $hour:$minute';
   }
 
+  Future<void> chooseRequestedSkill() async {
+    final chosen = await pickSkill(context, alreadySelected: const []);
+    if (chosen != null) setState(() => skillRequested.text = chosen);
+  }
+
   Future<void> submit() async {
     final requested = widget.isCounter ? widget.initialSkillRequested.trim() : skillRequested.text.trim();
     final offered = widget.isCounter ? selectedOffer : skillOffered.text.trim();
     if (requested.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The requested skill is missing.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select the requested skill.')));
       return;
     }
     if (useSkill && offered.isEmpty) {
@@ -118,7 +124,9 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       return;
     }
     if (!acceptedQuality) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please confirm responsibility for the quality of the work.')),
+      );
       return;
     }
     setState(() => working = true);
@@ -186,13 +194,14 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: AppColors.blue,
         foregroundColor: Colors.white,
         title: Text(widget.isCounter ? 'Counter-offer' : 'New offer'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
           Text(
             widget.isCounter ? 'Reply to ${widget.otherName}' : 'Offer to ${widget.otherName}',
@@ -236,9 +245,12 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               ),
             )
           else
-            TextField(
-              controller: skillRequested,
-              decoration: const InputDecoration(labelText: 'Skill you request', prefixIcon: Icon(Icons.flag_outlined)),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Skill you request', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(skillRequested.text.isEmpty ? 'Select from the list' : skillRequested.text),
+              trailing: const Icon(Icons.expand_more),
+              onTap: chooseRequestedSkill,
             ),
           if (useSkill && widget.isCounter) ...[
             const SizedBox(height: 12),
@@ -253,9 +265,15 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             ),
           ] else if (useSkill) ...[
             const SizedBox(height: 12),
-            TextField(
-              controller: skillOffered,
-              decoration: const InputDecoration(labelText: 'Skill you offer in return', prefixIcon: Icon(Icons.handshake_outlined)),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Skill you offer in return', style: TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(skillOffered.text.isEmpty ? 'Select from the list' : skillOffered.text),
+              trailing: const Icon(Icons.expand_more),
+              onTap: () async {
+                final chosen = await pickSkill(context, alreadySelected: const []);
+                if (chosen != null) setState(() => skillOffered.text = chosen);
+              },
             ),
           ],
           if (useTokens) ...[
@@ -284,7 +302,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                       when == null
                           ? (widget.isCounter ? 'Choose date and time' : 'Choose a time at least 24 hours from now')
                           : prettyWhen(when!),
-                      style: TextStyle(fontWeight: FontWeight.w700, color: when == null ? AppColors.muted : null),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: when == null ? AppColors.muted : Colors.black),
                     ),
                   ),
                 ],

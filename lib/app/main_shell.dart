@@ -54,7 +54,7 @@ class _MainShellState extends State<MainShell> {
       const SearchScreen(),
       const ChatListScreen(),
       const WalletScreen(),
-      ProfileScreen(userName: widget.userName),
+      ProfileScreen(userName: widget.userName, onSaved: () => goTo(0)),
       const SupportScreen(),
     ];
 

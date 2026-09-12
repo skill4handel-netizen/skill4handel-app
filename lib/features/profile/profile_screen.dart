@@ -3,17 +3,20 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/session.dart';
+import '../../core/constants/skills.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/skill_picker.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
 import '../chat/blocked_screen.dart';
 import '../support/support_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, this.userName});
+  const ProfileScreen({super.key, this.userName, this.onSaved});
 
   final String? userName;
+  final VoidCallback? onSaved;
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -23,11 +26,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   late final name = TextEditingController(text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''));
   late final city = TextEditingController(text: Session.city);
-  late final offers = TextEditingController(text: Session.offers);
-  late final needs = TextEditingController(text: Session.needs);
   late final age = TextEditingController(text: Session.age > 0 ? '${Session.age}' : '');
   String gender = Session.gender.isNotEmpty ? Session.gender : 'prefer_not';
+  late List<String> selectedSkills = Session.offers
+      .split(RegExp(r'[,/]'))
+      .map((item) => item.trim())
+      .where((item) => item.isNotEmpty)
+      .toList();
   bool saving = false;
+
+  int get customCount => selectedSkills.where((item) => !allowedSkills.contains(item)).length;
 
   ImageProvider? photoOf(String url) {
     if (url.isEmpty) return null;
@@ -42,7 +50,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> pickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 45, maxWidth: 600);
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Take a photograph'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final picked = await ImagePicker().pickImage(source: source, imageQuality: 45, maxWidth: 600);
     if (picked == null) return;
     final bytes = await picked.readAsBytes();
     final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
@@ -55,6 +84,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('photoError'))));
     }
+  }
+
+  Future<void> addSkill() async {
+    if (selectedSkills.length >= 10) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You may select up to 10 skills.')));
+      return;
+    }
+    final chosen = await pickSkill(context, alreadySelected: selectedSkills);
+    if (chosen == null || selectedSkills.contains(chosen)) return;
+    setState(() => selectedSkills.add(chosen));
   }
 
   Future<void> save() async {
@@ -71,18 +110,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'id': Session.id,
         'name': name.text,
         'city': city.text,
-        'offers': offers.text,
-        'needs': needs.text,
+        'offers': selectedSkills.join(', '),
+        'needs': '',
         'gender': gender,
         'age': parsedAge,
         'language': Session.language,
       });
       final user = response.data is Map ? response.data['user'] : response.data;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
+      Session.offers = selectedSkills.join(', ');
+      Session.needs = '';
       await Session.save();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('saved'))));
-      setState(() {});
+      widget.onSaved?.call();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('saveError'))));
@@ -105,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final photo = photoOf(Session.photoUrl);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 48, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 40),
       children: [
         Text(S.t('profile'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
@@ -167,10 +208,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
           keyboardType: TextInputType.number,
           decoration: InputDecoration(labelText: S.t('ageRule')),
         ),
-        const SizedBox(height: 12),
-        TextField(controller: offers, decoration: InputDecoration(labelText: S.t('skillsOffer'))),
-        const SizedBox(height: 12),
-        TextField(controller: needs, decoration: InputDecoration(labelText: S.t('skillsNeed'))),
+        const SizedBox(height: 16),
+        Text(S.t('skillsOffer'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 6),
+        Text(
+          'Choose up to 10 categories. Up to 3 may be written as Other. Custom: $customCount/3',
+          style: const TextStyle(color: AppColors.muted),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          children: [
+            for (final skill in selectedSkills)
+              Padding(
+                padding: const EdgeInsets.only(right: 8, bottom: 8),
+                child: InputChip(
+                  label: Text(skill),
+                  onDeleted: () => setState(() => selectedSkills.remove(skill)),
+                ),
+              ),
+          ],
+        ),
+        OutlinedButton.icon(
+          onPressed: addSkill,
+          icon: const Icon(Icons.add),
+          label: Text(selectedSkills.length >= 10 ? 'Limit reached' : 'Add a skill'),
+        ),
         const SizedBox(height: 20),
         SizedBox(
           height: 52,
