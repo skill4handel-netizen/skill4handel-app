@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/safe_places.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/theme/app_theme.dart';
@@ -146,6 +147,48 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) => refresh());
   }
 
+  void showPlace(SafePlace place) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.network(
+                  place.photoUrl,
+                  height: 160,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stack) => Container(height: 120, color: AppColors.soft),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(place.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(place.kind, style: const TextStyle(color: AppColors.blue, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 8),
+              Text(place.details),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.place, color: AppColors.coral),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(place.address, style: const TextStyle(fontWeight: FontWeight.w700))),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final photo = Session.photoUrl.trim();
@@ -272,6 +315,56 @@ class _HomeScreenState extends State<HomeScreen> {
                       }),
                     ),
                   ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  Session.city.isEmpty ? 'Safe public places' : 'Safe public places in ${Session.city}',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 196,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final place in safePlacesFor(Session.city))
+                        GestureDetector(
+                          onTap: () => showPlace(place),
+                          child: Container(
+                            width: 220,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: AppTheme.card(),
+                            clipBehavior: Clip.antiAlias,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Image.network(
+                                  place.photoUrl,
+                                  height: 110,
+                                  width: 220,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stack) => Container(
+                                    height: 110,
+                                    color: AppColors.soft,
+                                    child: const Icon(Icons.location_city, color: AppColors.blue, size: 40),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(place.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                                      Text(place.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
