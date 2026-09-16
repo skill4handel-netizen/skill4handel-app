@@ -19,45 +19,33 @@ class _SignupScreenState extends State<SignupScreen> {
   final email = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
-  DateTime? birthDate;
+  int? year;
+  int? month;
+  int? day;
   bool accepted = false;
   bool showPass = false;
   bool showConfirm = false;
   bool loading = false;
+
+  DateTime? get birthDate {
+    if (year == null || month == null || day == null) return null;
+    final last = DateTime(year!, month! + 1, 0).day;
+    final safeDay = day! > last ? last : day!;
+    return DateTime(year!, month!, safeDay);
+  }
+
+  int daysInMonth() {
+    if (year == null || month == null) return 31;
+    return DateTime(year!, month! + 1, 0).day;
+  }
 
   int? ageFromBirth() {
     final date = birthDate;
     if (date == null) return null;
     final now = DateTime.now();
     var age = now.year - date.year;
-    if (now.month < date.month || (now.month == date.month && now.day < date.day)) {
-      age -= 1;
-    }
+    if (now.month < date.month || (now.month == date.month && now.day < date.day)) age -= 1;
     return age;
-  }
-
-  String birthLabel() {
-    final date = birthDate;
-    if (date == null) return S.t('selectDate');
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  Future<void> pickBirthDate() async {
-    final now = DateTime.now();
-    final last = DateTime(now.year - 18, now.month, now.day);
-    final first = DateTime(now.year - 100, 1, 1);
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: birthDate ?? last,
-      firstDate: first,
-      lastDate: last,
-      helpText: S.t('dateOfBirth'),
-    );
-    if (selected != null) setState(() => birthDate = selected);
   }
 
   Future<void> signup() async {
@@ -98,7 +86,6 @@ class _SignupScreenState extends State<SignupScreen> {
         'acceptedTerms': true,
       });
       Session.apply(Map<String, dynamic>.from(response.data['user'] as Map));
-      Session.language = Session.language == 'nl' ? 'nl' : 'en';
       if (response.data['token'] != null) Session.token = response.data['token'].toString();
       await Session.save();
       if (!mounted) return;
@@ -115,21 +102,23 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
-  InputDecoration field(String emoji, String label, {Widget? suffix}) {
-    return InputDecoration(labelText: '$emoji  $label', suffixIcon: suffix);
-  }
-
   @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
+    final now = DateTime.now();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     return Scaffold(
-      appBar: AppBar(title: Text(S.t('createAccount'))),
+      appBar: AppBar(
+        title: Text(S.t('createAccount')),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
           const Text('🤝', textAlign: TextAlign.center, style: TextStyle(fontSize: 42)),
           const SizedBox(height: 8),
-          Text(S.t('welcomeLine1'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
-          Text(S.t('welcomeLine2'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(S.t('welcomeLine1'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(S.t('welcomeLine2'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
           Text(S.t('welcomeTag'), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 20),
@@ -143,75 +132,80 @@ class _SignupScreenState extends State<SignupScreen> {
             onChanged: (value) => setState(() => Session.language = value ?? 'en'),
           ),
           const SizedBox(height: 12),
-          TextField(controller: name, decoration: field('👤', S.t('name'))),
+          TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'), prefixIcon: const Icon(Icons.person))),
           const SizedBox(height: 12),
-          TextField(
-            controller: email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: field('✉️', S.t('email')),
-          ),
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: S.t('email'), prefixIcon: const Icon(Icons.email_outlined))),
           const SizedBox(height: 12),
           TextField(
             controller: password,
             obscureText: !showPass,
-            decoration: field(
-              '🔑',
-              S.t('password'),
-              suffix: IconButton(
-                onPressed: () => setState(() => showPass = !showPass),
-                icon: Icon(showPass ? Icons.visibility_off : Icons.visibility),
-              ),
+            decoration: InputDecoration(
+              labelText: S.t('password'),
+              prefixIcon: const Icon(Icons.key),
+              suffixIcon: IconButton(onPressed: () => setState(() => showPass = !showPass), icon: Icon(showPass ? Icons.visibility_off : Icons.visibility)),
             ),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: confirm,
             obscureText: !showConfirm,
-            decoration: field(
-              '🔐',
-              S.t('confirmPassword'),
-              suffix: IconButton(
-                onPressed: () => setState(() => showConfirm = !showConfirm),
-                icon: Icon(showConfirm ? Icons.visibility_off : Icons.visibility),
-              ),
+            decoration: InputDecoration(
+              labelText: S.t('confirmPassword'),
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(onPressed: () => setState(() => showConfirm = !showConfirm), icon: Icon(showConfirm ? Icons.visibility_off : Icons.visibility)),
             ),
           ),
-          const SizedBox(height: 12),
-          InkWell(
-            onTap: pickBirthDate,
-            child: InputDecorator(
-              decoration: InputDecoration(
-                labelText: '📅  ${S.t('dateOfBirth')}',
-                helperText: S.t('ageRule'),
-                suffixIcon: const Icon(Icons.calendar_month),
+          const SizedBox(height: 16),
+          const Text('Date of birth', style: TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  initialValue: day,
+                  decoration: const InputDecoration(labelText: 'Day'),
+                  items: [for (var i = 1; i <= daysInMonth(); i++) DropdownMenuItem(value: i, child: Text('$i'))],
+                  onChanged: (value) => setState(() => day = value),
+                ),
               ),
-              child: Text(
-                birthLabel(),
-                style: TextStyle(fontSize: 16, color: birthDate == null ? AppColors.muted : null),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: DropdownButtonFormField<int>(
+                  initialValue: month,
+                  decoration: const InputDecoration(labelText: 'Month'),
+                  items: [for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(months[i - 1]))],
+                  onChanged: (value) => setState(() => month = value),
+                ),
               ),
-            ),
+            ],
           ),
           const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            initialValue: year,
+            decoration: const InputDecoration(labelText: 'Year'),
+            items: [for (var i = now.year - 18; i >= now.year - 90; i--) DropdownMenuItem(value: i, child: Text('$i'))],
+            onChanged: (value) => setState(() => year = value),
+          ),
+          const SizedBox(height: 6),
+          const Text('18 years or older', style: TextStyle(color: AppColors.muted)),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: accepted,
             onChanged: (value) => setState(() => accepted = value ?? false),
             title: Text(S.t('acceptTerms')),
-            secondary: const Text('📜', style: TextStyle(fontSize: 22)),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()));
-            },
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())),
             child: Text(S.t('readTerms')),
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 52,
+            height: 54,
             child: ElevatedButton(
               onPressed: loading ? null : signup,
               style: AppTheme.solid(AppColors.green),
-              child: Text(loading ? S.t('saving') : S.t('createAccount'), style: const TextStyle(color: Colors.white)),
+              child: Text(loading ? S.t('saving') : S.t('createAccount'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
             ),
           ),
         ],

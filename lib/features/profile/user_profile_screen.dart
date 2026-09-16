@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/constants/favorites.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/theme/app_theme.dart';
@@ -45,11 +46,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   late String photo = widget.photoUrl?.trim() ?? '';
   late double rating = widget.rating;
   late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(widget.reviews);
+  bool liked = false;
 
   @override
   void initState() {
     super.initState();
     loadProfile();
+    loadLike();
+  }
+
+  Future<void> loadLike() async {
+    liked = await Favorites.has(widget.otherId);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> toggleLike() async {
+    liked = await Favorites.toggle(widget.otherId);
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(liked ? 'Added to favorites' : 'Removed from favorites')),
+    );
   }
 
   Future<void> loadProfile() async {
@@ -119,10 +136,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget build(BuildContext context) {
     final skills = parseSkills(offers);
     final featured = skills.isEmpty ? null : skills.first;
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
     return Scaffold(
-      appBar: AppBar(title: Text(name)),
+      appBar: AppBar(
+        title: Text(name),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        actions: [
+          IconButton(
+            onPressed: toggleLike,
+            icon: Icon(liked ? Icons.favorite : Icons.favorite_border, color: Colors.white),
+          ),
+        ],
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
         children: [
           Center(child: UserPhoto(url: photo, radius: 48, letter: name.isNotEmpty ? name[0] : '?')),
           const SizedBox(height: 16),
@@ -155,10 +182,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       margin: const EdgeInsets.only(right: 8, bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF7B61FF).withValues(alpha: 0.12),
+                        color: const Color(0xFFEEE8FF),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.purple),
                       ),
-                      child: Text(skill.name, style: const TextStyle(color: Color(0xFF7B61FF), fontWeight: FontWeight.w600)),
+                      child: Text(skill.name, style: const TextStyle(color: Color(0xFF3D2BB3), fontWeight: FontWeight.w800)),
                     ),
                   ),
               ],

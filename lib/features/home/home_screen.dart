@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/places_service.dart';
 import '../../core/constants/safe_places.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
@@ -9,6 +11,7 @@ import '../chat/chat_screen.dart';
 import '../chat/history_screen.dart';
 import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
+import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -32,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   List<Map<String, dynamic>> chats = [];
   List<Map<String, dynamic>> history = [];
+  List<SafePlace> places = [];
   int unread = 0;
 
   @override
@@ -65,6 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
       history = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
     } catch (_) {
       history = [];
+    }
+    try {
+      places = await PlacesService.load(Session.city);
+    } catch (_) {
+      places = safePlacesFor(Session.city);
     }
     if (mounted) setState(() {});
   }
@@ -112,17 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final item in history) {
       final status = item['status']?.toString();
       if (status == 'completed' && !reviewedByMe(item)) {
-        items.add({
-          'title': item['otherName'] ?? 'Member',
-          'reason': 'Review pending after a completed exchange.',
-          'review': item,
-        });
+        items.add({'title': item['otherName'] ?? 'Member', 'reason': 'Review pending after a completed exchange.', 'review': item});
       } else if (status == 'cancelled' || status == 'expired') {
         items.add({
           'title': item['otherName'] ?? 'Member',
-          'reason': status == 'expired'
-              ? 'The previous offer expired. Both members may start a new request.'
-              : 'The previous offer was cancelled. Both members may start a new request.',
+          'reason': 'The previous offer was closed. Both members may start a new request.',
           'chatId': item['chatId'],
           'otherId': item['otherId'],
           'name': item['otherName'],
@@ -147,6 +150,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ).then((_) => refresh());
   }
 
+  Future<void> openMaps(SafePlace place) async {
+    final query = place.lat != null ? '${place.lat},${place.lng}' : place.address;
+    await launchUrl(
+      Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
   void showPlace(SafePlace place) {
     showModalBottomSheet(
       context: context,
@@ -154,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       builder: (context) {
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+          padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,6 +193,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(child: Text(place.address, style: const TextStyle(fontWeight: FontWeight.w700))),
                 ],
               ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () => openMaps(place),
+                style: AppTheme.solid(AppColors.blue),
+                icon: const Icon(Icons.map, color: Colors.white),
+                label: const Text('Open in Google Maps', style: TextStyle(color: Colors.white)),
+              ),
             ],
           ),
         );
@@ -197,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final skills = parseSkills(Session.offers);
     final featured = skills.isEmpty ? null : skills.first;
     final live = activityItems();
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
 
     return Column(
       children: [
@@ -227,14 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: RefreshIndicator(
             onRefresh: refresh,
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
               children: [
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 6))],
-                  ),
+                  decoration: AppTheme.card(),
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,11 +285,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Container(
                                         margin: const EdgeInsets.only(right: 8, bottom: 8),
                                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF7B61FF).withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(skill.name, style: const TextStyle(color: Color(0xFF7B61FF), fontWeight: FontWeight.w600)),
+                                        decoration: BoxDecoration(color: const Color(0xFFEEE8FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.purple)),
+                                        child: Text(skill.name, style: const TextStyle(color: Color(0xFF3D2BB3), fontWeight: FontWeight.w800)),
                                       ),
                                     ),
                                 ],
@@ -298,73 +310,68 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(child: stat(Icons.account_balance_wallet_rounded, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {}, AppColors.mint, AppColors.green)),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(child: actionTile(Icons.search, 'Search', AppColors.blue, widget.onSearchTap ?? () {})),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: actionTile(Icons.history, 'History', AppColors.purple, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())).then((_) => refresh());
-                      }),
-                    ),
+                    Expanded(child: actionTile(Icons.favorite, 'Favorites', AppColors.coral, () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
+                    })),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: actionTile(Icons.support_agent, 'Support', AppColors.coral, () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
-                      }),
-                    ),
+                    Expanded(child: actionTile(Icons.history, 'History', AppColors.purple, () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())).then((_) => refresh());
+                    })),
+                    const SizedBox(width: 8),
+                    Expanded(child: actionTile(Icons.support_agent, 'Support', AppColors.green, () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
+                    })),
                   ],
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  Session.city.isEmpty ? 'Safe public places' : 'Safe public places in ${Session.city}',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-                ),
+                Text(Session.city.isEmpty ? 'Safe public places' : 'Safe public places in ${Session.city}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 196,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      for (final place in safePlacesFor(Session.city))
-                        GestureDetector(
-                          onTap: () => showPlace(place),
-                          child: Container(
-                            width: 220,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: AppTheme.card(),
-                            clipBehavior: Clip.antiAlias,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Image.network(
-                                  place.photoUrl,
-                                  height: 110,
+                  child: places.isEmpty
+                      ? const Center(child: Text('Looking up public places...'))
+                      : ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final place in places)
+                              GestureDetector(
+                                onTap: () => showPlace(place),
+                                child: Container(
                                   width: 220,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stack) => Container(
-                                    height: 110,
-                                    color: AppColors.soft,
-                                    child: const Icon(Icons.location_city, color: AppColors.blue, size: 40),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: AppTheme.card(),
+                                  clipBehavior: Clip.antiAlias,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(place.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
-                                      Text(place.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                      Image.network(
+                                        place.photoUrl,
+                                        height: 110,
+                                        width: 220,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stack) => Container(height: 110, color: AppColors.soft, child: const Icon(Icons.location_city, color: AppColors.blue, size: 40)),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(10),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(place.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                                            Text(place.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
@@ -411,13 +418,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
             Icon(icon, color: color),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 11)),
           ],
         ),
       ),

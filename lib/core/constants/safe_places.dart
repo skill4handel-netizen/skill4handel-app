@@ -6,6 +6,8 @@ class SafePlace {
     required this.details,
     required this.address,
     required this.photoUrl,
+    this.lat,
+    this.lng,
   });
 
   final String name;
@@ -14,6 +16,8 @@ class SafePlace {
   final String details;
   final String address;
   final String photoUrl;
+  final double? lat;
+  final double? lng;
 }
 
 const _libraryPhoto = 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=900&q=70';
