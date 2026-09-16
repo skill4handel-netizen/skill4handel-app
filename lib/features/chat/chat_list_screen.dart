@@ -80,6 +80,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat'),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
         actions: [
           IconButton(
             onPressed: () {
@@ -92,32 +93,54 @@ class _ChatListScreenState extends State<ChatListScreen> {
       body: RefreshIndicator(
         onRefresh: loadChats,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
           children: [
             if (unreadCount > 0)
-              Text('$unreadCount unread', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.blue)),
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  children: [
+                    const Icon(Icons.mark_chat_unread, color: AppColors.green),
+                    const SizedBox(width: 8),
+                    Text('$unreadCount unread', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green)),
+                  ],
+                ),
+              ),
             if (chats.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 24),
-                child: Text('No conversations yet.', style: TextStyle(color: AppColors.muted)),
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: AppTheme.card(color: AppColors.soft),
+                child: const Column(
+                  children: [
+                    Icon(Icons.forum_outlined, size: 48, color: AppColors.blue),
+                    SizedBox(height: 8),
+                    Text('No conversations yet.', style: TextStyle(color: AppColors.muted)),
+                  ],
+                ),
               )
             else
               ...chats.map((chat) {
                 final name = chat['name']?.toString() ?? 'Member';
                 final unread = chat['unread'] == true;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: UserPhoto(url: chat['photoUrl']?.toString(), radius: 24, letter: name.isNotEmpty ? name[0] : '?'),
-                  title: Text(name, style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w600)),
-                  subtitle: Text(chat['last']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (unread) const Icon(Icons.circle, size: 10, color: AppColors.green),
-                      IconButton(onPressed: () => deleteChat(chat), icon: const Icon(Icons.delete_outline)),
-                    ],
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: AppTheme.card(color: unread ? AppColors.mint : Colors.white),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    leading: UserPhoto(url: chat['photoUrl']?.toString(), radius: 26, letter: name.isNotEmpty ? name[0] : '?'),
+                    title: Text(name, style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w700)),
+                    subtitle: Text(chat['last']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (unread) const Icon(Icons.circle, size: 10, color: AppColors.green),
+                        IconButton(onPressed: () => deleteChat(chat), icon: const Icon(Icons.delete_outline, color: AppColors.coral)),
+                      ],
+                    ),
+                    onTap: () => openChat(chat),
                   ),
-                  onTap: () => openChat(chat),
                 );
               }),
           ],

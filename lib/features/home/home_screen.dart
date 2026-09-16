@@ -5,7 +5,9 @@ import '../../core/constants/skill_items.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
+import '../chat/history_screen.dart';
 import '../reviews/review_screen.dart';
+import '../support/support_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -253,6 +255,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(child: stat(Icons.account_balance_wallet_rounded, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {}, AppColors.mint, AppColors.green)),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: actionTile(Icons.search, 'Search', AppColors.blue, widget.onSearchTap ?? () {})),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: actionTile(Icons.history, 'History', AppColors.purple, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())).then((_) => refresh());
+                      }),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: actionTile(Icons.support_agent, 'Support', AppColors.coral, () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
+                      }),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
@@ -291,6 +311,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget actionTile(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color)),
+          ],
+        ),
+      ),
     );
   }
 

@@ -250,6 +250,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 8, bottom: 8),
                 child: InputChip(
+                  backgroundColor: const Color(0xFFEEE8FF),
+                  side: const BorderSide(color: AppColors.purple),
+                  labelStyle: const TextStyle(color: Color(0xFF3D2BB3), fontWeight: FontWeight.w800),
+                  deleteIconColor: AppColors.purple,
                   label: Text(skill.note.isEmpty ? skill.name : '${skill.name} •'),
                   onPressed: () {
                     showDialog(
