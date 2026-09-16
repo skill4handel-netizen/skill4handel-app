@@ -38,22 +38,42 @@ class _BlockedScreenState extends State<BlockedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked people')),
+      appBar: AppBar(
+        title: const Text('Blocked people'),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+      ),
       body: RefreshIndicator(
         onRefresh: load,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
           children: [
-            if (items.isEmpty) const Text('Nobody is blocked.', style: TextStyle(color: AppColors.muted)),
+            if (items.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: AppTheme.card(color: AppColors.soft),
+                child: const Column(
+                  children: [
+                    Icon(Icons.block, size: 56, color: AppColors.blue),
+                    SizedBox(height: 8),
+                    Text('Nobody is blocked.', style: TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+              ),
             ...items.map((item) {
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(item['name']?.toString() ?? 'User'),
-                subtitle: Text(item['email']?.toString() ?? ''),
-                trailing: TextButton(
-                  onPressed: () => unblock(int.tryParse('${item['id']}') ?? 0),
-                  child: const Text('Unblock'),
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: AppTheme.card(),
+                child: ListTile(
+                  leading: const CircleAvatar(backgroundColor: AppColors.coral, child: Icon(Icons.person_off, color: Colors.white)),
+                  title: Text(item['name']?.toString() ?? 'User', style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Text(item['email']?.toString() ?? ''),
+                  trailing: TextButton.icon(
+                    onPressed: () => unblock(int.tryParse('${item['id']}') ?? 0),
+                    icon: const Icon(Icons.lock_open),
+                    label: const Text('Unblock'),
+                  ),
                 ),
               );
             }),

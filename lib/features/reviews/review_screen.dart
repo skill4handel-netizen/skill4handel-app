@@ -4,12 +4,7 @@ import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({
-    super.key,
-    required this.otherId,
-    required this.otherName,
-    required this.skill,
-  });
+  const ReviewScreen({super.key, required this.otherId, required this.otherName, required this.skill});
 
   final int otherId;
   final String otherName;
@@ -27,9 +22,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Future<void> save() async {
     if (rating <= 3 && text.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A reason is required for 3 stars or less')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A reason is required for 3 stars or less')));
       return;
     }
     setState(() => saving = true);
@@ -54,22 +47,26 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).padding.bottom + 24;
     return Scaffold(
-      appBar: AppBar(title: Text('Review ${widget.otherName}')),
+      appBar: AppBar(
+        title: Text('Review ${widget.otherName}'),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+      ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
         children: [
-          Text(widget.skill, style: const TextStyle(color: AppColors.muted)),
+          const Icon(Icons.rate_review, size: 64, color: AppColors.gold),
+          const SizedBox(height: 8),
+          Text(widget.skill, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
           const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (index) {
               final value = index + 1;
               return IconButton(
                 onPressed: () => setState(() => rating = value),
-                icon: Icon(
-                  value <= rating ? Icons.star : Icons.star_border,
-                  color: AppColors.gold,
-                ),
+                icon: Icon(value <= rating ? Icons.star : Icons.star_border, color: AppColors.gold, size: 40),
               );
             }),
           ),
@@ -77,18 +74,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
           TextField(
             controller: text,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Your review',
-              hintText: 'Required if 3 stars or less',
-            ),
+            decoration: const InputDecoration(labelText: 'Your review', hintText: 'Required if 3 stars or less', prefixIcon: Icon(Icons.edit, size: 28)),
           ),
           const SizedBox(height: 20),
           SizedBox(
-            height: 52,
-            child: ElevatedButton(
+            height: 56,
+            child: ElevatedButton.icon(
               onPressed: saving ? null : save,
               style: AppTheme.solid(AppColors.green),
-              child: Text(saving ? 'Saving...' : 'Save review', style: const TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.check_circle, color: Colors.white, size: 28),
+              label: Text(saving ? 'Saving...' : 'Save review', style: const TextStyle(color: Colors.white)),
             ),
           ),
         ],

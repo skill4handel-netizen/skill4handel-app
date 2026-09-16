@@ -182,12 +182,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: AppColors.blue,
-        foregroundColor: Colors.white,
         title: Text(widget.isCounter ? 'Counter-offer' : 'New offer'),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 24),
         children: [
           Text(
             widget.isCounter ? 'Reply to ${widget.otherName}' : 'Offer to ${widget.otherName}',

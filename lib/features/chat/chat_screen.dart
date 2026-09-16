@@ -178,8 +178,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        backgroundColor: AppColors.blue,
-        foregroundColor: Colors.white,
         title: GestureDetector(
           onTap: openProfile,
           child: Row(
@@ -196,15 +194,16 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ),
         actions: [
-          IconButton(onPressed: blockUser, icon: const Icon(Icons.block)),
-          IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined)),
+          IconButton(onPressed: blockUser, icon: const Icon(Icons.block, size: 26)),
+          IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined, size: 26)),
           IconButton(
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
             },
-            icon: const Icon(Icons.history),
+            icon: const Icon(Icons.history, size: 26),
           ),
         ],
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
