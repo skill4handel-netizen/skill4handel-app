@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/session.dart';
+import '../../core/constants/skill_items.dart';
 import '../../core/constants/skills.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -27,14 +28,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final name = TextEditingController(text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''));
   late final city = TextEditingController(text: Session.city);
   String gender = Session.gender.isNotEmpty ? Session.gender : 'prefer_not';
-  late List<String> selectedSkills = Session.offers
-      .split(RegExp(r'[,/]'))
-      .map((item) => item.trim())
-      .where((item) => item.isNotEmpty)
-      .toList();
+  late List<SkillItem> selectedSkills = parseSkills(Session.offers);
   bool saving = false;
 
-  int get customCount => selectedSkills.where((item) => !allowedSkills.contains(item)).length;
+  int get customCount => selectedSkills.where((item) => !allowedSkills.contains(item.name)).length;
 
   ImageProvider? photoOf(String url) {
     if (url.isEmpty) return null;
@@ -55,16 +52,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Take a photograph'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
+            ListTile(leading: const Icon(Icons.photo_camera), title: const Text('Take a photograph'), onTap: () => Navigator.pop(context, ImageSource.camera)),
+            ListTile(leading: const Icon(Icons.photo_library), title: const Text('Choose from gallery'), onTap: () => Navigator.pop(context, ImageSource.gallery)),
           ],
         ),
       ),
@@ -90,19 +79,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You may select up to 10 skills.')));
       return;
     }
-    final chosen = await pickSkill(context, alreadySelected: selectedSkills);
-    if (chosen == null || selectedSkills.contains(chosen)) return;
-    setState(() => selectedSkills.add(chosen));
+    final chosen = await pickSkill(context, alreadySelected: selectedSkills.map((item) => item.name).toList());
+    if (chosen == null || selectedSkills.any((item) => item.name == chosen)) return;
+    final noteController = TextEditingController();
+    final note = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(chosen),
+        content: TextField(
+          controller: noteController,
+          maxLength: 100,
+          maxLines: 3,
+          decoration: const InputDecoration(hintText: 'Short description, up to 100 characters'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, ''), child: const Text('Skip')),
+          TextButton(onPressed: () => Navigator.pop(context, noteController.text.trim()), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (note == null) return;
+    setState(() => selectedSkills.add(SkillItem(name: chosen, note: note)));
   }
 
   Future<void> save() async {
     setState(() => saving = true);
     try {
+      final encoded = encodeSkills(selectedSkills);
       final response = await dio.post('/auth/profile', data: {
         'id': Session.id,
         'name': name.text,
         'city': city.text,
-        'offers': selectedSkills.join(', '),
+        'offers': encoded,
         'needs': '',
         'gender': gender,
         'age': Session.age,
@@ -110,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       final user = response.data is Map ? response.data['user'] : response.data;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
-      Session.offers = selectedSkills.join(', ');
+      Session.offers = encoded;
       Session.needs = '';
       await Session.save();
       if (!mounted) return;
@@ -124,14 +132,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> changePassword() async {
+    final current = TextEditingController();
+    final next = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: current, obscureText: true, decoration: const InputDecoration(labelText: 'Current password')),
+            const SizedBox(height: 8),
+            TextField(controller: next, obscureText: true, decoration: const InputDecoration(labelText: 'New password')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/change-password', data: {
+        'userId': Session.id,
+        'currentPassword': current.text,
+        'newPassword': next.text,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated.')));
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is DioException && e.response?.data is Map
+          ? e.response!.data['message'].toString()
+          : 'The password could not be changed.';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   Future<void> logout() async {
     await Session.clear();
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
+    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginScreen()), (route) => false);
   }
 
   @override
@@ -150,10 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppColors.blue,
                 backgroundImage: photo,
                 child: photo == null
-                    ? Text(
-                        Session.name.isNotEmpty ? Session.name[0].toUpperCase() : 'U',
-                        style: const TextStyle(color: Colors.white, fontSize: 36),
-                      )
+                    ? Text(Session.name.isNotEmpty ? Session.name[0].toUpperCase() : 'U', style: const TextStyle(color: Colors.white, fontSize: 36))
                     : null,
               ),
               Positioned(
@@ -196,19 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         InputDecorator(
-          decoration: InputDecoration(labelText: S.t('ageRule')),
-          child: Text(
-            Session.age > 0 ? '${Session.age}' : 'Set at registration',
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
+          decoration: const InputDecoration(labelText: 'Age'),
+          child: Text(Session.age > 0 ? '${Session.age}' : 'Set at registration', style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
         const SizedBox(height: 16),
         Text(S.t('skillsOffer'), style: const TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),
-        Text(
-          'Choose up to 10 categories. Up to 3 may be written as Other. Custom: $customCount/3',
-          style: const TextStyle(color: AppColors.muted),
-        ),
+        Text('Choose up to 10 categories. Add a short description for each. Custom: $customCount/3', style: const TextStyle(color: AppColors.muted)),
         const SizedBox(height: 8),
         Wrap(
           children: [
@@ -216,7 +250,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Padding(
                 padding: const EdgeInsets.only(right: 8, bottom: 8),
                 child: InputChip(
-                  label: Text(skill),
+                  label: Text(skill.note.isEmpty ? skill.name : '${skill.name} •'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(skill.name),
+                        content: Text(skill.note.isEmpty ? 'No description yet.' : skill.note),
+                        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+                      ),
+                    );
+                  },
                   onDeleted: () => setState(() => selectedSkills.remove(skill)),
                 ),
               ),
@@ -245,29 +289,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             setState(() {});
           },
         ),
-        TextButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen()));
-          },
-          child: Text(S.t('blocked')),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()));
-          },
-          child: Text(S.t('terms')),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
-          },
-          child: Text(S.t('support')),
-        ),
+        TextButton(onPressed: changePassword, child: const Text('Change password')),
+        TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked'))),
+        TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())), child: Text(S.t('terms'))),
+        TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support'))),
         const SizedBox(height: 8),
-        SizedBox(
-          height: 52,
-          child: OutlinedButton(onPressed: logout, child: Text(S.t('logOut'))),
-        ),
+        SizedBox(height: 52, child: OutlinedButton(onPressed: logout, child: Text(S.t('logOut')))),
       ],
     );
   }

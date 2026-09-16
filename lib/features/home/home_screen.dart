@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/constants/skill_items.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
@@ -65,16 +66,20 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() {});
   }
 
-  List<String> skills() {
-    return Session.offers.split(RegExp(r'[,/]')).map((item) => item.trim()).where((item) => item.isNotEmpty).toList();
+  void showSkill(SkillItem skill) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(skill.name),
+        content: Text(skill.note.isEmpty ? 'No description yet.' : skill.note),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+      ),
+    );
   }
 
   String today() {
     final now = DateTime.now();
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
@@ -90,21 +95,13 @@ class _HomeScreenState extends State<HomeScreen> {
         final mine = swap['proposedBy']?.toString() == Session.id.toString();
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason': mine
-              ? 'Offer sent. Awaiting a response within 24 hours.'
-              : 'An offer is awaiting your response.',
+          'reason': mine ? 'Offer sent. Awaiting a response within 24 hours.' : 'An offer is awaiting your response.',
           'chat': chat,
         });
       } else if (status == 'accepted') {
         items.add({
           'title': chat['name'] ?? 'Member',
           'reason': 'Open session. Confirm completion after the scheduled time.',
-          'chat': chat,
-        });
-      } else if (chat['waitingForRequester'] == true) {
-        items.add({
-          'title': chat['name'] ?? 'Member',
-          'reason': 'A new request cannot be sent until the other member opens the chat or submits the first offer.',
           'chat': chat,
         });
       }
@@ -117,10 +114,12 @@ class _HomeScreenState extends State<HomeScreen> {
           'reason': 'Review pending after a completed exchange.',
           'review': item,
         });
-      } else if (status == 'cancelled') {
+      } else if (status == 'cancelled' || status == 'expired') {
         items.add({
           'title': item['otherName'] ?? 'Member',
-          'reason': 'The previous offer was cancelled. Both members may start a new request.',
+          'reason': status == 'expired'
+              ? 'The previous offer expired. Both members may start a new request.'
+              : 'The previous offer was cancelled. Both members may start a new request.',
           'chatId': item['chatId'],
           'otherId': item['otherId'],
           'name': item['otherName'],
@@ -150,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final photo = Session.photoUrl.trim();
     final image = userPhoto(photo);
     final name = Session.name.isEmpty ? 'there' : Session.name;
-    final offerSkills = skills();
+    final skills = parseSkills(Session.offers);
+    final featured = skills.isEmpty ? null : skills.first;
     final live = activityItems();
 
     return Column(
@@ -200,9 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ? Image(image: image, fit: BoxFit.cover)
                             : Container(
                                 color: AppColors.soft,
-                                child: Center(
-                                  child: Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 72, color: AppColors.blue)),
-                                ),
+                                child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 72, color: AppColors.blue))),
                               ),
                       ),
                       Padding(
@@ -212,31 +210,33 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(Session.name.isEmpty ? 'Your profile' : Session.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                             if (Session.city.isNotEmpty) Text(Session.city, style: const TextStyle(color: AppColors.muted)),
-                            if (offerSkills.isNotEmpty) ...[
+                            if (featured != null) ...[
                               const SizedBox(height: 12),
                               const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 6),
+                              Text(featured.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                              if (featured.note.isNotEmpty) Text(featured.note),
                               const SizedBox(height: 8),
                               Wrap(
                                 children: [
-                                  for (final skill in offerSkills)
-                                    Container(
-                                      margin: const EdgeInsets.only(right: 8, bottom: 8),
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF7B61FF).withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(20),
+                                  for (final skill in skills)
+                                    GestureDetector(
+                                      onTap: () => showSkill(skill),
+                                      child: Container(
+                                        margin: const EdgeInsets.only(right: 8, bottom: 8),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF7B61FF).withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(skill.name, style: const TextStyle(color: Color(0xFF7B61FF), fontWeight: FontWeight.w600)),
                                       ),
-                                      child: Text(skill, style: const TextStyle(color: Color(0xFF7B61FF), fontWeight: FontWeight.w600)),
                                     ),
                                 ],
                               ),
                             ],
                             const SizedBox(height: 8),
-                            OutlinedButton.icon(
-                              onPressed: widget.onProfileTap,
-                              icon: const Icon(Icons.edit),
-                              label: const Text('Edit profile'),
-                            ),
+                            OutlinedButton.icon(onPressed: widget.onProfileTap, icon: const Icon(Icons.edit), label: const Text('Edit profile')),
                           ],
                         ),
                       ),

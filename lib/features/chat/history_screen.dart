@@ -33,6 +33,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return '${local.day} ${months[local.month - 1]} ${local.year}, ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
+  bool isExpired(Map swap) {
+    final status = swap['status']?.toString() ?? '';
+    if (status == 'expired') return true;
+    final created = DateTime.tryParse('${swap['createdAt'] ?? ''}');
+    final scheduled = DateTime.tryParse('${swap['scheduledAt'] ?? swap['when'] ?? ''}');
+    if (status != 'pending') return false;
+    final noReply = created != null && DateTime.now().difference(created).inHours >= 24;
+    final timePassed = scheduled != null && !scheduled.isAfter(DateTime.now());
+    return noReply || timePassed;
+  }
+
+  String statusText(Map item) {
+    final group = item['group']?.toString() ?? '';
+    if (item['status']?.toString() == 'expired') return 'Expired session';
+    if (group == 'pending') return 'Pending offer';
+    if (group == 'open') return 'Open session';
+    return item['status']?.toString() ?? 'Closed';
+  }
+
   Future<void> loadAll() async {
     final merged = <Map<String, dynamic>>[];
     try {
@@ -41,13 +60,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final item = Map<String, dynamic>.from(raw as Map);
         final swap = item['pendingSwap'] is Map ? Map<String, dynamic>.from(item['pendingSwap'] as Map) : null;
         final status = swap?['status']?.toString() ?? '';
-        if (status == 'pending' || status == 'accepted') {
-          merged.add({
-            ...item,
-            ...?swap,
-            'otherName': item['name'],
-            'group': status == 'accepted' ? 'open' : 'pending',
-          });
+        if (swap != null && isExpired(swap)) {
+          merged.add({...item, ...swap, 'otherName': item['name'], 'group': 'closed', 'status': 'expired'});
+        } else if (status == 'pending' || status == 'accepted') {
+          merged.add({...item, ...swap, 'otherName': item['name'], 'group': status == 'accepted' ? 'open' : 'pending'});
         }
       }
     } catch (_) {}
@@ -55,7 +71,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       final history = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
       for (final raw in ((history.data as List?) ?? [])) {
         final item = Map<String, dynamic>.from(raw as Map);
-        merged.add({...item, 'group': 'closed'});
+        final expired = item['status']?.toString() == 'cancelled' && isExpired(item);
+        merged.add({...item, 'group': 'closed', if (expired) 'status': 'expired'});
       }
     } catch (_) {}
     try {
@@ -204,7 +221,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member', style: const TextStyle(fontWeight: FontWeight.w800)),
-                        Text(group == 'pending' ? 'Pending offer' : group == 'open' ? 'Open session' : item['status']?.toString() ?? ''),
+                        Text(statusText(item), style: const TextStyle(fontWeight: FontWeight.w700)),
                         if ((item['skillRequested'] ?? '').toString().isNotEmpty) Text('Requested: ${item['skillRequested']}'),
                         if ((item['skillOffered'] ?? '').toString().isNotEmpty) Text('In return: ${item['skillOffered']}'),
                         if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
