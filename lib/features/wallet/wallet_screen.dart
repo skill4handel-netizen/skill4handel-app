@@ -77,7 +77,7 @@ class _WalletScreenState extends State<WalletScreen> {
             const Text('No transactions yet.', style: TextStyle(color: AppColors.muted))
           else
             ...items.map((item) {
-              final row = item is Map ? Map<String, dynamic>.from(item) : {'title': item.toString(), 'amount': ''};
+              final row = Map<String, dynamic>.from(item);
               return Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(bottom: 10),

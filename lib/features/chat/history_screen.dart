@@ -63,7 +63,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         if (swap != null && isExpired(swap)) {
           merged.add({...item, ...swap, 'otherName': item['name'], 'group': 'closed', 'status': 'expired'});
         } else if (status == 'pending' || status == 'accepted') {
-          merged.add({...item, ...swap, 'otherName': item['name'], 'group': status == 'accepted' ? 'open' : 'pending'});
+          merged.add({...item, ...?swap, 'otherName': item['name'], 'group': status == 'accepted' ? 'open' : 'pending'});
         }
       }
     } catch (_) {}

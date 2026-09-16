@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Container(
           width: double.infinity,
-          color: AppColors.blue,
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
           padding: const EdgeInsets.fromLTRB(16, 8, 8, 12),
           child: SafeArea(
             bottom: false,
@@ -246,11 +246,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: stat(Icons.chat_bubble_outline, '$unread', 'New messages', widget.onChatTap ?? () {})),
+                    Expanded(child: stat(Icons.chat_bubble_rounded, '$unread', 'Messages', widget.onChatTap ?? () {}, AppColors.soft, AppColors.blue)),
                     const SizedBox(width: 8),
-                    Expanded(child: stat(Icons.star, Session.rating.toStringAsFixed(1), 'Reviews', refresh)),
+                    Expanded(child: stat(Icons.star_rounded, Session.rating.toStringAsFixed(1), 'Reviews', refresh, AppColors.cream, AppColors.gold)),
                     const SizedBox(width: 8),
-                    Expanded(child: stat(Icons.account_balance_wallet_outlined, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {})),
+                    Expanded(child: stat(Icons.account_balance_wallet_rounded, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {}, AppColors.mint, AppColors.green)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -294,15 +294,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget stat(IconData icon, String value, String label, VoidCallback onTap) {
+  Widget stat(IconData icon, String value, String label, VoidCallback onTap, Color bg, Color accent) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppColors.soft, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
-            Icon(icon, color: AppColors.blue),
+            Icon(icon, color: accent),
             const SizedBox(height: 6),
             Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
             Text(label, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 12)),

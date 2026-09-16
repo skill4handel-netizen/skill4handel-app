@@ -45,11 +45,11 @@ class WelcomeScreen extends StatelessWidget {
   Widget logo() {
     return Image.asset(
       'assets/logo.jpg',
-      height: 176,
+      height: 168,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stack) => Image.asset(
         'assets/logo.jpeg',
-        height: 176,
+        height: 168,
         fit: BoxFit.contain,
         errorBuilder: (context, error2, stack2) {
           return const Icon(Icons.handshake, size: 96, color: AppColors.blue);
@@ -61,61 +61,88 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(28, 24, 28, 20),
-          child: Column(
-            children: [
-              const Spacer(),
-              logo(),
-              const SizedBox(height: 24),
-              const Text(
-                'Share what you know.\nGet what you need.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25),
+      body: Stack(
+        children: [
+          Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+          Positioned(top: -40, right: -30, child: circle(180, Colors.white.withValues(alpha: 0.12))),
+          Positioned(bottom: 120, left: -50, child: circle(160, AppColors.gold.withValues(alpha: 0.22))),
+          Positioned(top: 90, left: 20, child: circle(70, AppColors.green.withValues(alpha: 0.25))),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                    decoration: AppTheme.card(),
+                    child: Column(
+                      children: [
+                        logo(),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'Share what you know.\nGet what you need.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, height: 1.25, color: AppColors.text),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text('Skill sharing without money.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted)),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton.icon(
+                        onPressed: () => openUrl('https://www.skill4handel.com'),
+                        icon: const Icon(Icons.language, color: Colors.white),
+                        label: const Text('Website', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => openPrivacy(context),
+                        icon: const Icon(Icons.verified_user_outlined, color: Colors.white),
+                        label: const Text('Privacy', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen()));
+                      },
+                      style: AppTheme.solid(AppColors.green),
+                      icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
+                      label: const Text('Create account', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                      },
+                      style: AppTheme.solid(Colors.white),
+                      icon: const Icon(Icons.login, color: AppColors.blueDeep),
+                      label: const Text('Log in', style: TextStyle(color: AppColors.blueDeep, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Skill sharing without money.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.muted),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => openUrl('https://www.skill4handel.com'),
-                child: const Text('www.skill4handel.com'),
-              ),
-              TextButton(
-                onPressed: () => openPrivacy(context),
-                child: const Text('Privacy and safety'),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen()));
-                  },
-                  style: AppTheme.solid(AppColors.green),
-                  child: const Text('Create account', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-                  },
-                  child: const Text('Log in'),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  Widget circle(double size, Color color) {
+    return Container(width: size, height: size, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
   }
 }
