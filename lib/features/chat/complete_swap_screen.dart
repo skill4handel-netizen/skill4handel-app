@@ -86,7 +86,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
 
   String prettyWhen(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${date.day} ${months[date.month - 1]} ${date.year}  •  ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+    final local = date.toLocal();
+    return '${local.day} ${months[local.month - 1]} ${local.year}  •  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
   Future<void> submit() async {
@@ -128,8 +129,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         'mode': mode,
         'level': volunteer ? 'Volunteer' : 'Normal',
         'location': location.text.trim(),
-        'when': when!.toIso8601String(),
-        'scheduledAt': when!.toIso8601String(),
+        'when': when!.toUtc().toIso8601String(),
+        'scheduledAt': when!.toUtc().toIso8601String(),
       });
       if (!mounted) return;
       Navigator.pop(context, true);

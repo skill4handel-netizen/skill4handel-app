@@ -31,7 +31,6 @@ class _SkillPickerSheet extends StatefulWidget {
 class _SkillPickerSheetState extends State<_SkillPickerSheet> {
   final query = TextEditingController();
   final other = TextEditingController();
-  bool otherMode = false;
 
   List<String> get filtered {
     final q = query.text.trim().toLowerCase();
@@ -41,12 +40,22 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
         .toList();
   }
 
+  void addCustom(String value) {
+    final text = value.trim();
+    if (text.isEmpty || !widget.canAddCustom) return;
+    Navigator.pop(context, text);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final typed = query.text.trim();
+    final typedIsNew = typed.isNotEmpty &&
+        !allowedSkills.any((item) => item.toLowerCase() == typed.toLowerCase());
+
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.75,
         child: Column(
           children: [
             const Padding(
@@ -59,7 +68,7 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                 controller: query,
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
-                  hintText: 'Type to filter',
+                  hintText: 'Type to filter, or write a custom skill',
                   prefixIcon: Icon(Icons.search),
                 ),
               ),
@@ -78,37 +87,49 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                       child: Text('No matching category.', style: TextStyle(color: AppColors.muted)),
                     ),
                   const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.edit_outlined),
-                    title: const Text('Other'),
-                    subtitle: Text(widget.canAddCustom ? 'Add a skill outside this list' : 'Custom skill limit reached'),
-                    enabled: widget.canAddCustom,
-                    onTap: widget.canAddCustom ? () => setState(() => otherMode = true) : null,
-                  ),
-                  if (otherMode && widget.canAddCustom)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: other,
-                              decoration: const InputDecoration(hintText: 'Write the skill'),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Other', style: TextStyle(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.canAddCustom
+                              ? 'Write a skill that is not in the list. Maximum 3 custom skills.'
+                              : 'Custom skill limit reached.',
+                          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: other,
+                          enabled: widget.canAddCustom,
+                          decoration: const InputDecoration(hintText: 'Write the skill'),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: widget.canAddCustom ? () => addCustom(other.text) : null,
+                                style: AppTheme.solid(AppColors.green),
+                                child: const Text('Add Other', style: TextStyle(color: Colors.white)),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              final value = other.text.trim();
-                              if (value.isEmpty) return;
-                              Navigator.pop(context, value);
-                            },
-                            style: AppTheme.solid(AppColors.green),
-                            child: const Text('Add', style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      ),
+                            if (typedIsNew && widget.canAddCustom) ...[
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () => addCustom(typed),
+                                  child: Text('Add "$typed"'),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
                 ],
               ),
             ),
