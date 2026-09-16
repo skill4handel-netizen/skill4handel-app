@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/city_picker.dart';
 import '../home/demo_screen.dart';
 import 'terms_screen.dart';
 
@@ -16,6 +17,7 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   final name = TextEditingController();
+  final city = TextEditingController();
   final email = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
@@ -78,6 +80,7 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       final response = await dio.post('/auth/signup', data: {
         'name': name.text.trim(),
+        'city': city.text.trim(),
         'email': email.text.trim(),
         'password': password.text,
         'age': age,
@@ -133,6 +136,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 12),
           TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'), prefixIcon: const Icon(Icons.person))),
+          const SizedBox(height: 12),
+          CityPicker(controller: city, label: S.t('city')),
           const SizedBox(height: 12),
           TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: S.t('email'), prefixIcon: const Icon(Icons.email_outlined))),
           const SizedBox(height: 12),

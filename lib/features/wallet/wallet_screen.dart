@@ -40,10 +40,14 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
     final items = Session.history;
-    return RefreshIndicator(
+    return Column(
+      children: [
+        const AppHeader(title: 'Wallet', subtitle: 'S4H tokens'),
+        Expanded(
+          child: RefreshIndicator(
       onRefresh: loadWallet,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).padding.bottom + 24),
         children: [
           Container(
             width: double.infinity,
@@ -111,6 +115,9 @@ class _WalletScreenState extends State<WalletScreen> {
             }),
         ],
       ),
+          ),
+        ),
+      ],
     );
   }
 }

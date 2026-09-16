@@ -73,44 +73,46 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  Widget avatar(String name, String photo, bool online) {
-    return Stack(
-      children: [
-        UserPhoto(url: photo, radius: 24, letter: name.isNotEmpty ? name[0] : '?'),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: online ? AppColors.green : Colors.grey,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-            ),
-          ),
+  void openProfile(Map person) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UserProfileScreen(
+          name: person['name']?.toString() ?? 'User',
+          email: person['email']?.toString() ?? '',
+          city: person['city']?.toString() ?? '',
+          offers: person['offers']?.toString() ?? '',
+          needs: person['needs']?.toString() ?? '',
+          otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
+          rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
+          reviews: ((person['reviews'] as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList(),
+          photoUrl: (person['photoUrl'] ?? person['photo_url'] ?? '').toString(),
         ),
-      ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+    return Column(
       children: [
-        const Text('Search', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 16),
+        const AppHeader(title: 'Search', subtitle: 'Find people by name, city or skill'),
+        Expanded(
+          child: ListView(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).padding.bottom + 24),
+      children: [
         TextField(
           controller: controller,
           onChanged: search,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'Name, city or skill',
-            prefixIcon: Icon(Icons.search),
-            border: OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.search, color: AppColors.blue),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         if (results.isEmpty)
           const Text('No users found.', style: TextStyle(color: AppColors.muted))
         else
@@ -121,39 +123,56 @@ class _SearchScreenState extends State<SearchScreen> {
             final rating = double.tryParse('${person['rating'] ?? 0}') ?? 0;
             final score = int.tryParse('${person['score'] ?? 0}') ?? 0;
             final online = isOnline(person);
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: avatar(name, photo, online),
-              title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text([
-                if (city.isNotEmpty) city,
-                '${rating.toStringAsFixed(1)} ★',
-              ].join('  •  ')),
-              trailing: score > 0
-                  ? Text('$score%', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green))
-                  : null,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UserProfileScreen(
-                      name: name,
-                      email: person['email']?.toString() ?? '',
-                      city: city,
-                      offers: person['offers']?.toString() ?? '',
-                      needs: person['needs']?.toString() ?? '',
-                      otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
-                      rating: rating,
-                      reviews: ((person['reviews'] as List?) ?? [])
-                          .map((item) => Map<String, dynamic>.from(item as Map))
-                          .toList(),
-                      photoUrl: photo,
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: AppTheme.card(),
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(12),
+                leading: Stack(
+                  children: [
+                    UserPhoto(url: photo, radius: 28, letter: name.isNotEmpty ? name[0] : '?'),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: online ? AppColors.green : Colors.grey,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
+                  ],
+                ),
+                title: Text(name, style: const TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: Row(
+                  children: [
+                    if (city.isNotEmpty) ...[
+                      const Icon(Icons.place, size: 14, color: AppColors.blue),
+                      const SizedBox(width: 2),
+                      Text(city),
+                      const SizedBox(width: 8),
+                    ],
+                    const Icon(Icons.star, size: 14, color: AppColors.gold),
+                    Text(rating.toStringAsFixed(1)),
+                  ],
+                ),
+                trailing: score > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(20)),
+                        child: Text('$score%', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green)),
+                      )
+                    : const Icon(Icons.chevron_right, color: AppColors.purple),
+                onTap: () => openProfile(person),
+              ),
             );
           }),
+      ],
+          ),
+        ),
       ],
     );
   }

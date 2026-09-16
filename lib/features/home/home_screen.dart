@@ -184,6 +184,11 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(place.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               Text(place.kind, style: const TextStyle(color: AppColors.blue, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
+              const Text(
+                'Suggestion only. Confirm opening hours and that the place is public and suitable before you meet.',
+                style: TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: 8),
               Text(place.details),
               const SizedBox(height: 8),
               Row(
@@ -329,7 +334,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                Text(Session.city.isEmpty ? 'Safe public places' : 'Safe public places in ${Session.city}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                Text(Session.city.isEmpty ? 'Suggested meeting places' : 'Suggested meeting places in ${Session.city}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                const Text(
+                  'These are suggestions only. Check the place yourself before you meet.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 196,

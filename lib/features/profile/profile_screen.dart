@@ -7,6 +7,7 @@ import '../../core/constants/skill_items.dart';
 import '../../core/constants/skills.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/city_picker.dart';
 import '../../core/widgets/skill_picker.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
@@ -180,11 +181,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final photo = photoOf(Session.photoUrl);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 48, 20, 40),
+    return Column(
       children: [
-        Text(S.t('profile'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 16),
+        AppHeader(title: S.t('profile'), subtitle: Session.name),
+        Expanded(
+          child: ListView(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 24),
+      children: [
         Center(
           child: Stack(
             children: [
@@ -221,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 12),
         TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'))),
         const SizedBox(height: 12),
-        TextField(controller: city, decoration: InputDecoration(labelText: S.t('city'))),
+        CityPicker(controller: city, label: S.t('city')),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: gender,
@@ -299,6 +302,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support'))),
         const SizedBox(height: 8),
         SizedBox(height: 52, child: OutlinedButton(onPressed: logout, child: Text(S.t('logOut')))),
+      ],
+          ),
+        ),
       ],
     );
   }
