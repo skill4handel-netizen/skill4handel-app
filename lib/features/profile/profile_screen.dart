@@ -28,6 +28,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
   late final name = TextEditingController(text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''));
   late final city = TextEditingController(text: Session.city);
+  late final bio = TextEditingController(text: Session.bio.isNotEmpty ? Session.bio : Session.needs);
   String gender = Session.gender.isNotEmpty ? Session.gender : 'prefer_not';
   late List<SkillItem> selectedSkills = parseSkills(Session.offers);
   bool saving = false;
@@ -112,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'name': name.text,
         'city': city.text,
         'offers': encoded,
-        'needs': '',
+        'needs': bio.text.trim(),
         'gender': gender,
         'age': Session.age,
         'language': Session.language,
@@ -120,7 +121,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = response.data is Map ? response.data['user'] : response.data;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
       Session.offers = encoded;
-      Session.needs = '';
+      Session.bio = bio.text.trim();
+      Session.needs = bio.text.trim();
       await Session.save();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.t('saved'))));
@@ -225,6 +227,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'))),
         const SizedBox(height: 12),
         CityPicker(controller: city, label: S.t('city')),
+        const SizedBox(height: 12),
+        TextField(
+          controller: bio,
+          maxLength: 180,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Bio', alignLabelWithHint: true),
+        ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           initialValue: gender,

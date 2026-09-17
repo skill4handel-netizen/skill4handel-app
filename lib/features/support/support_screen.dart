@@ -46,7 +46,9 @@ class _SupportScreenState extends State<SupportScreen> {
         'text': text.text.trim(),
       });
       text.clear();
+      type = widget.initialType ?? 'support';
       if (!mounted) return;
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Your ticket has been submitted.')));
     } catch (e) {
       if (!mounted) return;
@@ -186,7 +188,7 @@ class _SupportScreenState extends State<SupportScreen> {
           TextField(
             controller: text,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Details', alignLabelWithHint: true, prefixIcon: Icon(Icons.edit_note, size: 28)),
+            decoration: const InputDecoration(labelText: 'Details', alignLabelWithHint: true),
           ),
           const SizedBox(height: 16),
           SizedBox(

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/user_photo.dart';
 import '../profile/user_profile_screen.dart';
 import '../support/support_screen.dart';
 import 'complete_swap_screen.dart';
@@ -182,12 +183,7 @@ class _ChatScreenState extends State<ChatScreen> {
           onTap: openProfile,
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.amber,
-                backgroundImage: photo.isNotEmpty && !photo.startsWith('data:') ? NetworkImage(photo) : null,
-                child: photo.isEmpty ? Text(widget.name.isNotEmpty ? widget.name[0].toUpperCase() : '?') : null,
-              ),
+              UserPhoto(url: photo, radius: 18, letter: widget.name.isNotEmpty ? widget.name[0] : '?'),
               const SizedBox(width: 8),
               Flexible(child: Text(widget.name, overflow: TextOverflow.ellipsis)),
             ],

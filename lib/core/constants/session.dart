@@ -8,6 +8,7 @@ class Session {
   static String name = '';
   static String email = '';
   static String city = '';
+  static String bio = '';
   static String offers = '';
   static String needs = '';
   static String photoUrl = '';
@@ -26,6 +27,7 @@ class Session {
         'name': name,
         'email': email,
         'city': city,
+        'bio': bio,
         'offers': offers,
         'needs': needs,
         'photoUrl': photoUrl,
@@ -42,6 +44,8 @@ class Session {
     name = user['name']?.toString() ?? name;
     email = user['email']?.toString() ?? email;
     city = user['city']?.toString() ?? city;
+    final incomingBio = user['bio']?.toString() ?? user['needs']?.toString();
+    if (incomingBio != null && incomingBio.trim().isNotEmpty) bio = incomingBio;
     offers = user['offers']?.toString() ?? offers;
     needs = user['needs']?.toString() ?? needs;
     photoUrl = user['photoUrl']?.toString() ?? photoUrl;
@@ -53,16 +57,10 @@ class Session {
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
     if (user['reviews'] is List) {
-      reviews = (user['reviews'] as List)
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
+      reviews = (user['reviews'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
     }
     if (user['history'] is List) {
-      history = (user['history'] as List)
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
+      history = (user['history'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
     }
     save();
   }
@@ -84,6 +82,7 @@ class Session {
     name = '';
     email = '';
     city = '';
+    bio = '';
     offers = '';
     needs = '';
     photoUrl = '';

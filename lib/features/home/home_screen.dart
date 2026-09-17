@@ -144,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
           name: (chat?['name'] ?? item['name'] ?? 'Member').toString(),
           otherId: int.tryParse('${chat?['otherId'] ?? item['otherId'] ?? 0}') ?? 0,
           chatId: int.tryParse('${chat?['id'] ?? item['chatId'] ?? 0}'),
-          photoUrl: chat?['photoUrl']?.toString(),
+          photoUrl: (chat?['photoUrl'] ?? item['photoUrl'] ?? '').toString(),
         ),
       ),
     ).then((_) => refresh());
@@ -259,14 +259,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AspectRatio(
-                        aspectRatio: 4 / 3,
-                        child: image != null
-                            ? Image(image: image, fit: BoxFit.cover)
-                            : Container(
-                                color: AppColors.soft,
-                                child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 72, color: AppColors.blue))),
+                      Stack(
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: image != null
+                                ? Image(image: image, fit: BoxFit.cover)
+                                : Container(
+                                    color: AppColors.soft,
+                                    child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 72, color: AppColors.blue))),
+                                  ),
+                          ),
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Material(
+                              color: Colors.white,
+                              shape: const CircleBorder(),
+                              child: IconButton(
+                                onPressed: widget.onProfileTap,
+                                icon: const Icon(Icons.edit, color: AppColors.blue, size: 20),
                               ),
+                            ),
+                          ),
+                        ],
                       ),
                       Padding(
                         padding: const EdgeInsets.all(16),
@@ -275,12 +291,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text(Session.name.isEmpty ? 'Your profile' : Session.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
                             if (Session.city.isNotEmpty) Text(Session.city, style: const TextStyle(color: AppColors.muted)),
-                            if (featured != null) ...[
+                            const SizedBox(height: 10),
+                            Text(Session.bio.trim().isEmpty ? 'Add a short bio in Edit profile.' : Session.bio, style: const TextStyle(height: 1.35)),
+                            if (skills.isNotEmpty) ...[
                               const SizedBox(height: 12),
                               const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
-                              const SizedBox(height: 6),
-                              Text(featured.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                              if (featured.note.isNotEmpty) Text(featured.note),
+                              const SizedBox(height: 4),
+                              const Text('Tap a skill to read its description.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
                               const SizedBox(height: 8),
                               Wrap(
                                 children: [
@@ -297,8 +314,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ],
                               ),
                             ],
-                            const SizedBox(height: 8),
-                            OutlinedButton.icon(onPressed: widget.onProfileTap, icon: const Icon(Icons.edit), label: const Text('Edit profile')),
                           ],
                         ),
                       ),
