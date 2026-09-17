@@ -18,6 +18,7 @@ class Session {
   static num balance = 0;
   static String token = '';
   static String language = 'en';
+  static bool emailVerified = true;
   static List<Map<String, dynamic>> reviews = [];
   static List<Map<String, dynamic>> history = [];
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
@@ -37,6 +38,7 @@ class Session {
         'balance': balance,
         'token': token,
         'language': language,
+        'emailVerified': emailVerified,
       };
 
   static void apply(Map<String, dynamic> user) {
@@ -56,6 +58,7 @@ class Session {
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
+    if (user['emailVerified'] != null) emailVerified = user['emailVerified'] == true || user['emailVerified'] == 'true';
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
     }
@@ -92,6 +95,7 @@ class Session {
     balance = 0;
     token = '';
     language = 'en';
+    emailVerified = true;
     reviews = [];
     history = [];
     await _storage.delete(key: 'session');

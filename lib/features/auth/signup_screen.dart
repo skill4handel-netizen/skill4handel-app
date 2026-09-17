@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/city_picker.dart';
 import '../home/demo_screen.dart';
 import 'terms_screen.dart';
+import 'verify_email_screen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -92,9 +93,10 @@ class _SignupScreenState extends State<SignupScreen> {
       if (response.data['token'] != null) Session.token = response.data['token'].toString();
       await Session.save();
       if (!mounted) return;
+      final link = (response.data['verifyUrl'] ?? '').toString();
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => DemoScreen(userName: Session.name)),
+        MaterialPageRoute(builder: (context) => VerifyEmailScreen(verifyUrl: link)),
         (route) => false,
       );
     } catch (_) {

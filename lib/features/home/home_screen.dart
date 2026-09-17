@@ -253,6 +253,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
               children: [
+                if (!Session.emailVerified)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(16)),
+                    child: const Text('Please confirm your email.', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
                 Container(
                   decoration: AppTheme.card(),
                   clipBehavior: Clip.antiAlias,
