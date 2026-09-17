@@ -218,7 +218,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final image = userPhoto(photo);
     final name = Session.name.isEmpty ? 'there' : Session.name;
     final skills = parseSkills(Session.offers);
-    final featured = skills.isEmpty ? null : skills.first;
     final live = activityItems();
     final bottom = MediaQuery.of(context).padding.bottom + 24;
 

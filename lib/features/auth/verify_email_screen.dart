@@ -52,8 +52,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: S.t('verifyTitle'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(S.t('verifyTitle')),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
         children: [
@@ -69,7 +72,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           if (widget.verifyUrl.isNotEmpty)
             SizedBox(
               height: 52,
-              child: ElevatedButton(onPressed: openLink, style: AppTheme.solid(AppColors.blue), child: Text(S.t('verifyOpen'), style: const TextStyle(color: Colors.white))),
+              child: ElevatedButton(
+                onPressed: openLink,
+                style: AppTheme.solid(AppColors.blue),
+                child: Text(S.t('verifyOpen'), style: const TextStyle(color: Colors.white)),
+              ),
             ),
           const SizedBox(height: 10),
           OutlinedButton(onPressed: sending ? null : resend, child: Text(sending ? S.t('saving') : S.t('verifyResend'))),

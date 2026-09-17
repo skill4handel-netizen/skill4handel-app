@@ -4,7 +4,6 @@ import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/city_picker.dart';
-import '../home/demo_screen.dart';
 import 'terms_screen.dart';
 import 'verify_email_screen.dart';
 
