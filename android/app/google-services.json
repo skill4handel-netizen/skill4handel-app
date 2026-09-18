@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "763138708802",
+    "project_id": "login-demo-61a6b",
+    "storage_bucket": "login-demo-61a6b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763138708802:android:6a720ebed8d3475bbd24db",
+        "android_client_info": {
+          "package_name": "com.example.google_login_demo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763138708802-2g0n79liketv5ntb1k6infgt14286u8m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.google_login_demo",
+            "certificate_hash": "b6fcb4bc9a1c496b85a8308650e3d60c832a2c93"
+          }
+        },
+        {
+          "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASyzrehcaSJs__u7OTEQFQI9uOPJKsHCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "763138708802-ji5usi3q9mu43422918chrui1cv96e9g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.googleLoginDemo"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763138708802:android:4b29139c34b2e2a9bd24db",
+        "android_client_info": {
+          "package_name": "com.example.skill4handel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASyzrehcaSJs__u7OTEQFQI9uOPJKsHCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "763138708802-ji5usi3q9mu43422918chrui1cv96e9g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.googleLoginDemo"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763138708802:android:2af425d8c2cbe49bbd24db",
+        "android_client_info": {
+          "package_name": "com.skill4handel.skill4handel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASyzrehcaSJs__u7OTEQFQI9uOPJKsHCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "763138708802-ji5usi3q9mu43422918chrui1cv96e9g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.googleLoginDemo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
