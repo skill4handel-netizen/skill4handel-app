@@ -365,11 +365,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               onChanged: (value) => setState(() => selectedSkill = value ?? ''),
             ),
             if (otherSkills.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   S.t('noListedSkills'),
-                  style: TextStyle(color: AppColors.muted),
+                  style: const TextStyle(color: AppColors.muted),
                 ),
               ),
           ],
