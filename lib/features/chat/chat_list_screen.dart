@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import 'chat_screen.dart';
@@ -14,7 +15,9 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   List<Map<String, dynamic>> chats = [];
 
   @override
@@ -25,10 +28,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> loadChats() async {
     try {
-      final response = await dio.get('/chats', queryParameters: {'userId': Session.id});
+      final response = await dio.get(
+        '/chats',
+        queryParameters: {'userId': Session.id},
+      );
       if (!mounted) return;
       setState(() {
-        chats = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        chats = ((response.data as List?) ?? [])
+            .map((item) => Map<String, dynamic>.from(item as Map))
+            .toList();
       });
     } catch (_) {
       if (mounted) setState(() => chats = []);
@@ -58,20 +66,33 @@ class _ChatListScreenState extends State<ChatListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete this chat?'),
-        content: const Text('The conversation and its messages will be removed.'),
+        content: const Text(
+          'The conversation and its messages will be removed.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     try {
-      await dio.delete('/chats/${chat['id']}', queryParameters: {'userId': Session.id});
+      await dio.delete(
+        '/chats/${chat['id']}',
+        queryParameters: {'userId': Session.id},
+      );
       await loadChats();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The chat could not be deleted.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The chat could not be deleted.')),
+      );
     }
   }
 
@@ -79,12 +100,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat'),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        title: Text(S.t('chat')),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())).then((_) => loadChats());
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+              ).then((_) => loadChats());
             },
             icon: const Icon(Icons.history),
           ),
@@ -99,12 +125,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
               Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                  color: AppColors.mint,
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Row(
                   children: [
                     const Icon(Icons.mark_chat_unread, color: AppColors.green),
                     const SizedBox(width: 8),
-                    Text('$unreadCount unread', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.green)),
+                    Text(
+                      '$unreadCount ${S.t('messages')}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.green,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -112,11 +147,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: AppTheme.card(color: AppColors.soft),
-                child: const Column(
+                child: Column(
                   children: [
-                    Icon(Icons.forum_outlined, size: 48, color: AppColors.blue),
-                    SizedBox(height: 8),
-                    Text('No conversations yet.', style: TextStyle(color: AppColors.muted)),
+                    const Icon(
+                      Icons.forum_outlined,
+                      size: 48,
+                      color: AppColors.blue,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      S.t('noChats'),
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
                   ],
                 ),
               )
@@ -126,17 +168,46 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 final unread = chat['unread'] == true;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
-                  decoration: AppTheme.card(color: unread ? AppColors.mint : Colors.white),
+                  decoration: AppTheme.card(
+                    color: unread ? AppColors.mint : Colors.white,
+                  ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    leading: UserPhoto(url: chat['photoUrl']?.toString(), radius: 26, letter: name.isNotEmpty ? name[0] : '?'),
-                    title: Text(name, style: TextStyle(fontWeight: unread ? FontWeight.w800 : FontWeight.w700)),
-                    subtitle: Text(chat['last']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    leading: UserPhoto(
+                      url: chat['photoUrl']?.toString(),
+                      radius: 26,
+                      letter: name.isNotEmpty ? name[0] : '?',
+                    ),
+                    title: Text(
+                      name,
+                      style: TextStyle(
+                        fontWeight: unread ? FontWeight.w800 : FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      chat['last']?.toString() ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (unread) const Icon(Icons.circle, size: 10, color: AppColors.green),
-                        IconButton(onPressed: () => deleteChat(chat), icon: const Icon(Icons.delete_outline, color: AppColors.coral)),
+                        if (unread)
+                          const Icon(
+                            Icons.circle,
+                            size: 10,
+                            color: AppColors.green,
+                          ),
+                        IconButton(
+                          onPressed: () => deleteChat(chat),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: AppColors.coral,
+                          ),
+                        ),
                       ],
                     ),
                     onTap: () => openChat(chat),

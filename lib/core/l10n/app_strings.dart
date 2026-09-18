@@ -40,7 +40,8 @@ class S {
     'blocked': 'Blocked people',
     'terms': 'Terms and rules',
     'support': 'Support',
-    'photoError': 'The photograph could not be saved. Please try a smaller image.',
+    'photoError':
+        'The photograph could not be saved. Please try a smaller image.',
     'home': 'Home',
     'search': 'Search',
     'chat': 'Chat',
@@ -53,7 +54,8 @@ class S {
     'messages': 'Messages',
     'reviews': 'Reviews',
     'verifyTitle': 'Confirm your email',
-    'verifyBody': 'We sent a confirmation link to your email. Open it, then continue.',
+    'verifyBody':
+        'We sent a confirmation link to your email. Open it, then continue.',
     'verifyOpen': 'Open confirmation page',
     'verifyResend': 'Send the link again',
     'verifyLater': 'Continue and confirm later',
@@ -62,7 +64,8 @@ class S {
     'ticketSent': 'Your ticket has been submitted.',
     'suggestedPlaces': 'Suggested meeting places',
     'suggestedPlacesCity': 'Suggested meeting places in',
-    'placeWarning': 'These are suggestions only. Check the place yourself before you meet.',
+    'placeWarning':
+        'These are suggestions only. Check the place yourself before you meet.',
     'searchHint': 'Name, city or skill',
     'noUsers': 'No users found.',
     'newOffer': 'New offer',
@@ -87,7 +90,8 @@ class S {
     'dateOfBirth': 'Geboortedatum',
     'selectDate': 'Datum kiezen',
     'ageRule': '18 jaar of ouder',
-    'acceptTerms': 'Ik heb de voorwaarden en de gemeenschapsregels gelezen en geaccepteerd.',
+    'acceptTerms':
+        'Ik heb de voorwaarden en de gemeenschapsregels gelezen en geaccepteerd.',
     'readTerms': 'Voorwaarden lezen',
     'profile': 'Profiel',
     'city': 'Stad',
@@ -107,7 +111,8 @@ class S {
     'blocked': 'Geblokkeerde personen',
     'terms': 'Voorwaarden en regels',
     'support': 'Ondersteuning',
-    'photoError': 'De foto kon niet worden opgeslagen. Probeer een kleinere afbeelding.',
+    'photoError':
+        'De foto kon niet worden opgeslagen. Probeer een kleinere afbeelding.',
     'home': 'Home',
     'search': 'Zoeken',
     'chat': 'Chat',
@@ -120,7 +125,8 @@ class S {
     'messages': 'Berichten',
     'reviews': 'Beoordelingen',
     'verifyTitle': 'Bevestig je e-mail',
-    'verifyBody': 'We hebben een bevestigingslink naar je e-mail gestuurd. Open die en ga daarna verder.',
+    'verifyBody':
+        'We hebben een bevestigingslink naar je e-mail gestuurd. Open die en ga daarna verder.',
     'verifyOpen': 'Bevestigingspagina openen',
     'verifyResend': 'Link opnieuw versturen',
     'verifyLater': 'Nu doorgaan en later bevestigen',
@@ -129,12 +135,18 @@ class S {
     'ticketSent': 'Je ticket is verzonden.',
     'suggestedPlaces': 'Voorgestelde ontmoetingsplekken',
     'suggestedPlacesCity': 'Voorgestelde ontmoetingsplekken in',
-    'placeWarning': 'Dit zijn alleen suggesties. Controleer de plek zelf voordat je afspreekt.',
+    'placeWarning':
+        'Dit zijn alleen suggesties. Controleer de plek zelf voordat je afspreekt.',
     'searchHint': 'Naam, stad of vaardigheid',
     'noUsers': 'Geen leden gevonden.',
     'newOffer': 'Nieuw voorstel',
     'viewOffer': 'Voorstel bekijken',
     'writeMessage': 'Schrijf een bericht',
+    'emailConfirmed': 'E-mail bevestigd',
+    'noChats': 'Nog geen gesprekken.',
+    'tokens': 'S4H-tokens',
+    'noTransactions': 'Nog geen transacties.',
+    'age': 'Leeftijd',
   };
 
   static String t(String key) {

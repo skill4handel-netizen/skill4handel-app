@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../core/constants/session.dart';
+import '../core/l10n/app_strings.dart';
 import '../features/chat/chat_list_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/profile/profile_screen.dart';
@@ -18,7 +19,9 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   int index = 0;
   int unreadChats = 0;
 
@@ -30,8 +33,13 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> loadUnread() async {
     try {
-      final response = await dio.get('/chats', queryParameters: {'userId': Session.id});
-      final chats = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map));
+      final response = await dio.get(
+        '/chats',
+        queryParameters: {'userId': Session.id},
+      );
+      final chats = ((response.data as List?) ?? []).map(
+        (item) => Map<String, dynamic>.from(item as Map),
+      );
       final count = chats.where((chat) => chat['unread'] == true).length;
       if (mounted) setState(() => unreadChats = count);
     } catch (_) {}
@@ -69,19 +77,34 @@ class _MainShellState extends State<MainShell> {
         type: BottomNavigationBarType.fixed,
         onTap: goTo,
         items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.home_outlined),
+            label: S.t('home'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.search),
+            label: S.t('search'),
+          ),
           BottomNavigationBarItem(
             icon: Badge(
               isLabelVisible: unreadChats > 0,
               label: Text('$unreadChats'),
               child: const Icon(Icons.chat_bubble_outline),
             ),
-            label: 'Chat',
+            label: S.t('chat'),
           ),
-          const BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), label: 'Wallet'),
-          const BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-          const BottomNavigationBarItem(icon: Icon(Icons.support_agent), label: 'Support'),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.account_balance_wallet_outlined),
+            label: S.t('wallet'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person_outline),
+            label: S.t('profile'),
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.support_agent),
+            label: S.t('support'),
+          ),
         ],
       ),
     );

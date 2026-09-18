@@ -5,6 +5,7 @@ import '../../core/constants/places_service.dart';
 import '../../core/constants/safe_places.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
@@ -32,7 +33,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   List<Map<String, dynamic>> chats = [];
   List<Map<String, dynamic>> history = [];
   List<SafePlace> places = [];
@@ -52,21 +55,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> refresh() async {
     try {
-      final me = await dio.get('/auth/me', queryParameters: {'userId': Session.id});
+      final me = await dio.get(
+        '/auth/me',
+        queryParameters: {'userId': Session.id},
+      );
       final user = me.data is Map ? (me.data['user'] ?? me.data) : null;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
     } catch (_) {}
     try {
-      final response = await dio.get('/chats', queryParameters: {'userId': Session.id});
-      chats = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      final response = await dio.get(
+        '/chats',
+        queryParameters: {'userId': Session.id},
+      );
+      chats = ((response.data as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
       unread = chats.where((item) => item['unread'] == true).length;
     } catch (_) {
       chats = [];
       unread = 0;
     }
     try {
-      final response = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
-      history = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      final response = await dio.get(
+        '/chats/history',
+        queryParameters: {'userId': Session.id},
+      );
+      history = ((response.data as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
     } catch (_) {
       history = [];
     }
@@ -84,14 +100,32 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => AlertDialog(
         title: Text(skill.name),
         content: Text(skill.note.isEmpty ? 'No description yet.' : skill.note),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
 
   String today() {
     final now = DateTime.now();
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
     return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 
@@ -101,19 +135,26 @@ class _HomeScreenState extends State<HomeScreen> {
       final swap = chat['pendingSwap'];
       final status = swap is Map ? swap['status']?.toString() : '';
       if (chat['unread'] == true) {
-        items.add({'title': chat['name'] ?? 'Member', 'reason': 'New message', 'chat': chat});
+        items.add({
+          'title': chat['name'] ?? 'Member',
+          'reason': 'New message',
+          'chat': chat,
+        });
       }
       if (status == 'pending') {
         final mine = swap['proposedBy']?.toString() == Session.id.toString();
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason': mine ? 'Offer sent. Awaiting a response within 24 hours.' : 'An offer is awaiting your response.',
+          'reason': mine
+              ? 'Offer sent. Awaiting a response within 24 hours.'
+              : 'An offer is awaiting your response.',
           'chat': chat,
         });
       } else if (status == 'accepted') {
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason': 'Open session. Confirm completion after the scheduled time.',
+          'reason':
+              'Open session. Confirm completion after the scheduled time.',
           'chat': chat,
         });
       }
@@ -121,11 +162,16 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final item in history) {
       final status = item['status']?.toString();
       if (status == 'completed' && !reviewedByMe(item)) {
-        items.add({'title': item['otherName'] ?? 'Member', 'reason': 'Review pending after a completed exchange.', 'review': item});
+        items.add({
+          'title': item['otherName'] ?? 'Member',
+          'reason': 'Review pending after a completed exchange.',
+          'review': item,
+        });
       } else if (status == 'cancelled' || status == 'expired') {
         items.add({
           'title': item['otherName'] ?? 'Member',
-          'reason': 'The previous offer was closed. Both members may start a new request.',
+          'reason':
+              'The previous offer was closed. Both members may start a new request.',
           'chatId': item['chatId'],
           'otherId': item['otherId'],
           'name': item['otherName'],
@@ -142,7 +188,8 @@ class _HomeScreenState extends State<HomeScreen> {
       MaterialPageRoute(
         builder: (context) => ChatScreen(
           name: (chat?['name'] ?? item['name'] ?? 'Member').toString(),
-          otherId: int.tryParse('${chat?['otherId'] ?? item['otherId'] ?? 0}') ?? 0,
+          otherId:
+              int.tryParse('${chat?['otherId'] ?? item['otherId'] ?? 0}') ?? 0,
           chatId: int.tryParse('${chat?['id'] ?? item['chatId'] ?? 0}'),
           photoUrl: (chat?['photoUrl'] ?? item['photoUrl'] ?? '').toString(),
         ),
@@ -151,9 +198,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> openMaps(SafePlace place) async {
-    final query = place.lat != null ? '${place.lat},${place.lng}' : place.address;
+    final query = place.lat != null
+        ? '${place.lat},${place.lng}'
+        : place.address;
     await launchUrl(
-      Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}'),
+      Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
+      ),
       mode: LaunchMode.externalApplication,
     );
   }
@@ -165,7 +216,12 @@ class _HomeScreenState extends State<HomeScreen> {
       isScrollControlled: true,
       builder: (context) {
         return Padding(
-          padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).padding.bottom + 20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            0,
+            20,
+            MediaQuery.of(context).padding.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,12 +233,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 160,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stack) => Container(height: 120, color: AppColors.soft),
+                  errorBuilder: (context, error, stack) =>
+                      Container(height: 120, color: AppColors.soft),
                 ),
               ),
               const SizedBox(height: 12),
-              Text(place.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-              Text(place.kind, style: const TextStyle(color: AppColors.blue, fontWeight: FontWeight.w700)),
+              Text(
+                place.name,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              Text(
+                place.kind,
+                style: const TextStyle(
+                  color: AppColors.blue,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 8),
               const Text(
                 'Suggestion only. Confirm opening hours and that the place is public and suitable before you meet.',
@@ -195,7 +264,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const Icon(Icons.place, color: AppColors.coral),
                   const SizedBox(width: 6),
-                  Expanded(child: Text(place.address, style: const TextStyle(fontWeight: FontWeight.w700))),
+                  Expanded(
+                    child: Text(
+                      place.address,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -203,7 +277,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () => openMaps(place),
                 style: AppTheme.solid(AppColors.blue),
                 icon: const Icon(Icons.map, color: Colors.white),
-                label: const Text('Open in Google Maps', style: TextStyle(color: Colors.white)),
+                label: const Text(
+                  'Open in Google Maps',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -235,13 +312,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Welcome, $name', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
-                      Text(today(), style: const TextStyle(color: Colors.white70)),
+                      Text(
+                        'Welcome, $name',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Text(
+                        today(),
+                        style: const TextStyle(color: Colors.white70),
+                      ),
                     ],
                   ),
                 ),
-                IconButton(onPressed: refresh, icon: const Icon(Icons.refresh, color: Colors.white)),
-                IconButton(onPressed: widget.onSearchTap, icon: const Icon(Icons.search, color: Colors.white)),
+                IconButton(
+                  onPressed: refresh,
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                ),
+                IconButton(
+                  onPressed: widget.onSearchTap,
+                  icon: const Icon(Icons.search, color: Colors.white),
+                ),
               ],
             ),
           ),
@@ -252,14 +345,23 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
               children: [
-                if (!Session.emailVerified)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(16)),
-                    child: const Text('Please confirm your email.', style: TextStyle(fontWeight: FontWeight.w700)),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Session.emailVerified
+                        ? const Color(0xFFE8F8EE)
+                        : const Color(0xFFFFF4D6),
+                    borderRadius: BorderRadius.circular(16),
                   ),
+                  child: Text(
+                    Session.emailVerified
+                        ? S.t('emailConfirmed')
+                        : S.t('verifyBanner'),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
                 Container(
                   decoration: AppTheme.card(),
                   clipBehavior: Clip.antiAlias,
@@ -274,7 +376,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? Image(image: image, fit: BoxFit.cover)
                                 : Container(
                                     color: AppColors.soft,
-                                    child: Center(child: Text(name[0].toUpperCase(), style: const TextStyle(fontSize: 72, color: AppColors.blue))),
+                                    child: Center(
+                                      child: Text(
+                                        name[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 72,
+                                          color: AppColors.blue,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                           ),
                           Positioned(
@@ -285,7 +395,11 @@ class _HomeScreenState extends State<HomeScreen> {
                               shape: const CircleBorder(),
                               child: IconButton(
                                 onPressed: widget.onProfileTap,
-                                icon: const Icon(Icons.edit, color: AppColors.blue, size: 20),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: AppColors.blue,
+                                  size: 20,
+                                ),
                               ),
                             ),
                           ),
@@ -296,15 +410,48 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(Session.name.isEmpty ? 'Your profile' : Session.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-                            if (Session.city.isNotEmpty) Text(Session.city, style: const TextStyle(color: AppColors.muted)),
+                            Text(
+                              Session.name.isEmpty
+                                  ? S.t('profile')
+                                  : Session.name,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            if (Session.email.isNotEmpty)
+                              Text(
+                                Session.email,
+                                style: const TextStyle(color: AppColors.muted),
+                              ),
+                            if (Session.city.isNotEmpty)
+                              Text(
+                                Session.city,
+                                style: const TextStyle(color: AppColors.muted),
+                              ),
                             const SizedBox(height: 10),
-                            Text(Session.bio.trim().isEmpty ? 'Add a short bio in Edit profile.' : Session.bio, style: const TextStyle(height: 1.35)),
+                            Text(
+                              Session.bio.trim().isEmpty
+                                  ? S.t('bioHint')
+                                  : Session.bio,
+                              style: const TextStyle(height: 1.35),
+                            ),
                             if (skills.isNotEmpty) ...[
                               const SizedBox(height: 12),
-                              const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
+                              Text(
+                                S.t('skillsOffer'),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                               const SizedBox(height: 4),
-                              const Text('Tap a skill to read its description.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                              Text(
+                                S.t('tapSkill'),
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
                               const SizedBox(height: 8),
                               Wrap(
                                 children: [
@@ -312,10 +459,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                     GestureDetector(
                                       onTap: () => showSkill(skill),
                                       child: Container(
-                                        margin: const EdgeInsets.only(right: 8, bottom: 8),
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                        decoration: BoxDecoration(color: const Color(0xFFEEE8FF), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.purple)),
-                                        child: Text(skill.name, style: const TextStyle(color: Color(0xFF3D2BB3), fontWeight: FontWeight.w800)),
+                                        margin: const EdgeInsets.only(
+                                          right: 8,
+                                          bottom: 8,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFEEE8FF),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                          border: Border.all(
+                                            color: AppColors.purple,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          skill.name,
+                                          style: const TextStyle(
+                                            color: Color(0xFF3D2BB3),
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -330,33 +497,111 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: stat(Icons.chat_bubble_rounded, '$unread', 'Messages', widget.onChatTap ?? () {}, AppColors.soft, AppColors.blue)),
+                    Expanded(
+                      child: stat(
+                        Icons.chat_bubble_rounded,
+                        '$unread',
+                        S.t('messages'),
+                        widget.onChatTap ?? () {},
+                        AppColors.soft,
+                        AppColors.blue,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: stat(Icons.star_rounded, Session.rating.toStringAsFixed(1), 'Reviews', refresh, AppColors.cream, AppColors.gold)),
+                    Expanded(
+                      child: stat(
+                        Icons.star_rounded,
+                        Session.rating.toStringAsFixed(1),
+                        S.t('reviews'),
+                        refresh,
+                        AppColors.cream,
+                        AppColors.gold,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: stat(Icons.account_balance_wallet_rounded, '${Session.balance}', 'Wallet', widget.onWalletTap ?? () {}, AppColors.mint, AppColors.green)),
+                    Expanded(
+                      child: stat(
+                        Icons.account_balance_wallet_rounded,
+                        '${Session.balance}',
+                        S.t('wallet'),
+                        widget.onWalletTap ?? () {},
+                        AppColors.mint,
+                        AppColors.green,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: actionTile(Icons.search, 'Search', AppColors.blue, widget.onSearchTap ?? () {})),
+                    Expanded(
+                      child: actionTile(
+                        Icons.search,
+                        S.t('search'),
+                        AppColors.blue,
+                        widget.onSearchTap ?? () {},
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: actionTile(Icons.favorite, 'Favorites', AppColors.coral, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const FavoritesScreen()));
-                    })),
+                    Expanded(
+                      child: actionTile(
+                        Icons.favorite,
+                        S.t('favorites'),
+                        AppColors.coral,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FavoritesScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: actionTile(Icons.history, 'History', AppColors.purple, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())).then((_) => refresh());
-                    })),
+                    Expanded(
+                      child: actionTile(
+                        Icons.history,
+                        S.t('history'),
+                        AppColors.purple,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HistoryScreen(),
+                            ),
+                          ).then((_) => refresh());
+                        },
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Expanded(child: actionTile(Icons.support_agent, 'Support', AppColors.green, () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
-                    })),
+                    Expanded(
+                      child: actionTile(
+                        Icons.support_agent,
+                        'Support',
+                        AppColors.green,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SupportScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 20),
-                Text(Session.city.isEmpty ? 'Suggested meeting places' : 'Suggested meeting places in ${Session.city}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                Text(
+                  Session.city.isEmpty
+                      ? 'Suggested meeting places'
+                      : 'Suggested meeting places in ${Session.city}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 const Text(
                   'These are suggestions only. Check the place yourself before you meet.',
@@ -379,22 +624,48 @@ class _HomeScreenState extends State<HomeScreen> {
                                   decoration: AppTheme.card(),
                                   clipBehavior: Clip.antiAlias,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Image.network(
                                         place.photoUrl,
                                         height: 110,
                                         width: 220,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stack) => Container(height: 110, color: AppColors.soft, child: const Icon(Icons.location_city, color: AppColors.blue, size: 40)),
+                                        errorBuilder: (context, error, stack) =>
+                                            Container(
+                                              height: 110,
+                                              color: AppColors.soft,
+                                              child: const Icon(
+                                                Icons.location_city,
+                                                color: AppColors.blue,
+                                                size: 40,
+                                              ),
+                                            ),
                                       ),
                                       Padding(
                                         padding: const EdgeInsets.all(10),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(place.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
-                                            Text(place.summary, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                            Text(
+                                              place.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            Text(
+                                              place.summary,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: AppColors.muted,
+                                                fontSize: 12,
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -406,10 +677,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                 ),
                 const SizedBox(height: 20),
-                const Text('Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const Text(
+                  'Activity',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 8),
                 if (live.isEmpty)
-                  const Text('No current activity.', style: TextStyle(color: AppColors.muted))
+                  const Text(
+                    'No current activity.',
+                    style: TextStyle(color: AppColors.muted),
+                  )
                 else
                   ...live.map((item) {
                     return Card(
@@ -424,9 +701,17 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => ReviewScreen(
-                                  otherId: int.tryParse('${review['otherId'] ?? 0}') ?? 0,
-                                  otherName: review['otherName']?.toString() ?? 'Member',
-                                  skill: review['skillRequested']?.toString() ?? '',
+                                  otherId:
+                                      int.tryParse(
+                                        '${review['otherId'] ?? 0}',
+                                      ) ??
+                                      0,
+                                  otherName:
+                                      review['otherName']?.toString() ??
+                                      'Member',
+                                  skill:
+                                      review['skillRequested']?.toString() ??
+                                      '',
                                 ),
                               ),
                             );
@@ -446,35 +731,67 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget actionTile(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget actionTile(
+    IconData icon,
+    String label,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           children: [
             Icon(icon, color: color),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontWeight: FontWeight.w800, color: color, fontSize: 11)),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: color,
+                fontSize: 11,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget stat(IconData icon, String value, String label, VoidCallback onTap, Color bg, Color accent) {
+  Widget stat(
+    IconData icon,
+    String value,
+    String label,
+    VoidCallback onTap,
+    Color bg,
+    Color accent,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Column(
           children: [
             Icon(icon, color: accent),
             const SizedBox(height: 6),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+            ),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
           ],
         ),
       ),
