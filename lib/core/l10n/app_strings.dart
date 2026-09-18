@@ -181,6 +181,44 @@ class S {
     'faq9q': 'How may arbitration be requested?',
     'faq9a':
         'Select Arbitration, describe the matter, and submit the ticket. Correspondence may also be sent to info@skill4handel.com.',
+
+    'login': 'Log in',
+    'chats': 'Chats',
+    'pleaseWait': 'Please wait…',
+    'fillEmailPassword': 'Enter your email address and password.',
+    'wrongEmailPassword': 'The email address or password is incorrect.',
+    'verifyYourEmail': 'Verify your email',
+    'verifyBeforeLogin':
+        'Please verify your email before signing in. Open the message we sent you, or request a new one.',
+    'verifyingEmail': 'Confirming your email…',
+    'emailVerifiedLogin': 'Email confirmed. Please sign in.',
+    'verifyFailed': 'This confirmation link is invalid or has expired.',
+    'verifyMailSent': 'A confirmation message has been sent.',
+    'verifyMailFailed': 'The confirmation message could not be sent.',
+    'resendVerification': 'Send confirmation again',
+    'completeProfile': 'Complete your profile',
+    'completeProfileHint':
+        'Add a photograph and at least one skill before you start an exchange.',
+    'profileLockedCity': 'City of residence',
+    'cityLockedHint':
+        'City of residence is set at registration and cannot be changed here.',
+    'deleteChat': 'Delete conversation',
+    'deleteChatConfirm': 'This conversation will be removed from your list.',
+    'changePassword': 'Change password',
+    'currentPassword': 'Current password',
+    'newPassword': 'New password',
+    'passwordUpdated': 'Password updated.',
+    'passwordChangeFailed': 'The password could not be changed.',
+    'takePhoto': 'Take a photograph',
+    'chooseGallery': 'Choose from gallery',
+    'addSkill': 'Add a skill',
+    'limitReached': 'Limit reached',
+    'skillLimit': 'You may select up to 10 skills.',
+    'skillNoteHint': 'Short description, up to 100 characters',
+    'skip': 'Skip',
+    'close': 'Close',
+    'noDescription': 'No description yet.',
+    'setAtRegistration': 'Set at registration',
   };
 
   static const _nl = {
@@ -363,6 +401,44 @@ class S {
     'faq9q': 'Hoe kan arbitrage worden aangevraagd?',
     'faq9a':
         'Kies Arbitrage, beschrijf de zaak en verstuur het ticket. Je kunt ook schrijven naar info@skill4handel.com.',
+
+    'login': 'Inloggen',
+    'chats': 'Chats',
+    'pleaseWait': 'Even geduld…',
+    'fillEmailPassword': 'Vul je e-mailadres en wachtwoord in.',
+    'wrongEmailPassword': 'E-mailadres of wachtwoord is onjuist.',
+    'verifyYourEmail': 'Bevestig je e-mailadres',
+    'verifyBeforeLogin':
+        'Bevestig eerst je e-mailadres voordat je inlogt. Open het bericht of vraag een nieuwe bevestiging aan.',
+    'verifyingEmail': 'E-mailadres wordt bevestigd…',
+    'emailVerifiedLogin': 'E-mailadres bevestigd. Log opnieuw in.',
+    'verifyFailed': 'Deze bevestigingslink is ongeldig of verlopen.',
+    'verifyMailSent': 'Er is een bevestigingsbericht verstuurd.',
+    'verifyMailFailed': 'Het bevestigingsbericht kon niet worden verstuurd.',
+    'resendVerification': 'Bevestiging opnieuw versturen',
+    'completeProfile': 'Rond je profiel af',
+    'completeProfileHint':
+        'Voeg een foto en minstens één vaardigheid toe voordat je een uitwisseling start.',
+    'profileLockedCity': 'Woonplaats',
+    'cityLockedHint':
+        'De woonplaats wordt bij registratie vastgelegd en kan hier niet worden gewijzigd.',
+    'deleteChat': 'Gesprek verwijderen',
+    'deleteChatConfirm': 'Dit gesprek verdwijnt uit jouw overzicht.',
+    'changePassword': 'Wachtwoord wijzigen',
+    'currentPassword': 'Huidig wachtwoord',
+    'newPassword': 'Nieuw wachtwoord',
+    'passwordUpdated': 'Wachtwoord bijgewerkt.',
+    'passwordChangeFailed': 'Het wachtwoord kon niet worden gewijzigd.',
+    'takePhoto': 'Een foto maken',
+    'chooseGallery': 'Kiezen uit galerij',
+    'addSkill': 'Vaardigheid toevoegen',
+    'limitReached': 'Limiet bereikt',
+    'skillLimit': 'Je mag maximaal 10 vaardigheden kiezen.',
+    'skillNoteHint': 'Korte toelichting, maximaal 100 tekens',
+    'skip': 'Overslaan',
+    'close': 'Sluiten',
+    'noDescription': 'Nog geen toelichting.',
+    'setAtRegistration': 'Vastgelegd bij registratie',
   };
 
   static String t(String key) {

@@ -352,7 +352,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
-              CityPicker(controller: city, label: S.t('city')),
+              InputDecorator(
+                decoration: InputDecoration(labelText: S.t('city')),
+                child: Text(
+                  Session.city.isEmpty ? '-' : Session.city,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'City of residence is set at registration and cannot be changed here.',
+                style: TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
               const SizedBox(height: 12),
               TextField(
                 controller: bio,

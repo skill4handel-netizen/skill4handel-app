@@ -1,153 +1,199 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../app/main_shell.dart';
+import '../../core/constants/push_service.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.verifyToken});
+
+  final String? verifyToken;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   final email = TextEditingController();
   final password = TextEditingController();
   bool showPass = false;
   bool loading = false;
+  bool waitingVerify = false;
+  String notice = '';
 
-  Future<void> login() async {
-    if (email.text.trim().isEmpty || password.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Fill email and password')));
-      return;
+  @override
+  void initState() {
+    super.initState();
+    if ((widget.verifyToken ?? '').isNotEmpty) {
+      confirmToken(widget.verifyToken!);
     }
-    setState(() => loading = true);
+  }
+
+  Future<void> confirmToken(String token) async {
+    setState(() {
+      loading = true;
+      notice = S.t('verifyingEmail');
+    });
     try {
-      final response = await dio.post('/auth/login', data: {
-        'email': email.text.trim(),
-        'password': password.text,
-      });
-      Session.apply(Map<String, dynamic>.from(response.data['user'] as Map));
-      if (response.data['token'] != null) Session.token = response.data['token'].toString();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => MainShell(userName: Session.name)),
-        (route) => false,
-      );
+      final response = await dio.post('/auth/verify', data: {'token': token});
+      final data = response.data is Map
+          ? Map<String, dynamic>.from(response.data as Map)
+          : <String, dynamic>{};
+      if (data['user'] is Map) {
+        Session.apply(Map<String, dynamic>.from(data['user'] as Map));
+        if (data['token'] != null) Session.token = data['token'].toString();
+        await Session.save();
+        await PushService.registerToken();
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainShell(userName: Session.name),
+          ),
+          (route) => false,
+        );
+        return;
+      }
+      setState(() => notice = S.t('emailVerifiedLogin'));
     } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email or password is wrong')));
+      setState(() => notice = S.t('verifyFailed'));
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> forgotPassword() async {
-    final newPass = TextEditingController();
-    final confirm = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Email: ${email.text.trim().isEmpty ? 'enter it on the login form first' : email.text.trim()}'),
-            const SizedBox(height: 12),
-            TextField(controller: newPass, obscureText: true, decoration: const InputDecoration(labelText: 'New password')),
-            const SizedBox(height: 8),
-            TextField(controller: confirm, obscureText: true, decoration: const InputDecoration(labelText: 'Confirm new password')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Reset')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    if (email.text.trim().isEmpty || newPass.text.isEmpty || newPass.text != confirm.text) {
+  Future<void> login() async {
+    if (email.text.trim().isEmpty || password.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('fillEmailPassword'))));
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      final response = await dio.post(
+        '/auth/login',
+        data: {'email': email.text.trim(), 'password': password.text},
+      );
+      final user = Map<String, dynamic>.from(response.data['user'] as Map);
+      final verified =
+          user['emailVerified'] == true || user['emailVerified'] == 'true';
+      if (!verified) {
+        setState(() {
+          waitingVerify = true;
+          notice = S.t('verifyBeforeLogin');
+        });
+        return;
+      }
+      Session.apply(user);
+      if (response.data['token'] != null)
+        Session.token = response.data['token'].toString();
+      await Session.save();
+      await PushService.registerToken();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email and matching new password are required')));
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainShell(userName: Session.name),
+        ),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('wrongEmailPassword'))));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> resend() async {
+    if (email.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('fillEmailPassword'))));
       return;
     }
     try {
-      await dio.post('/auth/forgot-password', data: {'email': email.text.trim(), 'password': newPass.text});
+      await dio.post('/auth/resend-verify', data: {'email': email.text.trim()});
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated. Log in with the new password.')));
+      setState(() => notice = S.t('verifyMailSent'));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not reset password')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('verifyMailFailed'))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.of(context).padding.bottom + 24;
     return AppScaffold(
-      title: 'Log in',
+      title: S.t('login'),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(24, 16, 24, bottom),
+        padding: const EdgeInsets.all(20),
         children: [
-          Center(
-            child: Image.asset(
-              'assets/logo.jpg',
-              height: 150,
-              errorBuilder: (context, error, stack) => Image.asset(
-                'assets/logo.jpeg',
-                height: 150,
-                errorBuilder: (context, error2, stack2) => const Icon(Icons.handshake, size: 96, color: AppColors.blue),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Icon(Icons.lock_open_rounded, size: 40, color: AppColors.green),
-          const SizedBox(height: 20),
           TextField(
             controller: email,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email, size: 28)),
+            decoration: InputDecoration(labelText: S.t('email')),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: password,
             obscureText: !showPass,
             decoration: InputDecoration(
-              labelText: 'Password',
-              prefixIcon: const Icon(Icons.key, size: 28),
+              labelText: S.t('password'),
               suffixIcon: IconButton(
                 onPressed: () => setState(() => showPass = !showPass),
-                icon: Icon(showPass ? Icons.visibility_off : Icons.visibility, size: 28),
+                icon: Icon(showPass ? Icons.visibility_off : Icons.visibility),
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(onPressed: forgotPassword, icon: const Icon(Icons.help_outline), label: const Text('Forgot password')),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 56,
-            child: ElevatedButton.icon(
+          if (notice.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(notice),
+            ),
+          ],
+          const SizedBox(height: 20),
+          if (!waitingVerify)
+            FilledButton(
               onPressed: loading ? null : login,
-              style: AppTheme.solid(AppColors.green),
-              icon: const Icon(Icons.login, color: Colors.white, size: 28),
-              label: Text(loading ? 'Signing in...' : 'Log in', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
+              child: Text(loading ? S.t('pleaseWait') : S.t('login')),
             ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 56,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen())),
-              icon: const Icon(Icons.person_add_alt_1, size: 28),
-              label: const Text('Create account'),
+          if (waitingVerify)
+            FilledButton(
+              onPressed: resend,
+              child: Text(S.t('verifyYourEmail')),
             ),
+          const SizedBox(height: 8),
+          if (waitingVerify)
+            TextButton(
+              onPressed: resend,
+              child: Text(S.t('resendVerification')),
+            ),
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SignupScreen()),
+              );
+            },
+            child: Text(S.t('createAccount')),
           ),
         ],
       ),

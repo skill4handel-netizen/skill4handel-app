@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_page.dart';
 import '../../core/widgets/user_photo.dart';
 import 'chat_screen.dart';
-import 'history_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -19,64 +19,84 @@ class _ChatListScreenState extends State<ChatListScreen> {
     BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
   );
   List<Map<String, dynamic>> chats = [];
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    loadChats();
+    load();
   }
 
-  Future<void> loadChats() async {
+  String when(dynamic raw) {
+    final parsed = DateTime.tryParse('$raw');
+    if (parsed == null) return '';
+    final local = parsed.toLocal();
+    final now = DateTime.now();
+    final sameDay =
+        local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    if (sameDay) return '$hh:$mm';
+    return '${local.day.toString().padLeft(2, '0')}-${local.month.toString().padLeft(2, '0')} $hh:$mm';
+  }
+
+  Future<void> load() async {
     try {
       final response = await dio.get(
         '/chats',
         queryParameters: {'userId': Session.id},
       );
-      if (!mounted) return;
-      setState(() {
-        chats = ((response.data as List?) ?? [])
-            .map((item) => Map<String, dynamic>.from(item as Map))
-            .toList();
+      final items = ((response.data as List?) ?? [])
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+      items.sort((a, b) {
+        final aTime =
+            DateTime.tryParse('${a['lastAt'] ?? ''}') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime =
+            DateTime.tryParse('${b['lastAt'] ?? ''}') ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
       });
+      if (mounted) setState(() => chats = items);
     } catch (_) {
-      if (mounted) setState(() => chats = []);
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
   }
 
-  int get unreadCount => chats.where((item) => item['unread'] == true).length;
-
   Future<void> openChat(Map<String, dynamic> chat) async {
-    setState(() => chat['unread'] = false);
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          name: chat['name']?.toString() ?? 'Member',
+        builder: (_) => ChatScreen(
+          name: chat['name']?.toString() ?? '',
           otherId: int.tryParse('${chat['otherId'] ?? 0}') ?? 0,
-          chatId: int.tryParse('${chat['id'] ?? 0}'),
+          chatId: int.tryParse('${chat['id']}') ?? 0,
           photoUrl: chat['photoUrl']?.toString(),
         ),
       ),
     );
-    await loadChats();
+    load();
   }
 
   Future<void> deleteChat(Map<String, dynamic> chat) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this chat?'),
-        content: const Text(
-          'The conversation and its messages will be removed.',
-        ),
+        title: Text(S.t('deleteChat')),
+        content: Text(S.t('deleteChatConfirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.t('cancel')),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(S.t('delete')),
           ),
         ],
       ),
@@ -87,66 +107,23 @@ class _ChatListScreenState extends State<ChatListScreen> {
         '/chats/${chat['id']}',
         queryParameters: {'userId': Session.id},
       );
-      await loadChats();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The chat could not be deleted.')),
-      );
-    }
+      load();
+    } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(S.t('chat')),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
-              ).then((_) => loadChats());
-            },
-            icon: const Icon(Icons.history),
-          ),
-        ],
-      ),
+    return AppScaffold(
+      title: S.t('chats'),
       body: RefreshIndicator(
-        onRefresh: loadChats,
+        onRefresh: load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+          padding: const EdgeInsets.all(16),
           children: [
-            if (unreadCount > 0)
-              Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.mint,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.mark_chat_unread, color: AppColors.green),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$unreadCount ${S.t('messages')}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.green,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (chats.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: AppTheme.card(color: AppColors.soft),
+            if (loading) const LinearProgressIndicator(),
+            if (!loading && chats.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 80),
                 child: Column(
                   children: [
                     const Icon(
@@ -164,7 +141,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               )
             else
               ...chats.map((chat) {
-                final name = chat['name']?.toString() ?? 'Member';
+                final name = chat['name']?.toString() ?? S.t('member');
                 final unread = chat['unread'] == true;
                 return Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -188,7 +165,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      chat['last']?.toString() ?? '',
+                      '${when(chat['lastAt'])}  ${chat['last'] ?? ''}'.trim(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

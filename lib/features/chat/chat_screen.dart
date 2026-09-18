@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../profile/user_profile_screen.dart';
@@ -29,7 +30,9 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   int? chatId;
   Map<String, dynamic>? pendingSwap;
   List<Map<String, dynamic>> messages = [];
@@ -45,32 +48,40 @@ class _ChatScreenState extends State<ChatScreen> {
   String apiError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      if (data is Map && data['message'] != null) return data['message'].toString();
+      if (data is Map && data['message'] != null)
+        return data['message'].toString();
     }
     return 'The request could not be completed.';
   }
 
   void applyChat(dynamic data) {
     chatId = int.tryParse(data['id'].toString()) ?? chatId;
-    pendingSwap = data['pendingSwap'] is Map ? Map<String, dynamic>.from(data['pendingSwap'] as Map) : null;
+    pendingSwap = data['pendingSwap'] is Map
+        ? Map<String, dynamic>.from(data['pendingSwap'] as Map)
+        : null;
     messages = ((data['messages'] as List?) ?? [])
         .map((item) => Map<String, dynamic>.from(item as Map))
-        .where((item) => (item['type']?.toString() ?? 'text') == 'text')
         .toList();
   }
 
   Future<void> openChat() async {
     try {
       if (chatId == null) {
-        final response = await dio.post('/chats/open', data: {
-          'myId': Session.id,
-          'myName': Session.name,
-          'otherId': widget.otherId,
-          'otherName': widget.name,
-        });
+        final response = await dio.post(
+          '/chats/open',
+          data: {
+            'myId': Session.id,
+            'myName': Session.name,
+            'otherId': widget.otherId,
+            'otherName': widget.name,
+          },
+        );
         applyChat(response.data);
       } else {
-        final response = await dio.get('/chats/$chatId', queryParameters: {'userId': Session.id});
+        final response = await dio.get(
+          '/chats/$chatId',
+          queryParameters: {'userId': Session.id},
+        );
         applyChat(response.data);
       }
     } catch (_) {
@@ -100,7 +111,8 @@ class _ChatScreenState extends State<ChatScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SupportScreen(initialType: 'report', initialOtherName: widget.name),
+        builder: (context) =>
+            SupportScreen(initialType: 'report', initialOtherName: widget.name),
       ),
     );
   }
@@ -110,26 +122,56 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Block this member?'),
-        content: const Text('This member will no longer appear in Search, Matches or Chat.'),
+        content: const Text(
+          'This member will no longer appear in Search, Matches or Chat.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Block'),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     try {
-      await dio.post('/auth/block', data: {'userId': Session.id, 'otherId': widget.otherId});
+      await dio.post(
+        '/auth/block',
+        data: {'userId': Session.id, 'otherId': widget.otherId},
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This member has been blocked.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This member has been blocked.')),
+      );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(apiError(e))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(apiError(e))));
     }
   }
 
+  String when(dynamic raw) {
+    final parsed = DateTime.tryParse('$raw');
+    if (parsed == null) return '';
+    final local = parsed.toLocal();
+    final hh = local.hour.toString().padLeft(2, '0');
+    final mm = local.minute.toString().padLeft(2, '0');
+    return '${local.day.toString().padLeft(2, '0')}-${local.month.toString().padLeft(2, '0')} $hh:$mm';
+  }
+
   Future<void> openOffer() async {
+    if (!Session.profileComplete) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('completeProfileHint'))));
+      return;
+    }
     if (chatId == null) return;
     if (pendingSwap == null) {
       final created = await Navigator.push(
@@ -165,10 +207,16 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty || chatId == null) return;
     controller.clear();
     try {
-      final response = await dio.post('/chats/$chatId/messages', data: {'fromId': Session.id, 'text': text});
+      final response = await dio.post(
+        '/chats/$chatId/messages',
+        data: {'fromId': Session.id, 'text': text},
+      );
       setState(() => applyChat(response.data));
     } catch (_) {
-      setState(() => messages.add({'type': 'text', 'fromId': Session.id, 'text': text}));
+      setState(
+        () =>
+            messages.add({'type': 'text', 'fromId': Session.id, 'text': text}),
+      );
     }
   }
 
@@ -183,23 +231,40 @@ class _ChatScreenState extends State<ChatScreen> {
           onTap: openProfile,
           child: Row(
             children: [
-              UserPhoto(url: photo, radius: 18, letter: widget.name.isNotEmpty ? widget.name[0] : '?'),
+              UserPhoto(
+                url: photo,
+                radius: 18,
+                letter: widget.name.isNotEmpty ? widget.name[0] : '?',
+              ),
               const SizedBox(width: 8),
-              Flexible(child: Text(widget.name, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                child: Text(widget.name, overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
         ),
         actions: [
-          IconButton(onPressed: blockUser, icon: const Icon(Icons.block, size: 26)),
-          IconButton(onPressed: reportUser, icon: const Icon(Icons.flag_outlined, size: 26)),
+          IconButton(
+            onPressed: blockUser,
+            icon: const Icon(Icons.block, size: 26),
+          ),
+          IconButton(
+            onPressed: reportUser,
+            icon: const Icon(Icons.flag_outlined, size: 26),
+          ),
           IconButton(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+              );
             },
             icon: const Icon(Icons.history, size: 26),
           ),
         ],
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
@@ -209,13 +274,21 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Row(
                     children: [
-                      Expanded(child: OutlinedButton(onPressed: openProfile, child: const Text('Profile'))),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: openProfile,
+                          child: const Text('Profile'),
+                        ),
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: openOffer,
                           style: AppTheme.solid(AppColors.green),
-                          child: Text(pendingSwap == null ? 'New offer' : 'View offer', style: const TextStyle(color: Colors.white)),
+                          child: Text(
+                            pendingSwap == null ? 'New offer' : 'View offer',
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -229,34 +302,93 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
                             final message = messages[index];
-                            final fromId = int.tryParse('${message['fromId'] ?? 0}') ?? 0;
-                            final isSystem = fromId == 0;
+                            final fromId =
+                                int.tryParse('${message['fromId'] ?? 0}') ?? 0;
+                            final isSystem =
+                                fromId == 0 ||
+                                (message['type']?.toString() ?? '') == 'system';
                             final isMe = fromId == Session.id;
                             if (isSystem) {
                               return Container(
                                 width: double.infinity,
                                 margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: const Color(0xFFEEF2F6), borderRadius: BorderRadius.circular(12)),
-                                child: Text(
-                                  message['text']?.toString() ?? '',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8EDF2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFFB7C0C8),
+                                  ),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      message['text']?.toString() ?? '',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Color(0xFF334155),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    if (when(message['createdAt']).isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          when(message['createdAt']),
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: AppColors.muted,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               );
                             }
                             return Align(
-                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                              alignment: isMe
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isMe ? AppColors.blue : const Color(0xFFFFF4D6),
+                                  color: isMe
+                                      ? AppColors.blue
+                                      : const Color(0xFFFFF4D6),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
-                                child: Text(
-                                  message['text']?.toString() ?? '',
-                                  style: TextStyle(color: isMe ? Colors.white : Colors.black),
+                                child: Column(
+                                  crossAxisAlignment: isMe
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      message['text']?.toString() ?? '',
+                                      style: TextStyle(
+                                        color: isMe
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                    if (when(message['createdAt']).isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 4),
+                                        child: Text(
+                                          when(message['createdAt']),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: isMe
+                                                ? Colors.white70
+                                                : AppColors.muted,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
                             );
@@ -274,14 +406,19 @@ class _ChatScreenState extends State<ChatScreen> {
                             hintText: 'Write a message',
                             filled: true,
                             fillColor: const Color(0xFFEAF4FF),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton.filled(
                         onPressed: send,
-                        style: IconButton.styleFrom(backgroundColor: AppColors.blue),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                        ),
                         icon: const Icon(Icons.send, color: Colors.white),
                       ),
                     ],

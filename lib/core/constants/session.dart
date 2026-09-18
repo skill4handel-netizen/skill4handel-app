@@ -24,22 +24,22 @@ class Session {
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
   static Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'city': city,
-        'bio': bio,
-        'offers': offers,
-        'needs': needs,
-        'photoUrl': photoUrl,
-        'gender': gender,
-        'age': age,
-        'rating': rating,
-        'balance': balance,
-        'token': token,
-        'language': language,
-        'emailVerified': emailVerified,
-      };
+    'id': id,
+    'name': name,
+    'email': email,
+    'city': city,
+    'bio': bio,
+    'offers': offers,
+    'needs': needs,
+    'photoUrl': photoUrl,
+    'gender': gender,
+    'age': age,
+    'rating': rating,
+    'balance': balance,
+    'token': token,
+    'language': language,
+    'emailVerified': emailVerified,
+  };
 
   static void apply(Map<String, dynamic> user) {
     id = int.tryParse('${user['id'] ?? id}') ?? id;
@@ -58,12 +58,20 @@ class Session {
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
-    if (user['emailVerified'] != null) emailVerified = user['emailVerified'] == true || user['emailVerified'] == 'true';
+    if (user['emailVerified'] != null)
+      emailVerified =
+          user['emailVerified'] == true || user['emailVerified'] == 'true';
     if (user['reviews'] is List) {
-      reviews = (user['reviews'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+      reviews = (user['reviews'] as List)
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
     }
     if (user['history'] is List) {
-      history = (user['history'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+      history = (user['history'] as List)
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
     }
     save();
   }
@@ -100,4 +108,10 @@ class Session {
     history = [];
     await _storage.delete(key: 'session');
   }
+
+  static bool get profileComplete =>
+      name.trim().isNotEmpty &&
+      city.trim().isNotEmpty &&
+      photoUrl.trim().isNotEmpty &&
+      offers.trim().isNotEmpty;
 }
