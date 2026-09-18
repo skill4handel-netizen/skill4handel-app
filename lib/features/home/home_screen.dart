@@ -247,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                place.kind,
+                S.maybe(place.kind),
                 style: const TextStyle(
                   color: AppColors.blue,
                   fontWeight: FontWeight.w700,
@@ -689,8 +689,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ...live.map((item) {
                     return Card(
                       child: ListTile(
-                        title: Text(item['title']?.toString() ?? 'Member'),
-                        subtitle: Text(item['reason']?.toString() ?? ''),
+                        title: Text(item['title']?.toString() ?? S.t('member')),
+                        subtitle: Text(
+                          S.maybe(item['reason']?.toString() ?? ''),
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () async {
                           if (item['review'] is Map) {

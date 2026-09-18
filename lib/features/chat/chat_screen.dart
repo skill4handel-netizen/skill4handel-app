@@ -304,9 +304,12 @@ class _ChatScreenState extends State<ChatScreen> {
                             final message = messages[index];
                             final fromId =
                                 int.tryParse('${message['fromId'] ?? 0}') ?? 0;
+                            final rawText = S.maybe(rawText);
                             final isSystem =
                                 fromId == 0 ||
-                                (message['type']?.toString() ?? '') == 'system';
+                                (message['type']?.toString() ?? '') ==
+                                    'system' ||
+                                S.isSystem(rawText);
                             final isMe = fromId == Session.id;
                             if (isSystem) {
                               return Container(
@@ -314,16 +317,16 @@ class _ChatScreenState extends State<ChatScreen> {
                                 margin: const EdgeInsets.only(bottom: 10),
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8EDF2),
+                                  color: const Color(0xFFD1FAE5),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: const Color(0xFFB7C0C8),
+                                    color: const Color(0xFF6EE7B7),
                                   ),
                                 ),
                                 child: Column(
                                   children: [
                                     Text(
-                                      message['text']?.toString() ?? '',
+                                      S.maybe(rawText),
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
                                         color: Color(0xFF334155),
@@ -368,7 +371,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       : CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      message['text']?.toString() ?? '',
+                                      S.maybe(rawText),
                                       style: TextStyle(
                                         color: isMe
                                             ? Colors.white

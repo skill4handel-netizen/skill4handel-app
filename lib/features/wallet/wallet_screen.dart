@@ -74,7 +74,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
                           Icon(
                             Icons.account_balance_wallet_rounded,
@@ -82,7 +82,7 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'S4H wallet',
+                            S.t('walletTitle'),
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,

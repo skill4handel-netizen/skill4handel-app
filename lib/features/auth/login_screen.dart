@@ -5,7 +5,7 @@ import '../../core/constants/push_service.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_page.dart';
+import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,6 +34,22 @@ class _LoginScreenState extends State<LoginScreen> {
     if ((widget.verifyToken ?? '').isNotEmpty) {
       confirmToken(widget.verifyToken!);
     }
+  }
+
+  Widget logo() {
+    return Image.asset(
+      'assets/logo.jpg',
+      height: 92,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stack) => Image.asset(
+        'assets/logo.jpeg',
+        height: 92,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error2, stack2) {
+          return const Icon(Icons.handshake, size: 72, color: AppColors.blue);
+        },
+      ),
+    );
   }
 
   Future<void> confirmToken(String token) async {
@@ -105,6 +121,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         (route) => false,
       );
+    } on DioException catch (error) {
+      final raw = error.response?.data;
+      final message = raw is Map ? raw['message']?.toString() ?? '' : '';
+      if (message.toLowerCase().contains('not verified') ||
+          message.toLowerCase().contains('email not')) {
+        setState(() {
+          waitingVerify = true;
+          notice = S.t('verifyBeforeLogin');
+        });
+      } else if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(S.t('wrongEmailPassword'))));
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -136,64 +166,146 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: S.t('login'),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+    return Scaffold(
+      body: Stack(
         children: [
-          TextField(
-            controller: email,
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(labelText: S.t('email')),
+          Container(
+            decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: password,
-            obscureText: !showPass,
-            decoration: InputDecoration(
-              labelText: S.t('password'),
-              suffixIcon: IconButton(
-                onPressed: () => setState(() => showPass = !showPass),
-                icon: Icon(showPass ? Icons.visibility_off : Icons.visibility),
-              ),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: DropdownButton<String>(
+                    value: Session.language == 'nl' ? 'nl' : 'en',
+                    dropdownColor: Colors.white,
+                    underline: const SizedBox.shrink(),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'en',
+                        child: Text(S.t('english')),
+                      ),
+                      DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
+                    ],
+                    onChanged: (value) {
+                      setState(() => Session.language = value ?? 'en');
+                      Session.save();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                  decoration: AppTheme.card(),
+                  child: Column(
+                    children: [
+                      logo(),
+                      const SizedBox(height: 12),
+                      Text(
+                        S.t('login'),
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      TextField(
+                        controller: email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(labelText: S.t('email')),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: password,
+                        obscureText: !showPass,
+                        decoration: InputDecoration(
+                          labelText: S.t('password'),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => showPass = !showPass),
+                            icon: Icon(
+                              showPass
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (notice.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.mint,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(notice),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      if (!waitingVerify)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: loading ? null : login,
+                            style: AppTheme.solid(AppColors.blue),
+                            child: Text(
+                              loading ? S.t('pleaseWait') : S.t('login'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (waitingVerify)
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: resend,
+                            style: AppTheme.solid(AppColors.green),
+                            child: Text(
+                              S.t('resendVerification'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(S.t('forgotPassword')),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SignupScreen(),
+                            ),
+                          );
+                        },
+                        child: Text(S.t('createAccount')),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          if (notice.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(notice),
-            ),
-          ],
-          const SizedBox(height: 20),
-          if (!waitingVerify)
-            FilledButton(
-              onPressed: loading ? null : login,
-              child: Text(loading ? S.t('pleaseWait') : S.t('login')),
-            ),
-          if (waitingVerify)
-            FilledButton(
-              onPressed: resend,
-              child: Text(S.t('verifyYourEmail')),
-            ),
-          const SizedBox(height: 8),
-          if (waitingVerify)
-            TextButton(
-              onPressed: resend,
-              child: Text(S.t('resendVerification')),
-            ),
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SignupScreen()),
-              );
-            },
-            child: Text(S.t('createAccount')),
           ),
         ],
       ),

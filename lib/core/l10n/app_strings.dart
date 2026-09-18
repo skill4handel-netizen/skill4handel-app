@@ -675,6 +675,26 @@ class S {
     return value;
   }
 
+  static bool isSystem(String raw) {
+    const mapped = {
+      'The offer expired because the scheduled time passed without a response. Both members may start a new request.':
+          true,
+      'The offer was cancelled automatically because no response was received within 24 hours. Both members may start a new request.':
+          true,
+      'Offer cancelled: no response within 24 hours': true,
+      'A counter-offer has been sent.': true,
+      'An offer has been sent. If there is no response within 24 hours, it will be cancelled.':
+          true,
+      'The offer was cancelled. Both members may start a new request.': true,
+      'Offer cancelled. A new request may be started.': true,
+      'New swap offer': true,
+      'Offer expired': true,
+    };
+    return mapped.containsKey(raw.trim()) ||
+        raw.startsWith('Offer cancelled') ||
+        raw.startsWith('The offer');
+  }
+
   static String maybe(String raw) {
     const mapped = {
       'No current activity.': 'noActivity',
@@ -684,6 +704,26 @@ class S {
       'Review pending after a completed exchange.': 'actReview',
       'The previous offer was closed. Both members may start a new request.':
           'actClosed',
+      'The offer expired because the scheduled time passed without a response. Both members may start a new request.':
+          'msgExpiredTime',
+      'The offer was cancelled automatically because no response was received within 24 hours. Both members may start a new request.':
+          'msgExpired24',
+      'Offer cancelled: no response within 24 hours': 'msgExpiredShort',
+      'A counter-offer has been sent.': 'msgCounterSent',
+      'An offer has been sent. If there is no response within 24 hours, it will be cancelled.':
+          'msgOfferSent',
+      'The offer was cancelled. Both members may start a new request.':
+          'msgCancelled',
+      'Offer cancelled. A new request may be started.': 'msgCancelledShort',
+      'New swap offer': 'newOffer',
+      'Offer expired': 'msgExpiredShort',
+      'S4H wallet': 'walletTitle',
+      'Starter bonus': 'starterBonus',
+      'Public library': 'placeLibrary',
+      'Community centre': 'placeCentre',
+      'Library': 'placeLibrary',
+      'Park': 'placePark',
+      'Community venue': 'placeCentre',
     };
     final key = mapped[raw.trim()];
     return key == null ? raw : t(key);

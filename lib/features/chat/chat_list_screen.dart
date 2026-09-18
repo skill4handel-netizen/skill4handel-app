@@ -165,7 +165,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      '${when(chat['lastAt'])}  ${chat['last'] ?? ''}'.trim(),
+                      '${when(chat['lastAt'])}  ${S.maybe(chat['last']?.toString() ?? '')}'
+                          .trim(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
