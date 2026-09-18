@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/skills.dart';
+import '../l10n/app_strings.dart';
+import '../l10n/skill_labels.dart';
 import '../theme/app_theme.dart';
 
 Future<String?> pickSkill(
@@ -7,7 +9,9 @@ Future<String?> pickSkill(
   required List<String> alreadySelected,
   int maxCustom = 3,
 }) async {
-  final customCount = alreadySelected.where((item) => !allowedSkills.contains(item)).length;
+  final customCount = alreadySelected
+      .where((item) => !allowedSkills.contains(item))
+      .length;
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
@@ -19,7 +23,10 @@ Future<String?> pickSkill(
 }
 
 class _SkillPickerSheet extends StatefulWidget {
-  const _SkillPickerSheet({required this.alreadySelected, required this.canAddCustom});
+  const _SkillPickerSheet({
+    required this.alreadySelected,
+    required this.canAddCustom,
+  });
 
   final List<String> alreadySelected;
   final bool canAddCustom;
@@ -36,7 +43,12 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
     final q = query.text.trim().toLowerCase();
     return allowedSkills
         .where((item) => !widget.alreadySelected.contains(item))
-        .where((item) => q.isEmpty || item.toLowerCase().contains(q))
+        .where(
+          (item) =>
+              q.isEmpty ||
+              item.toLowerCase().contains(q) ||
+              skillLabel(item).toLowerCase().contains(q),
+        )
         .toList();
   }
 
@@ -49,27 +61,36 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final typed = query.text.trim();
-    final typedIsNew = typed.isNotEmpty &&
+    final typedIsNew =
+        typed.isNotEmpty &&
         !allowedSkills.any((item) => item.toLowerCase() == typed.toLowerCase());
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SizedBox(
         height: MediaQuery.of(context).size.height * 0.75,
         child: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Text('Select a skill', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                S.t('selectSkill'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 controller: query,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  hintText: 'Type to filter, or write a custom skill',
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: S.t('filterOrCustom'),
+                  prefixIcon: const Icon(Icons.search),
                 ),
               ),
             ),
@@ -78,13 +99,16 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                 children: [
                   for (final skill in filtered)
                     ListTile(
-                      title: Text(skill),
+                      title: Text(skillLabel(skill)),
                       onTap: () => Navigator.pop(context, skill),
                     ),
                   if (filtered.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('No matching category.', style: TextStyle(color: AppColors.muted)),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        S.t('noMatchingCategory'),
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
                     ),
                   const Divider(),
                   Padding(
@@ -92,28 +116,41 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Other', style: TextStyle(fontWeight: FontWeight.w800)),
+                        Text(
+                          S.t('other'),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
                         const SizedBox(height: 6),
                         Text(
                           widget.canAddCustom
-                              ? 'Write a skill that is not in the list. Maximum 3 custom skills.'
-                              : 'Custom skill limit reached.',
-                          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                              ? S.t('writeCustomSkill')
+                              : S.t('customLimit'),
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         TextField(
                           controller: other,
                           enabled: widget.canAddCustom,
-                          decoration: const InputDecoration(hintText: 'Write the skill'),
+                          decoration: InputDecoration(
+                            hintText: S.t('writeTheSkill'),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: widget.canAddCustom ? () => addCustom(other.text) : null,
+                                onPressed: widget.canAddCustom
+                                    ? () => addCustom(other.text)
+                                    : null,
                                 style: AppTheme.solid(AppColors.green),
-                                child: const Text('Add Other', style: TextStyle(color: Colors.white)),
+                                child: Text(
+                                  S.t('addOther'),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
                               ),
                             ),
                             if (typedIsNew && widget.canAddCustom) ...[
@@ -121,7 +158,9 @@ class _SkillPickerSheetState extends State<_SkillPickerSheet> {
                               Expanded(
                                 child: OutlinedButton(
                                   onPressed: () => addCustom(typed),
-                                  child: Text('Add "$typed"'),
+                                  child: Text(
+                                    S.fill('addNamed', {'name': typed}),
+                                  ),
                                 ),
                               ),
                             ],

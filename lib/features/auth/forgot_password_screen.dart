@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -12,7 +13,9 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'),
+  );
   bool loading = false;
   String message = '';
 
@@ -34,7 +37,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       Navigator.pop(context);
     } catch (e) {
       setState(() {
-        message = 'No account found with this email.';
+        message = S.t('noAccountEmail');
         loading = false;
       });
     }
@@ -43,37 +46,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Forgot password')),
+      appBar: AppBar(title: Text(S.t('forgotPassword'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Reset your password',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+              Text(
+                S.t('resetPassword'),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Enter the email of your account and choose a new password.',
-                style: TextStyle(color: AppColors.muted, fontSize: 16),
+              Text(
+                S.t('forgotHint'),
+                style: const TextStyle(color: AppColors.muted, fontSize: 16),
               ),
               const SizedBox(height: 28),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('email'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'New password',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('newPassword'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               if (message.isNotEmpty) ...[
@@ -93,7 +99,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text(loading ? 'Please wait...' : 'Update password'),
+                  child: Text(
+                    loading ? S.t('pleaseWait') : S.t('updatePassword'),
+                  ),
                 ),
               ),
             ],

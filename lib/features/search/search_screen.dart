@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../profile/user_profile_screen.dart';
@@ -79,8 +80,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final q = value.trim().toLowerCase();
     setState(() {
       results = all.where((person) {
+        final offers = skillLabel(person['offers']?.toString() ?? '');
         final blob =
-            '${person['name']} ${person['city']} ${person['offers']} ${person['needs']}'
+            '${person['name']} ${person['city']} ${person['offers']} $offers ${person['needs']}'
                 .toLowerCase();
         return q.isEmpty || blob.contains(q);
       }).toList();
@@ -92,7 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => UserProfileScreen(
-          name: person['name']?.toString() ?? 'User',
+          name: person['name']?.toString() ?? S.t('user'),
           email: person['email']?.toString() ?? '',
           city: person['city']?.toString() ?? '',
           offers: person['offers']?.toString() ?? '',
@@ -145,7 +147,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 )
               else
                 ...results.map((person) {
-                  final name = person['name']?.toString() ?? 'User';
+                  final name = person['name']?.toString() ?? S.t('user');
                   final photo =
                       (person['photoUrl'] ?? person['photo_url'] ?? '')
                           .toString();

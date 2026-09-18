@@ -6,6 +6,7 @@ import '../../core/constants/safe_places.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
@@ -98,8 +99,8 @@ class _HomeScreenState extends State<HomeScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(skill.name),
-        content: Text(skill.note.isEmpty ? 'No description yet.' : skill.note),
+        title: Text(skillLabel(skill.name)),
+        content: Text(skill.note.isEmpty ? S.t('noDescription') : skill.note),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -137,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (chat['unread'] == true) {
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason': 'New message',
+          'reason': S.t('newMessage'),
           'chat': chat,
         });
       }
@@ -253,7 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Suggestion only. Confirm opening hours and that the place is public and suitable before you meet.',
                 style: TextStyle(color: AppColors.muted),
               ),
@@ -277,8 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () => openMaps(place),
                 style: AppTheme.solid(AppColors.blue),
                 icon: const Icon(Icons.map, color: Colors.white),
-                label: const Text(
-                  'Open in Google Maps',
+                label: Text(
+                  S.t('openMaps'),
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -313,7 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome, $name',
+                        S.fill('welcomeName', {'name': name}),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -674,15 +675,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Activity',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 if (live.isEmpty)
-                  const Text(
-                    'No current activity.',
-                    style: TextStyle(color: AppColors.muted),
+                  Text(
+                    S.t('noActivity'),
+                    style: const TextStyle(color: AppColors.muted),
                   )
                 else
                   ...live.map((item) {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/constants/favorites.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
+import '../../core/l10n/app_strings.dart';
+import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
@@ -37,7 +39,9 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   late String name = widget.name;
   late String email = widget.email;
   late String city = widget.city;
@@ -45,7 +49,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   late String needs = widget.needs;
   late String photo = widget.photoUrl?.trim() ?? '';
   late double rating = widget.rating;
-  late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(widget.reviews);
+  late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(
+    widget.reviews,
+  );
   bool liked = false;
 
   @override
@@ -65,7 +71,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (!mounted) return;
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(liked ? 'Added to favorites' : 'Removed from favorites')),
+      SnackBar(content: Text(liked ? S.t('addedFav') : S.t('removedFav'))),
     );
   }
 
@@ -73,7 +79,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (widget.otherId == 0) return;
     try {
       final response = await dio.get('/users/${widget.otherId}');
-      final user = response.data is Map ? (response.data['user'] ?? response.data) : null;
+      final user = response.data is Map
+          ? (response.data['user'] ?? response.data)
+          : null;
       if (user is! Map) return;
       setState(() {
         name = user['name']?.toString() ?? name;
@@ -84,7 +92,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         photo = (user['photoUrl'] ?? user['photo_url'] ?? photo).toString();
         rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
         if (user['reviews'] is List) {
-          reviews = (user['reviews'] as List).whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+          reviews = (user['reviews'] as List)
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
         }
       });
     } catch (_) {}
@@ -93,7 +104,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> reportUser() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => SupportScreen(initialType: 'report', initialOtherName: name)),
+      MaterialPageRoute(
+        builder: (context) =>
+            SupportScreen(initialType: 'report', initialOtherName: name),
+      ),
     );
   }
 
@@ -101,23 +115,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Block this member?'),
-        content: const Text('This member will no longer appear in Search, Matches or Chat.'),
+        title: Text(S.t('blockTitle')),
+        content: Text(S.t('blockBody')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Block')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Block'),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     try {
-      await dio.post('/auth/block', data: {'userId': Session.id, 'otherId': widget.otherId});
+      await dio.post(
+        '/auth/block',
+        data: {'userId': Session.id, 'otherId': widget.otherId},
+      );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The member has been blocked and will no longer appear in matches or chat.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('blockedOk'))));
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The member could not be blocked.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('requestFailed'))));
     }
   }
 
@@ -125,9 +152,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(skill.name),
-        content: Text(skill.note.isEmpty ? 'No description yet.' : skill.note),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
+        title: Text(skillLabel(skill.name)),
+        content: Text(skill.note.isEmpty ? S.t('noDescription') : skill.note),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }
@@ -140,20 +172,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(name),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
         actions: [
           IconButton(
             onPressed: toggleLike,
-            icon: Icon(liked ? Icons.favorite : Icons.favorite_border, color: Colors.white),
+            icon: Icon(
+              liked ? Icons.favorite : Icons.favorite_border,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
         children: [
-          Center(child: UserPhoto(url: photo, radius: 48, letter: name.isNotEmpty ? name[0] : '?')),
+          Center(
+            child: UserPhoto(
+              url: photo,
+              radius: 48,
+              letter: name.isNotEmpty ? name[0] : '?',
+            ),
+          ),
           const SizedBox(height: 16),
-          Text(name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -163,14 +210,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               Text(rating.toStringAsFixed(1)),
             ],
           ),
-          if (city.isNotEmpty) Text(city, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+          if (city.isNotEmpty)
+            Text(
+              city,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.muted),
+            ),
           const SizedBox(height: 16),
-          const Text('Skills offered', style: TextStyle(fontWeight: FontWeight.w800)),
+          Text(
+            S.t('skillsOffered'),
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
           if (featured == null)
-            const Text('No skills have been listed.', style: TextStyle(color: AppColors.muted))
+            Text(
+              S.t('noSkillsListed'),
+              style: TextStyle(color: AppColors.muted),
+            )
           else ...[
-            Text(featured.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            Text(
+              featured.name,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
             if (featured.note.isNotEmpty) Text(featured.note),
             const SizedBox(height: 8),
             Wrap(
@@ -180,13 +241,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     onTap: () => showSkill(skill),
                     child: Container(
                       margin: const EdgeInsets.only(right: 8, bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEEE8FF),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.purple),
                       ),
-                      child: Text(skill.name, style: const TextStyle(color: Color(0xFF3D2BB3), fontWeight: FontWeight.w800)),
+                      child: Text(
+                        skill.name,
+                        style: const TextStyle(
+                          color: Color(0xFF3D2BB3),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -197,30 +267,58 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             height: 52,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(name: name, otherId: widget.otherId, photoUrl: photo)));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      name: name,
+                      otherId: widget.otherId,
+                      photoUrl: photo,
+                    ),
+                  ),
+                );
               },
               style: AppTheme.solid(AppColors.green),
-              child: const Text('Connect', style: TextStyle(color: Colors.white)),
+              child: Text('Connect', style: TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: OutlinedButton.icon(onPressed: reportUser, icon: const Icon(Icons.flag_outlined), label: const Text('Report'))),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: reportUser,
+                  icon: const Icon(Icons.flag_outlined),
+                  label: const Text('Report'),
+                ),
+              ),
               const SizedBox(width: 8),
-              Expanded(child: OutlinedButton.icon(onPressed: blockUser, icon: const Icon(Icons.block), label: const Text('Block'))),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: blockUser,
+                  icon: const Icon(Icons.block),
+                  label: const Text('Block'),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
-          const Text('Reviews', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          const Text(
+            'Reviews',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           if (reviews.isEmpty)
-            const Text('No reviews have been submitted.', style: TextStyle(color: AppColors.muted))
+            Text(S.t('noReviewsYet'), style: TextStyle(color: AppColors.muted))
           else
-            ...reviews.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text('${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})'),
-                )),
+            ...reviews.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})',
+                ),
+              ),
+            ),
         ],
       ),
     );

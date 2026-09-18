@@ -6,8 +6,8 @@ import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/constants/skills.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/city_picker.dart';
 import '../../core/widgets/skill_picker.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
@@ -63,12 +63,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text('Take a photograph'),
+              title: Text(S.t('takePhoto')),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from gallery'),
+              title: Text(S.t('chooseGallery')),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -112,9 +112,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> addSkill() async {
     if (selectedSkills.length >= 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You may select up to 10 skills.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('skillLimit'))));
       return;
     }
     final chosen = await pickSkill(
@@ -132,18 +132,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           controller: noteController,
           maxLength: 100,
           maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Short description, up to 100 characters',
-          ),
+          decoration: InputDecoration(hintText: S.t('skillNoteHint')),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, ''),
-            child: const Text('Skip'),
+            child: Text(S.t('skip')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, noteController.text.trim()),
-            child: const Text('Save'),
+            child: Text(S.t('save')),
           ),
         ],
       ),
@@ -204,31 +202,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Change password'),
+        title: Text(S.t('changePassword')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: current,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Current password'),
+              decoration: InputDecoration(labelText: S.t('currentPassword')),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: next,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'New password'),
+              decoration: InputDecoration(labelText: S.t('newPassword')),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
+            child: Text(S.t('save')),
           ),
         ],
       ),
@@ -246,12 +244,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Password updated.')));
+      ).showSnackBar(SnackBar(content: Text(S.t('passwordUpdated'))));
     } catch (e) {
       if (!mounted) return;
       final message = e is DioException && e.response?.data is Map
           ? e.response!.data['message'].toString()
-          : 'The password could not be changed.';
+          : S.t('passwordChangeFailed');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -360,17 +358,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'City of residence is set at registration and cannot be changed here.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
+              Text(
+                S.t('cityLockedHint'),
+                style: const TextStyle(color: AppColors.muted, fontSize: 12),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: bio,
                 maxLength: 180,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Bio',
+                decoration: InputDecoration(
+                  labelText: S.t('bio'),
                   alignLabelWithHint: true,
                 ),
               ),
@@ -392,9 +390,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
               InputDecorator(
-                decoration: const InputDecoration(labelText: 'Age'),
+                decoration: InputDecoration(labelText: 'Age'),
                 child: Text(
-                  Session.age > 0 ? '${Session.age}' : 'Set at registration',
+                  Session.age > 0 ? '${Session.age}' : S.t('setAtRegistration'),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -405,7 +403,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Choose up to 10 categories. Add a short description for each. Custom: $customCount/3',
+                '${S.t('skillLimit')} ${S.t('skillNoteHint')} $customCount/3',
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 8),
@@ -423,22 +421,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         deleteIconColor: AppColors.purple,
                         label: Text(
-                          skill.note.isEmpty ? skill.name : '${skill.name} •',
+                          skill.note.isEmpty
+                              ? skill.name
+                              : '${skillLabel(skill.name)} •',
                         ),
                         onPressed: () {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: Text(skill.name),
+                              title: Text(skillLabel(skill.name)),
                               content: Text(
                                 skill.note.isEmpty
-                                    ? 'No description yet.'
+                                    ? S.t('noDescription')
                                     : skill.note,
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context),
-                                  child: const Text('Close'),
+                                  child: Text(S.t('close')),
                                 ),
                               ],
                             ),
@@ -454,7 +454,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: addSkill,
                 icon: const Icon(Icons.add),
                 label: Text(
-                  selectedSkills.length >= 10 ? 'Limit reached' : 'Add a skill',
+                  selectedSkills.length >= 10
+                      ? S.t('limitReached')
+                      : S.t('addSkill'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -482,7 +484,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               TextButton(
                 onPressed: changePassword,
-                child: const Text('Change password'),
+                child: Text(S.t('changePassword')),
               ),
               TextButton(
                 onPressed: () => Navigator.push(

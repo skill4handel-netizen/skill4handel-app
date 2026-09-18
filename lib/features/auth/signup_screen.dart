@@ -15,7 +15,9 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   final name = TextEditingController();
   final city = TextEditingController();
   final email = TextEditingController();
@@ -46,61 +48,85 @@ class _SignupScreenState extends State<SignupScreen> {
     if (date == null) return null;
     final now = DateTime.now();
     var age = now.year - date.year;
-    if (now.month < date.month || (now.month == date.month && now.day < date.day)) age -= 1;
+    if (now.month < date.month ||
+        (now.month == date.month && now.day < date.day))
+      age -= 1;
     return age;
   }
 
   Future<void> signup() async {
     final age = ageFromBirth();
-    if (name.text.trim().isEmpty || email.text.trim().isEmpty || password.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please complete all fields.')));
+    if (name.text.trim().isEmpty ||
+        email.text.trim().isEmpty ||
+        password.text.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupFill'))));
       return;
     }
     if (password.text != confirm.text) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The passwords do not match.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupPassMatch'))));
       return;
     }
     if (password.text.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The password must contain at least 6 characters.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupPassLen'))));
       return;
     }
     if (birthDate == null || age == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select your date of birth.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupDob'))));
       return;
     }
     if (age < 18) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Members must be 18 years of age or older.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupAge'))));
       return;
     }
     if (!accepted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please accept the terms to create an account.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupTerms'))));
       return;
     }
     setState(() => loading = true);
     try {
-      final response = await dio.post('/auth/signup', data: {
-        'name': name.text.trim(),
-        'city': city.text.trim(),
-        'email': email.text.trim(),
-        'password': password.text,
-        'age': age,
-        'birthDate': birthDate!.toIso8601String(),
-        'language': Session.language,
-        'acceptedTerms': true,
-      });
+      final response = await dio.post(
+        '/auth/signup',
+        data: {
+          'name': name.text.trim(),
+          'city': city.text.trim(),
+          'email': email.text.trim(),
+          'password': password.text,
+          'age': age,
+          'birthDate': birthDate!.toIso8601String(),
+          'language': Session.language,
+          'acceptedTerms': true,
+        },
+      );
       Session.apply(Map<String, dynamic>.from(response.data['user'] as Map));
-      if (response.data['token'] != null) Session.token = response.data['token'].toString();
+      if (response.data['token'] != null)
+        Session.token = response.data['token'].toString();
       await Session.save();
       if (!mounted) return;
       final link = (response.data['verifyUrl'] ?? '').toString();
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => VerifyEmailScreen(verifyUrl: link)),
+        MaterialPageRoute(
+          builder: (context) => VerifyEmailScreen(verifyUrl: link),
+        ),
         (route) => false,
       );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('The account could not be created.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('signupFail'))));
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -110,21 +136,52 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom + 24;
     final now = DateTime.now();
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
     return Scaffold(
       appBar: AppBar(
         title: Text(S.t('createAccount')),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
-          const Text('🤝', textAlign: TextAlign.center, style: TextStyle(fontSize: 42)),
+          Text(
+            '🤝',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 42),
+          ),
           const SizedBox(height: 8),
-          Text(S.t('welcomeLine1'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
-          Text(S.t('welcomeLine2'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(
+            S.t('welcomeLine1'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          Text(
+            S.t('welcomeLine2'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 6),
-          Text(S.t('welcomeTag'), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.muted)),
+          Text(
+            S.t('welcomeTag'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted),
+          ),
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             initialValue: Session.language == 'nl' ? 'nl' : 'en',
@@ -133,14 +190,28 @@ class _SignupScreenState extends State<SignupScreen> {
               DropdownMenuItem(value: 'en', child: Text(S.t('english'))),
               DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
             ],
-            onChanged: (value) => setState(() => Session.language = value ?? 'en'),
+            onChanged: (value) =>
+                setState(() => Session.language = value ?? 'en'),
           ),
           const SizedBox(height: 12),
-          TextField(controller: name, decoration: InputDecoration(labelText: S.t('name'), prefixIcon: const Icon(Icons.person))),
+          TextField(
+            controller: name,
+            decoration: InputDecoration(
+              labelText: S.t('name'),
+              prefixIcon: Icon(Icons.person),
+            ),
+          ),
           const SizedBox(height: 12),
           CityPicker(controller: city, label: S.t('city')),
           const SizedBox(height: 12),
-          TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: S.t('email'), prefixIcon: const Icon(Icons.email_outlined))),
+          TextField(
+            controller: email,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: S.t('email'),
+              prefixIcon: Icon(Icons.email_outlined),
+            ),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: password,
@@ -148,7 +219,10 @@ class _SignupScreenState extends State<SignupScreen> {
             decoration: InputDecoration(
               labelText: S.t('password'),
               prefixIcon: const Icon(Icons.key),
-              suffixIcon: IconButton(onPressed: () => setState(() => showPass = !showPass), icon: Icon(showPass ? Icons.visibility_off : Icons.visibility)),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => showPass = !showPass),
+                icon: Icon(showPass ? Icons.visibility_off : Icons.visibility),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -158,19 +232,30 @@ class _SignupScreenState extends State<SignupScreen> {
             decoration: InputDecoration(
               labelText: S.t('confirmPassword'),
               prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(onPressed: () => setState(() => showConfirm = !showConfirm), icon: Icon(showConfirm ? Icons.visibility_off : Icons.visibility)),
+              suffixIcon: IconButton(
+                onPressed: () => setState(() => showConfirm = !showConfirm),
+                icon: Icon(
+                  showConfirm ? Icons.visibility_off : Icons.visibility,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          const Text('Date of birth', style: TextStyle(fontWeight: FontWeight.w800)),
+          Text(
+            S.t('dateOfBirth'),
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: day,
-                  decoration: const InputDecoration(labelText: 'Day'),
-                  items: [for (var i = 1; i <= daysInMonth(); i++) DropdownMenuItem(value: i, child: Text('$i'))],
+                  decoration: InputDecoration(labelText: 'Day'),
+                  items: [
+                    for (var i = 1; i <= daysInMonth(); i++)
+                      DropdownMenuItem(value: i, child: Text('$i')),
+                  ],
                   onChanged: (value) => setState(() => day = value),
                 ),
               ),
@@ -179,8 +264,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 flex: 2,
                 child: DropdownButtonFormField<int>(
                   initialValue: month,
-                  decoration: const InputDecoration(labelText: 'Month'),
-                  items: [for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(months[i - 1]))],
+                  decoration: InputDecoration(labelText: 'Month'),
+                  items: [
+                    for (var i = 1; i <= 12; i++)
+                      DropdownMenuItem(value: i, child: Text(months[i - 1])),
+                  ],
                   onChanged: (value) => setState(() => month = value),
                 ),
               ),
@@ -189,12 +277,15 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             initialValue: year,
-            decoration: const InputDecoration(labelText: 'Year'),
-            items: [for (var i = now.year - 18; i >= now.year - 90; i--) DropdownMenuItem(value: i, child: Text('$i'))],
+            decoration: InputDecoration(labelText: 'Year'),
+            items: [
+              for (var i = now.year - 18; i >= now.year - 90; i--)
+                DropdownMenuItem(value: i, child: Text('$i')),
+            ],
             onChanged: (value) => setState(() => year = value),
           ),
           const SizedBox(height: 6),
-          const Text('18 years or older', style: TextStyle(color: AppColors.muted)),
+          Text('18 years or older', style: TextStyle(color: AppColors.muted)),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: accepted,
@@ -202,7 +293,10 @@ class _SignupScreenState extends State<SignupScreen> {
             title: Text(S.t('acceptTerms')),
           ),
           TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const TermsScreen()),
+            ),
             child: Text(S.t('readTerms')),
           ),
           const SizedBox(height: 8),
@@ -211,7 +305,13 @@ class _SignupScreenState extends State<SignupScreen> {
             child: ElevatedButton(
               onPressed: loading ? null : signup,
               style: AppTheme.solid(AppColors.green),
-              child: Text(loading ? S.t('saving') : S.t('createAccount'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+              child: Text(
+                loading ? S.t('saving') : S.t('createAccount'),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
           ),
         ],

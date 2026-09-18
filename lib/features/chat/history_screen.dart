@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
+import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../reviews/review_screen.dart';
 import 'chat_screen.dart';
@@ -149,7 +150,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       MaterialPageRoute(
         builder: (context) => ReviewScreen(
           otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-          otherName: item['otherName']?.toString() ?? 'Member',
+          otherName: item['otherName']?.toString() ?? S.t('member'),
           skill: item['skillRequested']?.toString() ?? '',
         ),
       ),
@@ -168,7 +169,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(
-          name: (item['name'] ?? item['otherName'] ?? 'Member').toString(),
+          name: (item['name'] ?? item['otherName'] ?? S.t('member')).toString(),
           otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
           chatId: int.tryParse('${item['id'] ?? item['chatId'] ?? 0}'),
           photoUrl: item['photoUrl']?.toString(),
@@ -384,9 +385,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         if ((item['skillRequested'] ?? '')
                             .toString()
                             .isNotEmpty)
-                          Text('Requested: ${item['skillRequested']}'),
+                          Text(
+                            '${S.t('requested')}: ${skillLabel(item['skillRequested']?.toString() ?? '')}',
+                          ),
                         if ((item['skillOffered'] ?? '').toString().isNotEmpty)
-                          Text('In return: ${item['skillOffered']}'),
+                          Text(
+                            '${S.t('inReturn')}: ${skillLabel(item['skillOffered']?.toString() ?? '')}',
+                          ),
                         if ((item['scheduledAt'] ?? item['when'] ?? '')
                             .toString()
                             .isNotEmpty)
@@ -422,7 +427,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ],
             if (tab == 1) ...[
               Text(
-                'Balance  ${Session.balance} S4H',
+                '${S.t('tokens')}  ${Session.balance} S4H',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,

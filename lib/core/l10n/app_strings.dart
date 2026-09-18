@@ -182,6 +182,132 @@ class S {
     'faq9a':
         'Select Arbitration, describe the matter, and submit the ticket. Correspondence may also be sent to info@skill4handel.com.',
 
+    'welcomeSlogan': 'Share what you know.\nGet what you need.',
+    'privacySafety': 'Privacy and safety',
+    'privacyIntro':
+        'Skill4Handel is a platform for exchanging skills and practical help without payment between members.',
+    'reviewBeforeMeet': 'Review a profile before you arrange to meet.',
+    'meetInPublic': 'Meet in public where appropriate.',
+    'tokensNotCurrency':
+        'Tokens are not currency and not cryptocurrency. They are used when a direct skill swap is not possible.',
+    'writeIfWrong': 'If something is wrong, write to info@skill4handel.com.',
+    'forgotPassword': 'Forgot password',
+    'resetPassword': 'Reset your password',
+    'forgotHint': 'Enter the email of your account and choose a new password.',
+    'noAccountEmail': 'No account found with this email.',
+    'updatePassword': 'Update password',
+    'nobodyBlocked': 'Nobody is blocked.',
+    'unblock': 'Unblock',
+    'user': 'User',
+    'noFavoritesYet': 'No favorites yet. Open a profile and tap the heart.',
+    'selectSkill': 'Select a skill',
+    'filterOrCustom': 'Type to filter, or write a custom skill',
+    'addOther': 'Add Other',
+    'addNamed': 'Add "{name}"',
+    'noMatchingCategory': 'No matching category.',
+    'customLimit': 'Custom skill limit reached.',
+    'writeCustomSkill':
+        'Write a skill that is not in the list. Maximum 3 custom skills.',
+    'writeTheSkill': 'Write the skill',
+    'reasonLowStars': 'A reason is required for 3 stars or less.',
+    'reviewOf': 'Review {name}',
+    'yourReview': 'Your review',
+    'requiredIf3': 'Required if 3 stars or less',
+    'saveReview': 'Save review',
+    'termsTitle': 'Skill4Handel terms',
+    'termsSource':
+        'Taken from skill4handel.com and the community safety rules.',
+    'termWhatTitle': 'What Skill4Handel is',
+    'termWhatBody':
+        'A platform for exchanging skills and practical help without payment between members.',
+    'termReciprocityTitle': 'Reciprocity',
+    'termReciprocityBody':
+        'You must offer a skill. The model is reciprocal. Everyday knowledge counts.',
+    'termTokensTitle': 'Tokens',
+    'termTokensBody':
+        'Tokens are used when a direct swap is not possible. They are not currency and not cryptocurrency.',
+    'termAgeTitle': 'Age',
+    'termAgeBody': 'You must be 18 years of age or older to create an account.',
+    'termMeetTitle': 'Before a meeting',
+    'termMeetBody':
+        'Review a profile before you arrange to meet. Meet in public where appropriate.',
+    'termBanTitle': 'What is not allowed',
+    'termBanBody':
+        'Sexual services, pornography, violence, weapons, illegal drugs, theft, fraud and any other illegal activity are prohibited.',
+    'termRespTitle': 'Responsibility',
+    'termRespBody':
+        'Skill4Handel is a matching platform. Quality, safety and result of each exchange are the responsibility of the two parties.',
+    'termCancelTitle': 'Cancellation',
+    'termCancelBody':
+        'An accepted exchange may be cancelled until 24 hours before the agreed time. An unanswered offer is cancelled after 24 hours.',
+    'termReportTitle': 'Reports',
+    'termReportBody':
+        'Use Report in Support, or write to info@skill4handel.com.',
+    'welcomeName': 'Welcome, {name}',
+    'noActivity': 'No current activity.',
+    'actAwaiting': 'An offer is awaiting your response.',
+    'actSent': 'Offer sent. Awaiting a response within 24 hours.',
+    'actOpen': 'Open session. Confirm completion after the scheduled time.',
+    'actReview': 'Review pending after a completed exchange.',
+    'actClosed':
+        'The previous offer was closed. Both members may start a new request.',
+    'openMaps': 'Open in Google Maps',
+    'newMessage': 'New message',
+    'cityLockedHint':
+        'City of residence is set at registration and cannot be changed here.',
+    'takePhoto': 'Take a photograph',
+    'chooseGallery': 'Choose from gallery',
+    'addSkill': 'Add a skill',
+    'limitReached': 'Limit reached',
+    'skillLimit': 'You may select up to 10 skills.',
+    'skillNoteHint': 'Short description, up to 100 characters',
+    'skip': 'Skip',
+    'close': 'Close',
+    'noDescription': 'No description yet.',
+    'setAtRegistration': 'Set at registration',
+    'changePassword': 'Change password',
+    'currentPassword': 'Current password',
+    'newPassword': 'New password',
+    'passwordUpdated': 'Password updated.',
+    'passwordChangeFailed': 'The password could not be changed.',
+    'profileBtn': 'Profile',
+    'skillsOffered': 'Skills offered',
+    'noSkillsListed': 'No skills have been listed.',
+    'noReviewsYet': 'No reviews have been submitted.',
+    'addedFav': 'Added to favorites',
+    'removedFav': 'Removed from favorites',
+    'signupFill': 'Please complete all fields.',
+    'signupAge': 'Members must be 18 years of age or older.',
+    'signupTerms': 'Please accept the terms to create an account.',
+    'signupDob': 'Please select your date of birth.',
+    'signupPassLen': 'The password must contain at least 6 characters.',
+    'signupPassMatch': 'The passwords do not match.',
+    'signupFail': 'The account could not be created.',
+    'ticketFail': 'The ticket could not be submitted. Please try again.',
+    'walletTitle': 'S4H wallet',
+
+    'offerTo': 'Offer to {name}',
+    'replyTo': 'Reply to {name}',
+    'pleaseTime24': 'Please choose a time at least 24 hours from now.',
+    'pleaseQuality':
+        'Please confirm responsibility for the quality of the work.',
+    'pleaseTokens': 'Please enter between 1 and 10 tokens.',
+    'pleaseSelectTime': 'Please select a date and time.',
+    'pleaseSelectSkill': 'Please select a skill from their list.',
+    'selectNeedSkill': 'Select the skill you need from their list.',
+    's4hRange': 'S4H tokens (1–10)',
+    'sendFailed': 'The request could not be sent.',
+    'skillYouNeed': 'Skill you need from their list',
+    'skillYouAsk': 'Skill you ask from their list',
+    'completionAfter': 'Completion is available after {when}.',
+    'mode': 'Mode',
+    'type': 'Type',
+    'schedule': 'Schedule',
+    'returnSkill': 'Return skill',
+    'tokensLabel': 'Tokens',
+    'normal': 'Normal',
+    'bothModes': 'Both',
+
     'login': 'Log in',
     'chats': 'Chats',
     'pleaseWait': 'Please wait…',
@@ -200,25 +326,8 @@ class S {
     'completeProfileHint':
         'Add a photograph and at least one skill before you start an exchange.',
     'profileLockedCity': 'City of residence',
-    'cityLockedHint':
-        'City of residence is set at registration and cannot be changed here.',
     'deleteChat': 'Delete conversation',
     'deleteChatConfirm': 'This conversation will be removed from your list.',
-    'changePassword': 'Change password',
-    'currentPassword': 'Current password',
-    'newPassword': 'New password',
-    'passwordUpdated': 'Password updated.',
-    'passwordChangeFailed': 'The password could not be changed.',
-    'takePhoto': 'Take a photograph',
-    'chooseGallery': 'Choose from gallery',
-    'addSkill': 'Add a skill',
-    'limitReached': 'Limit reached',
-    'skillLimit': 'You may select up to 10 skills.',
-    'skillNoteHint': 'Short description, up to 100 characters',
-    'skip': 'Skip',
-    'close': 'Close',
-    'noDescription': 'No description yet.',
-    'setAtRegistration': 'Set at registration',
   };
 
   static const _nl = {
@@ -402,6 +511,135 @@ class S {
     'faq9a':
         'Kies Arbitrage, beschrijf de zaak en verstuur het ticket. Je kunt ook schrijven naar info@skill4handel.com.',
 
+    'welcomeSlogan': 'Deel wat je kunt.\nKrijg wat je nodig hebt.',
+    'privacySafety': 'Privacy en veiligheid',
+    'privacyIntro':
+        'Skill4Handel is een platform om vaardigheden en praktische hulp uit te wisselen zonder betaling tussen leden.',
+    'reviewBeforeMeet': 'Bekijk een profiel voordat je een ontmoeting plant.',
+    'meetInPublic': 'Spreek waar mogelijk af op een openbare plek.',
+    'tokensNotCurrency':
+        'Tokens zijn geen geld en geen cryptovaluta. Ze worden gebruikt als een directe ruil niet mogelijk is.',
+    'writeIfWrong': 'Als er iets mis is, schrijf naar info@skill4handel.com.',
+    'forgotPassword': 'Wachtwoord vergeten',
+    'resetPassword': 'Wachtwoord opnieuw instellen',
+    'forgotHint':
+        'Vul het e-mailadres van je account in en kies een nieuw wachtwoord.',
+    'noAccountEmail': 'Er is geen account met dit e-mailadres.',
+    'updatePassword': 'Wachtwoord bijwerken',
+    'nobodyBlocked': 'Niemand is geblokkeerd.',
+    'unblock': 'Deblokkeren',
+    'user': 'Gebruiker',
+    'noFavoritesYet':
+        'Nog geen favorieten. Open een profiel en tik op het hart.',
+    'selectSkill': 'Kies een vaardigheid',
+    'filterOrCustom': 'Typ om te filteren, of schrijf een eigen vaardigheid',
+    'addOther': 'Anders toevoegen',
+    'addNamed': '"{name}" toevoegen',
+    'noMatchingCategory': 'Geen passende categorie.',
+    'customLimit': 'Limiet voor eigen vaardigheden bereikt.',
+    'writeCustomSkill':
+        'Schrijf een vaardigheid die niet in de lijst staat. Maximaal 3 eigen vaardigheden.',
+    'writeTheSkill': 'Schrijf de vaardigheid',
+    'reasonLowStars': 'Bij 3 sterren of minder is een toelichting verplicht.',
+    'reviewOf': 'Beoordeling van {name}',
+    'yourReview': 'Jouw beoordeling',
+    'requiredIf3': 'Verplicht bij 3 sterren of minder',
+    'saveReview': 'Beoordeling opslaan',
+    'termsTitle': 'Voorwaarden van Skill4Handel',
+    'termsSource':
+        'Overgenomen van skill4handel.com en de veiligheidsregels van de gemeenschap.',
+    'termWhatTitle': 'Wat Skill4Handel is',
+    'termWhatBody':
+        'Een platform om vaardigheden en praktische hulp uit te wisselen zonder betaling tussen leden.',
+    'termReciprocityTitle': 'Wederkerigheid',
+    'termReciprocityBody':
+        'Je moet een vaardigheid aanbieden. Het model is wederkerig. Alledaagse kennis telt.',
+    'termTokensTitle': 'Tokens',
+    'termTokensBody':
+        'Tokens worden gebruikt als een directe ruil niet mogelijk is. Ze zijn geen geld en geen cryptovaluta.',
+    'termAgeTitle': 'Leeftijd',
+    'termAgeBody': 'Je moet 18 jaar of ouder zijn om een account aan te maken.',
+    'termMeetTitle': 'Voor een ontmoeting',
+    'termMeetBody':
+        'Bekijk een profiel voordat je afspreekt. Spreek waar mogelijk af op een openbare plek.',
+    'termBanTitle': 'Wat niet is toegestaan',
+    'termBanBody':
+        'Seksuele diensten, pornografie, geweld, wapens, illegale drugs, diefstal, fraude en andere onwettige activiteiten zijn verboden.',
+    'termRespTitle': 'Verantwoordelijkheid',
+    'termRespBody':
+        'Skill4Handel is een koppelingsplatform. Kwaliteit, veiligheid en resultaat van elke uitwisseling zijn de verantwoordelijkheid van beide partijen.',
+    'termCancelTitle': 'Annulering',
+    'termCancelBody':
+        'Een geaccepteerde uitwisseling mag tot 24 uur voor het afgesproken tijdstip worden geannuleerd. Een onbeantwoord voorstel vervalt na 24 uur.',
+    'termReportTitle': 'Meldingen',
+    'termReportBody':
+        'Gebruik Melding in Ondersteuning, of schrijf naar info@skill4handel.com.',
+    'welcomeName': 'Welkom, {name}',
+    'noActivity': 'Geen huidige activiteit.',
+    'actAwaiting': 'Er wacht een voorstel op jouw reactie.',
+    'actSent': 'Voorstel verstuurd. Reactie binnen 24 uur verwacht.',
+    'actOpen':
+        'Open sessie. Bevestig de afronding na het afgesproken tijdstip.',
+    'actReview': 'Beoordeling open na een afgeronde uitwisseling.',
+    'actClosed':
+        'Het vorige voorstel is gesloten. Beide leden mogen een nieuw verzoek starten.',
+    'openMaps': 'Openen in Google Maps',
+    'newMessage': 'Nieuw bericht',
+    'cityLockedHint':
+        'De woonplaats wordt bij registratie vastgelegd en kan hier niet worden gewijzigd.',
+    'takePhoto': 'Een foto maken',
+    'chooseGallery': 'Kiezen uit galerij',
+    'addSkill': 'Vaardigheid toevoegen',
+    'limitReached': 'Limiet bereikt',
+    'skillLimit': 'Je mag maximaal 10 vaardigheden kiezen.',
+    'skillNoteHint': 'Korte toelichting, maximaal 100 tekens',
+    'skip': 'Overslaan',
+    'close': 'Sluiten',
+    'noDescription': 'Nog geen toelichting.',
+    'setAtRegistration': 'Vastgelegd bij registratie',
+    'changePassword': 'Wachtwoord wijzigen',
+    'currentPassword': 'Huidig wachtwoord',
+    'newPassword': 'Nieuw wachtwoord',
+    'passwordUpdated': 'Wachtwoord bijgewerkt.',
+    'passwordChangeFailed': 'Het wachtwoord kon niet worden gewijzigd.',
+    'profileBtn': 'Profiel',
+    'skillsOffered': 'Aangeboden vaardigheden',
+    'noSkillsListed': 'Er zijn geen vaardigheden vermeld.',
+    'noReviewsYet': 'Er zijn nog geen beoordelingen.',
+    'addedFav': 'Toegevoegd aan favorieten',
+    'removedFav': 'Verwijderd uit favorieten',
+    'signupFill': 'Vul alle velden in.',
+    'signupAge': 'Leden moeten 18 jaar of ouder zijn.',
+    'signupTerms': 'Accepteer de voorwaarden om een account aan te maken.',
+    'signupDob': 'Selecteer je geboortedatum.',
+    'signupPassLen': 'Het wachtwoord moet minstens 6 tekens hebben.',
+    'signupPassMatch': 'De wachtwoorden komen niet overeen.',
+    'signupFail': 'Het account kon niet worden aangemaakt.',
+    'ticketFail': 'Het ticket kon niet worden verstuurd. Probeer het opnieuw.',
+    'walletTitle': 'S4H-portemonnee',
+
+    'offerTo': 'Voorstel aan {name}',
+    'replyTo': 'Antwoord aan {name}',
+    'pleaseTime24': 'Kies een tijdstip minstens 24 uur vanaf nu.',
+    'pleaseQuality':
+        'Bevestig de verantwoordelijkheid voor de kwaliteit van het werk.',
+    'pleaseTokens': 'Vul tussen 1 en 10 tokens in.',
+    'pleaseSelectTime': 'Selecteer een datum en tijd.',
+    'pleaseSelectSkill': 'Kies een vaardigheid uit hun lijst.',
+    'selectNeedSkill': 'Kies de vaardigheid die je nodig hebt uit hun lijst.',
+    's4hRange': 'S4H-tokens (1–10)',
+    'sendFailed': 'Het verzoek kon niet worden verstuurd.',
+    'skillYouNeed': 'Vaardigheid die je nodig hebt uit hun lijst',
+    'skillYouAsk': 'Vaardigheid die je uit hun lijst vraagt',
+    'completionAfter': 'Afronding is mogelijk na {when}.',
+    'mode': 'Vorm',
+    'type': 'Type',
+    'schedule': 'Planning',
+    'returnSkill': 'Vaardigheid in ruil',
+    'tokensLabel': 'Tokens',
+    'normal': 'Normaal',
+    'bothModes': 'Beide',
+
     'login': 'Inloggen',
     'chats': 'Chats',
     'pleaseWait': 'Even geduld…',
@@ -420,29 +658,34 @@ class S {
     'completeProfileHint':
         'Voeg een foto en minstens één vaardigheid toe voordat je een uitwisseling start.',
     'profileLockedCity': 'Woonplaats',
-    'cityLockedHint':
-        'De woonplaats wordt bij registratie vastgelegd en kan hier niet worden gewijzigd.',
     'deleteChat': 'Gesprek verwijderen',
     'deleteChatConfirm': 'Dit gesprek verdwijnt uit jouw overzicht.',
-    'changePassword': 'Wachtwoord wijzigen',
-    'currentPassword': 'Huidig wachtwoord',
-    'newPassword': 'Nieuw wachtwoord',
-    'passwordUpdated': 'Wachtwoord bijgewerkt.',
-    'passwordChangeFailed': 'Het wachtwoord kon niet worden gewijzigd.',
-    'takePhoto': 'Een foto maken',
-    'chooseGallery': 'Kiezen uit galerij',
-    'addSkill': 'Vaardigheid toevoegen',
-    'limitReached': 'Limiet bereikt',
-    'skillLimit': 'Je mag maximaal 10 vaardigheden kiezen.',
-    'skillNoteHint': 'Korte toelichting, maximaal 100 tekens',
-    'skip': 'Overslaan',
-    'close': 'Sluiten',
-    'noDescription': 'Nog geen toelichting.',
-    'setAtRegistration': 'Vastgelegd bij registratie',
   };
 
   static String t(String key) {
     final table = lang == 'nl' ? _nl : _en;
     return table[key] ?? _en[key] ?? key;
+  }
+
+  static String fill(String key, Map<String, String> vars) {
+    var value = t(key);
+    vars.forEach((name, item) {
+      value = value.replaceAll('{$name}', item);
+    });
+    return value;
+  }
+
+  static String maybe(String raw) {
+    const mapped = {
+      'No current activity.': 'noActivity',
+      'An offer is awaiting your response.': 'actAwaiting',
+      'Offer sent. Awaiting a response within 24 hours.': 'actSent',
+      'Open session. Confirm completion after the scheduled time.': 'actOpen',
+      'Review pending after a completed exchange.': 'actReview',
+      'The previous offer was closed. Both members may start a new request.':
+          'actClosed',
+    };
+    final key = mapped[raw.trim()];
+    return key == null ? raw : t(key);
   }
 }

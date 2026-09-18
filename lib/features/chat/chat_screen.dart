@@ -121,18 +121,16 @@ class _ChatScreenState extends State<ChatScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Block this member?'),
-        content: const Text(
-          'This member will no longer appear in Search, Matches or Chat.',
-        ),
+        title: Text(S.t('blockTitle')),
+        content: Text(S.t('blockBody')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Block'),
+            child: Text(S.t('block')),
           ),
         ],
       ),
@@ -144,9 +142,9 @@ class _ChatScreenState extends State<ChatScreen> {
         data: {'userId': Session.id, 'otherId': widget.otherId},
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This member has been blocked.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('blockedOk'))));
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -277,7 +275,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: openProfile,
-                          child: const Text('Profile'),
+                          child: Text(S.t('profileBtn')),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -286,7 +284,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           onPressed: openOffer,
                           style: AppTheme.solid(AppColors.green),
                           child: Text(
-                            pendingSwap == null ? 'New offer' : 'View offer',
+                            pendingSwap == null
+                                ? S.t('newOffer')
+                                : S.t('viewOffer'),
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
@@ -296,7 +296,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 Expanded(
                   child: messages.isEmpty
-                      ? const Center(child: Text('No messages yet.'))
+                      ? Center(child: Text(S.t('noMessages')))
                       : ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                           itemCount: messages.length,
@@ -403,7 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: TextField(
                           controller: controller,
                           decoration: InputDecoration(
-                            hintText: 'Write a message',
+                            hintText: S.t('writeMessage'),
                             filled: true,
                             fillColor: const Color(0xFFEAF4FF),
                             border: OutlineInputBorder(

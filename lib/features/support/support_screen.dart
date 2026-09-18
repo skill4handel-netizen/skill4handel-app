@@ -32,7 +32,7 @@ class _SupportScreenState extends State<SupportScreen> {
         return 'The ticket could not be submitted (${error.response?.statusCode}). Please try again.';
       }
     }
-    return 'The ticket could not be submitted. Please try again.';
+    return S.t('ticketFail');
   }
 
   Future<void> sendTicket() async {
