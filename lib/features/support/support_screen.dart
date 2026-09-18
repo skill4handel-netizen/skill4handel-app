@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
 class SupportScreen extends StatefulWidget {
@@ -15,7 +16,9 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   final text = TextEditingController();
   late String type = widget.initialType ?? 'support';
   bool sending = false;
@@ -23,7 +26,8 @@ class _SupportScreenState extends State<SupportScreen> {
   String cleanError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      if (data is Map && data['message'] != null) return data['message'].toString();
+      if (data is Map && data['message'] != null)
+        return data['message'].toString();
       if (error.response?.statusCode != null) {
         return 'The ticket could not be submitted (${error.response?.statusCode}). Please try again.';
       }
@@ -33,26 +37,35 @@ class _SupportScreenState extends State<SupportScreen> {
 
   Future<void> sendTicket() async {
     if (text.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter the details of your request.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('ticketEmpty'))));
       return;
     }
     setState(() => sending = true);
     try {
-      await dio.post('/auth/ticket', data: {
-        'userId': Session.id,
-        'name': Session.name,
-        'type': type,
-        'otherName': widget.initialOtherName ?? '',
-        'text': text.text.trim(),
-      });
+      await dio.post(
+        '/auth/ticket',
+        data: {
+          'userId': Session.id,
+          'name': Session.name,
+          'type': type,
+          'otherName': widget.initialOtherName ?? '',
+          'text': text.text.trim(),
+        },
+      );
       text.clear();
       type = widget.initialType ?? 'support';
       if (!mounted) return;
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Your ticket has been submitted.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('ticketSent'))));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(cleanError(e))));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(cleanError(e))));
     } finally {
       if (mounted) setState(() => sending = false);
     }
@@ -71,13 +84,22 @@ class _SupportScreenState extends State<SupportScreen> {
         children: [
           Icon(icon, size: 28, color: AppColors.blue),
           const SizedBox(width: 8),
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
         ],
       ),
     );
   }
 
-  Widget typeCard(String value, IconData icon, String title, String subtitle, Color color) {
+  Widget typeCard(
+    String value,
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+  ) {
     final selected = type == value;
     return InkWell(
       onTap: () => setState(() => type = value),
@@ -88,44 +110,85 @@ class _SupportScreenState extends State<SupportScreen> {
         decoration: BoxDecoration(
           color: selected ? color.withValues(alpha: 0.12) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: selected ? color : const Color(0xFFE4E7EC), width: 2),
+          border: Border.all(
+            color: selected ? color : const Color(0xFFE4E7EC),
+            width: 2,
+          ),
         ),
         child: Row(
           children: [
-            CircleAvatar(radius: 26, backgroundColor: color, child: Icon(icon, color: Colors.white, size: 28)),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: color,
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Icon(selected ? Icons.check_circle : Icons.circle_outlined, size: 28, color: selected ? color : Colors.grey),
+            Icon(
+              selected ? Icons.check_circle : Icons.circle_outlined,
+              size: 28,
+              color: selected ? color : Colors.grey,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget contactCard(IconData icon, String title, String subtitle, VoidCallback onTap) {
+  Widget contactCard(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: const Color(0xFFEAF4FF), borderRadius: BorderRadius.circular(16)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEAF4FF),
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           children: [
-            CircleAvatar(radius: 26, backgroundColor: AppColors.blue, child: Icon(icon, color: Colors.white, size: 28)),
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: AppColors.blue,
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                  Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -139,14 +202,26 @@ class _SupportScreenState extends State<SupportScreen> {
   Widget faq(IconData icon, String title, String body) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(border: Border.all(color: const Color(0xFFE4E7EC)), borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          leading: CircleAvatar(backgroundColor: AppColors.soft, child: Icon(icon, color: AppColors.blue, size: 22)),
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+          leading: CircleAvatar(
+            backgroundColor: AppColors.soft,
+            child: Icon(icon, color: AppColors.blue, size: 22),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          ),
           children: [
-            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 14), child: Text(body, style: const TextStyle(color: AppColors.muted))),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Text(body, style: const TextStyle(color: AppColors.muted)),
+            ),
           ],
         ),
       ),
@@ -159,36 +234,81 @@ class _SupportScreenState extends State<SupportScreen> {
     final bottom = MediaQuery.of(context).padding.bottom + 24;
     return Scaffold(
       appBar: AppBar(
-        title: Text(type == 'report' ? 'Report' : 'Support'),
+        title: Text(type == 'report' ? S.t('report') : S.t('support')),
         automaticallyImplyLeading: Navigator.canPop(context),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
-          sectionTitle('Contact', Icons.phone_in_talk),
-          contactCard(Icons.email_outlined, 'Email', 'info@skill4handel.com', () => openLink('mailto:info@skill4handel.com')),
+          sectionTitle(S.t('contact'), Icons.phone_in_talk),
+          contactCard(
+            Icons.email_outlined,
+            S.t('email'),
+            'info@skill4handel.com',
+            () => openLink('mailto:info@skill4handel.com'),
+          ),
           const SizedBox(height: 8),
-          contactCard(Icons.language, 'Website', 'www.skill4handel.com', () => openLink('https://www.skill4handel.com')),
+          contactCard(
+            Icons.language,
+            S.t('website'),
+            'www.skill4handel.com',
+            () => openLink('https://www.skill4handel.com'),
+          ),
           const SizedBox(height: 20),
-          sectionTitle('New ticket', Icons.edit_note),
+          sectionTitle(S.t('newTicket'), Icons.edit_note),
           if (reported.isNotEmpty)
             Container(
               width: double.infinity,
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFFFF4D6), borderRadius: BorderRadius.circular(14)),
-              child: Text('Member: $reported', style: const TextStyle(fontWeight: FontWeight.w700)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF4D6),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                '${S.t('member')}: $reported',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
-          typeCard('support', Icons.support_agent, 'Support', 'A general question or account issue', AppColors.blue),
-          typeCard('arbitration', Icons.gavel, 'Arbitration', 'A dispute after an exchange', const Color(0xFFE3A008)),
-          typeCard('report', Icons.flag_outlined, 'Report a member', 'Inappropriate or unsafe behaviour', const Color(0xFFD92D20)),
-          typeCard('fraud', Icons.warning_amber_rounded, 'Fraud', 'Suspicion of misuse or deception', const Color(0xFFB42318)),
+          typeCard(
+            'support',
+            Icons.support_agent,
+            S.t('support'),
+            S.t('supportHint'),
+            AppColors.blue,
+          ),
+          typeCard(
+            'arbitration',
+            Icons.gavel,
+            S.t('arbitration'),
+            S.t('arbitrationHint'),
+            const Color(0xFFE3A008),
+          ),
+          typeCard(
+            'report',
+            Icons.flag_outlined,
+            S.t('reportMember'),
+            S.t('reportHint'),
+            const Color(0xFFD92D20),
+          ),
+          typeCard(
+            'fraud',
+            Icons.warning_amber_rounded,
+            S.t('fraud'),
+            S.t('fraudHint'),
+            const Color(0xFFB42318),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: text,
             maxLines: 5,
-            decoration: const InputDecoration(labelText: 'Details', alignLabelWithHint: true),
+            decoration: InputDecoration(
+              labelText: S.t('details'),
+              alignLabelWithHint: true,
+            ),
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -197,20 +317,23 @@ class _SupportScreenState extends State<SupportScreen> {
               onPressed: sending ? null : sendTicket,
               style: AppTheme.solid(AppColors.green),
               icon: const Icon(Icons.send, color: Colors.white, size: 26),
-              label: Text(sending ? 'Submitting…' : 'Submit ticket', style: const TextStyle(color: Colors.white)),
+              label: Text(
+                sending ? S.t('sending') : S.t('submitTicket'),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
           const SizedBox(height: 24),
-          sectionTitle('Frequently asked questions', Icons.help_outline),
-          faq(Icons.info_outline, 'What is Skill4Handel?', 'Skill4Handel is a platform for exchanging skills and practical assistance without cash payment between members.'),
-          faq(Icons.payments_outlined, 'Is the service free of charge?', 'Registration is free of charge. Core skill exchanges do not require cash. S4H tokens may be used when a direct exchange is not possible.'),
-          faq(Icons.swap_horiz, 'How does an exchange work?', 'Members record the skills they can provide, send an offer, agree on the terms, complete the session, and submit a review.'),
-          faq(Icons.videocam_outlined, 'May exchanges take place online?', 'Yes. Members may select an online or in-person meeting when submitting an offer.'),
-          faq(Icons.badge_outlined, 'Who may use the application?', 'The service is available to users aged 18 and over. Members are advised to review profiles and meet in a safe location.'),
-          faq(Icons.block, 'What activity is prohibited?', 'Sexual services, pornography, violence, weapons, illegal drugs, fraud, theft and other unlawful activity are prohibited.'),
-          faq(Icons.verified_user_outlined, 'Who is responsible for quality?', 'The two parties to the exchange are responsible for the quality of the work. Skill4Handel provides matching only.'),
-          faq(Icons.event_busy, 'When may an offer be cancelled?', 'A pending offer with no response is cancelled after 24 hours. An accepted offer may be cancelled until 24 hours before the agreed time.'),
-          faq(Icons.gavel, 'How may arbitration be requested?', 'Select Arbitration, describe the matter, and submit the ticket. Correspondence may also be sent to info@skill4handel.com.'),
+          sectionTitle(S.t('faq'), Icons.help_outline),
+          faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),
+          faq(Icons.payments_outlined, S.t('faq2q'), S.t('faq2a')),
+          faq(Icons.swap_horiz, S.t('faq3q'), S.t('faq3a')),
+          faq(Icons.videocam_outlined, S.t('faq4q'), S.t('faq4a')),
+          faq(Icons.badge_outlined, S.t('faq5q'), S.t('faq5a')),
+          faq(Icons.block, S.t('faq6q'), S.t('faq6a')),
+          faq(Icons.verified_user_outlined, S.t('faq7q'), S.t('faq7a')),
+          faq(Icons.event_busy, S.t('faq8q'), S.t('faq8a')),
+          faq(Icons.gavel, S.t('faq9q'), S.t('faq9a')),
         ],
       ),
     );

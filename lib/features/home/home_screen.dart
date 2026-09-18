@@ -345,23 +345,20 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView(
               padding: EdgeInsets.fromLTRB(16, 16, 16, bottom),
               children: [
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Session.emailVerified
-                        ? const Color(0xFFE8F8EE)
-                        : const Color(0xFFFFF4D6),
-                    borderRadius: BorderRadius.circular(16),
+                if (!Session.emailVerified)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4D6),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      S.t('verifyBanner'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
-                  child: Text(
-                    Session.emailVerified
-                        ? S.t('emailConfirmed')
-                        : S.t('verifyBanner'),
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
                 Container(
                   decoration: AppTheme.card(),
                   clipBehavior: Clip.antiAlias,
@@ -595,23 +592,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 Text(
                   Session.city.isEmpty
-                      ? 'Suggested meeting places'
-                      : 'Suggested meeting places in ${Session.city}',
+                      ? S.t('suggestedPlaces')
+                      : '${S.t('suggestedPlacesCity')} ${Session.city}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'These are suggestions only. Check the place yourself before you meet.',
-                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                Text(
+                  S.t('placeWarning'),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 196,
                   child: places.isEmpty
-                      ? const Center(child: Text('Looking up public places...'))
+                      ? Center(child: Text(S.t('lookingPlaces')))
                       : ListView(
                           scrollDirection: Axis.horizontal,
                           children: [

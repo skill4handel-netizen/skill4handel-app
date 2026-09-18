@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../reviews/review_screen.dart';
 import 'chat_screen.dart';
@@ -13,7 +14,9 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
+  );
   List<Map<String, dynamic>> allItems = [];
   List<Map<String, dynamic>> walletItems = [];
   String filter = 'all';
@@ -28,7 +31,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
   String formatWhen(dynamic raw) {
     final parsed = DateTime.tryParse(raw?.toString() ?? '');
     if (parsed == null) return '';
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final local = parsed.toLocal();
     return '${local.day} ${months[local.month - 1]} ${local.year}, ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
@@ -37,46 +53,76 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final status = swap['status']?.toString() ?? '';
     if (status == 'expired') return true;
     final created = DateTime.tryParse('${swap['createdAt'] ?? ''}');
-    final scheduled = DateTime.tryParse('${swap['scheduledAt'] ?? swap['when'] ?? ''}');
+    final scheduled = DateTime.tryParse(
+      '${swap['scheduledAt'] ?? swap['when'] ?? ''}',
+    );
     if (status != 'pending') return false;
-    final noReply = created != null && DateTime.now().difference(created).inHours >= 24;
+    final noReply =
+        created != null && DateTime.now().difference(created).inHours >= 24;
     final timePassed = scheduled != null && !scheduled.isAfter(DateTime.now());
     return noReply || timePassed;
   }
 
   String statusText(Map item) {
     final group = item['group']?.toString() ?? '';
-    if (item['status']?.toString() == 'expired') return 'Expired session';
-    if (group == 'pending') return 'Pending offer';
-    if (group == 'open') return 'Open session';
-    return item['status']?.toString() ?? 'Closed';
+    if (item['status']?.toString() == 'expired') return S.t('expiredSession');
+    if (group == 'pending') return S.t('pendingOffer');
+    if (group == 'open') return S.t('openSession');
+    return item['status']?.toString() ?? S.t('closed');
   }
 
   Future<void> loadAll() async {
     final merged = <Map<String, dynamic>>[];
     try {
-      final chats = await dio.get('/chats', queryParameters: {'userId': Session.id});
+      final chats = await dio.get(
+        '/chats',
+        queryParameters: {'userId': Session.id},
+      );
       for (final raw in ((chats.data as List?) ?? [])) {
         final item = Map<String, dynamic>.from(raw as Map);
-        final swap = item['pendingSwap'] is Map ? Map<String, dynamic>.from(item['pendingSwap'] as Map) : null;
+        final swap = item['pendingSwap'] is Map
+            ? Map<String, dynamic>.from(item['pendingSwap'] as Map)
+            : null;
         final status = swap?['status']?.toString() ?? '';
         if (swap != null && isExpired(swap)) {
-          merged.add({...item, ...swap, 'otherName': item['name'], 'group': 'closed', 'status': 'expired'});
+          merged.add({
+            ...item,
+            ...swap,
+            'otherName': item['name'],
+            'group': 'closed',
+            'status': 'expired',
+          });
         } else if (status == 'pending' || status == 'accepted') {
-          merged.add({...item, ...?swap, 'otherName': item['name'], 'group': status == 'accepted' ? 'open' : 'pending'});
+          merged.add({
+            ...item,
+            ...?swap,
+            'otherName': item['name'],
+            'group': status == 'accepted' ? 'open' : 'pending',
+          });
         }
       }
     } catch (_) {}
     try {
-      final history = await dio.get('/chats/history', queryParameters: {'userId': Session.id});
+      final history = await dio.get(
+        '/chats/history',
+        queryParameters: {'userId': Session.id},
+      );
       for (final raw in ((history.data as List?) ?? [])) {
         final item = Map<String, dynamic>.from(raw as Map);
-        final expired = item['status']?.toString() == 'cancelled' && isExpired(item);
-        merged.add({...item, 'group': 'closed', if (expired) 'status': 'expired'});
+        final expired =
+            item['status']?.toString() == 'cancelled' && isExpired(item);
+        merged.add({
+          ...item,
+          'group': 'closed',
+          if (expired) 'status': 'expired',
+        });
       }
     } catch (_) {}
     try {
-      final me = await dio.get('/auth/me', queryParameters: {'userId': Session.id});
+      final me = await dio.get(
+        '/auth/me',
+        queryParameters: {'userId': Session.id},
+      );
       final user = me.data is Map ? (me.data['user'] ?? me.data) : null;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
       walletItems = List<Map<String, dynamic>>.from(Session.history);
@@ -93,7 +139,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   bool alreadyReviewed(Map item) {
     final reviewedBy = item['reviewedBy'];
-    return reviewedBy is List && reviewedBy.any((value) => value.toString() == Session.id.toString());
+    return reviewedBy is List &&
+        reviewedBy.any((value) => value.toString() == Session.id.toString());
   }
 
   Future<void> writeReview(Map item) async {
@@ -108,7 +155,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
       ),
     );
     if (saved == true && item['chatId'] != null) {
-      await dio.post('/chats/${item['chatId']}/reviewed', data: {'userId': Session.id});
+      await dio.post(
+        '/chats/${item['chatId']}/reviewed',
+        data: {'userId': Session.id},
+      );
       await loadAll();
     }
   }
@@ -128,24 +178,73 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> deleteItem(Map item) async {
-    final chatId = item['id'] ?? item['chatId'];
+    final chatId = item['chatId'] ?? item['id'];
     if (chatId == null) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete this record?'),
-        content: const Text('The related conversation will be removed.'),
+        title: Text(S.t('deleteRecord')),
+        content: Text(S.t('deleteRecordBody')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(S.t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(S.t('delete')),
+          ),
         ],
       ),
     );
     if (ok != true) return;
     try {
-      await dio.delete('/chats/$chatId', queryParameters: {'userId': Session.id});
+      await dio.delete(
+        '/chats/$chatId',
+        queryParameters: {'userId': Session.id},
+      );
       await loadAll();
     } catch (_) {}
+  }
+
+  Future<void> deleteWallet(Map item) async {
+    final id = item['id'];
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.t('deleteMovement')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(S.t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(S.t('delete')),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      if (id != null) {
+        await dio.delete(
+          '/auth/transaction',
+          queryParameters: {'userId': Session.id, 'id': id},
+        );
+      }
+    } catch (_) {}
+    final next = Session.history.where((row) {
+      if (id != null && row['id'] != null) {
+        return row['id'].toString() != id.toString();
+      }
+      return !(row['title']?.toString() == item['title']?.toString() &&
+          row['amount']?.toString() == item['amount']?.toString());
+    }).toList();
+    Session.history = next;
+    await Session.save();
+    if (!mounted) return;
+    setState(() => walletItems = next);
   }
 
   Widget chip(String value, String label, IconData icon, Color color) {
@@ -154,7 +253,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       padding: const EdgeInsets.only(right: 8, bottom: 8),
       child: ChoiceChip(
         avatar: Icon(icon, size: 16, color: selected ? Colors.white : color),
-        label: Text(label, style: TextStyle(color: selected ? Colors.white : Colors.black, fontWeight: FontWeight.w800)),
+        label: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.white : Colors.black,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         selected: selected,
         selectedColor: color,
         backgroundColor: color.withValues(alpha: 0.12),
@@ -168,50 +273,93 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('History'),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.headerGradient)),
+        title: Text(S.t('history')),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: loadAll,
         child: ListView(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).padding.bottom + 24),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.of(context).padding.bottom + 24,
+          ),
           children: [
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => setState(() => tab = 0),
-                    style: AppTheme.solid(tab == 0 ? AppColors.blue : Colors.grey),
+                    style: AppTheme.solid(
+                      tab == 0 ? AppColors.blue : Colors.grey,
+                    ),
                     icon: const Icon(Icons.swap_horiz, color: Colors.white),
-                    label: const Text('Offers', style: TextStyle(color: Colors.white)),
+                    label: Text(
+                      S.t('offersTab'),
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => setState(() => tab = 1),
-                    style: AppTheme.solid(tab == 1 ? AppColors.blue : Colors.grey),
-                    icon: const Icon(Icons.account_balance_wallet_outlined, color: Colors.white),
-                    label: const Text('Wallet', style: TextStyle(color: Colors.white)),
+                    style: AppTheme.solid(
+                      tab == 1 ? AppColors.blue : Colors.grey,
+                    ),
+                    icon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      S.t('wallet'),
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             if (tab == 0) ...[
-              Wrap(children: [
-                chip('all', 'All', Icons.apps, AppColors.blue),
-                chip('pending', 'Pending', Icons.hourglass_top, const Color(0xFFE3A008)),
-                chip('open', 'Open', Icons.check_circle, AppColors.green),
-                chip('closed', 'Closed', Icons.cancel, const Color(0xFFD92D20)),
-              ]),
+              Wrap(
+                children: [
+                  chip('all', S.t('all'), Icons.apps, AppColors.blue),
+                  chip(
+                    'pending',
+                    S.t('pending'),
+                    Icons.hourglass_top,
+                    const Color(0xFFE3A008),
+                  ),
+                  chip(
+                    'open',
+                    S.t('open'),
+                    Icons.check_circle,
+                    AppColors.green,
+                  ),
+                  chip(
+                    'closed',
+                    S.t('closed'),
+                    Icons.cancel,
+                    const Color(0xFFD92D20),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
               if (visible.isEmpty)
-                const Text('No items in this filter.', style: TextStyle(color: AppColors.muted))
+                Text(
+                  S.t('noFilterItems'),
+                  style: TextStyle(color: AppColors.muted),
+                )
               else
                 ...visible.map((item) {
                   final group = item['group']?.toString() ?? '';
-                  final canReview = group == 'closed' && item['status']?.toString() == 'completed' && !alreadyReviewed(item);
+                  final canReview =
+                      group == 'closed' &&
+                      item['status']?.toString() == 'completed' &&
+                      !alreadyReviewed(item);
                   return Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 12),
@@ -223,17 +371,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(item['otherName']?.toString() ?? item['name']?.toString() ?? 'Member', style: const TextStyle(fontWeight: FontWeight.w800)),
-                        Text(statusText(item), style: const TextStyle(fontWeight: FontWeight.w700)),
-                        if ((item['skillRequested'] ?? '').toString().isNotEmpty) Text('Requested: ${item['skillRequested']}'),
-                        if ((item['skillOffered'] ?? '').toString().isNotEmpty) Text('In return: ${item['skillOffered']}'),
-                        if ((item['scheduledAt'] ?? item['when'] ?? '').toString().isNotEmpty)
+                        Text(
+                          item['otherName']?.toString() ??
+                              item['name']?.toString() ??
+                              'Member',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          statusText(item),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        if ((item['skillRequested'] ?? '')
+                            .toString()
+                            .isNotEmpty)
+                          Text('Requested: ${item['skillRequested']}'),
+                        if ((item['skillOffered'] ?? '').toString().isNotEmpty)
+                          Text('In return: ${item['skillOffered']}'),
+                        if ((item['scheduledAt'] ?? item['when'] ?? '')
+                            .toString()
+                            .isNotEmpty)
                           Text(formatWhen(item['scheduledAt'] ?? item['when'])),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            if (group != 'closed') TextButton(onPressed: () => openChat(item), child: const Text('Open chat')),
-                            TextButton(onPressed: () => deleteItem(item), child: const Text('Delete')),
+                            if (group != 'closed')
+                              TextButton(
+                                onPressed: () => openChat(item),
+                                child: Text(S.t('openChat')),
+                              ),
+                            TextButton(
+                              onPressed: () => deleteItem(item),
+                              child: Text(S.t('delete')),
+                            ),
                           ],
                         ),
                         if (canReview)
@@ -241,7 +410,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             onPressed: () => writeReview(item),
                             style: AppTheme.solid(AppColors.green),
                             icon: const Icon(Icons.star, color: Colors.white),
-                            label: const Text('Write review', style: TextStyle(color: Colors.white)),
+                            label: Text(
+                              S.t('writeReview'),
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                       ],
                     ),
@@ -249,17 +421,40 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 }),
             ],
             if (tab == 1) ...[
-              Text('Balance  ${Session.balance} S4H', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(
+                'Balance  ${Session.balance} S4H',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               const SizedBox(height: 12),
               if (walletItems.isEmpty)
-                const Text('No wallet movements yet.', style: TextStyle(color: AppColors.muted))
+                Text(
+                  S.t('noTransactions'),
+                  style: TextStyle(color: AppColors.muted),
+                )
               else
-                ...walletItems.map((item) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.toll),
-                      title: Text(item['title']?.toString() ?? 'Movement'),
-                      trailing: Text(item['amount']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
-                    )),
+                ...walletItems.map(
+                  (item) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.toll),
+                    title: Text(item['title']?.toString() ?? S.t('history')),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item['amount']?.toString() ?? '',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        IconButton(
+                          onPressed: () => deleteWallet(item),
+                          icon: const Icon(Icons.delete_outline),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ],
         ),
