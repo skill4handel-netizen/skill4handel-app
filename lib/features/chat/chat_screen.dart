@@ -304,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             final message = messages[index];
                             final fromId =
                                 int.tryParse('${message['fromId'] ?? 0}') ?? 0;
-                            final rawText = S.maybe(rawText);
+                            final rawText = message['text']?.toString() ?? '';
                             final isSystem =
                                 fromId == 0 ||
                                 (message['type']?.toString() ?? '') ==
