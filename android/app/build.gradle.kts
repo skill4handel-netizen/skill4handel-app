@@ -27,8 +27,8 @@ android {
         applicationId = "com.skill4handel.skill4handel"
         minSdk = flutter.minSdkVersion
         targetSdk = 37
-        versionCode = 3
-        versionName = "3.0.0"
+        versionCode = 4
+        versionName = "3.0.1"
     }
 
     signingConfigs {
