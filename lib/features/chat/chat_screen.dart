@@ -159,9 +159,24 @@ class _ChatScreenState extends State<ChatScreen> {
       'An offer has been sent. If there is no response within 24 hours, it will be cancelled.':
           'Offer sent. Waiting for a reply within 24 hours.',
       'A counter-offer has been sent.': 'Counter-offer sent.',
+      'The offer has been accepted. The session is confirmed.':
+          'Offer accepted. The session is confirmed.',
+      'The offer has been declined.': 'Offer declined.',
+      'The offer was cancelled. Both members may start a new request.':
+          'Offer cancelled. A new request may be started.',
+      'Completion has been confirmed by one member. Waiting for the other confirmation.':
+          'One member confirmed completion. Waiting for the other confirmation.',
+      'Both members confirmed completion. Reviews can now be written.':
+          'Exchange completed. Reviews can now be written.',
       'New swap offer': 'New offer',
       'Counter offer': 'Counter-offer',
     };
+    if (raw.startsWith('The offer has been accepted. Return skill:')) {
+      return raw.replaceFirst(
+        'The offer has been accepted. Return skill:',
+        'Offer accepted. Return skill:',
+      );
+    }
     return mapped[raw] ?? S.maybe(raw);
   }
 

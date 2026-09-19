@@ -14,11 +14,14 @@ class CompleteSwapScreen extends StatefulWidget {
     this.otherId = 0,
     this.photoUrl,
     this.isCounter = false,
+    this.isAccept = false,
     this.initialSkillRequested = '',
     this.initialDuration = '60',
     this.initialMode = 'Online',
     this.initialLocation = '',
     this.initialWhen,
+    this.initialPayMode = 'skill',
+    this.initialTokens = '',
   });
 
   final String otherName;
@@ -26,11 +29,14 @@ class CompleteSwapScreen extends StatefulWidget {
   final int otherId;
   final String? photoUrl;
   final bool isCounter;
+  final bool isAccept;
   final String initialSkillRequested;
   final String initialDuration;
   final String initialMode;
   final String initialLocation;
   final DateTime? initialWhen;
+  final String initialPayMode;
+  final String initialTokens;
 
   @override
   State<CompleteSwapScreen> createState() => _CompleteSwapScreenState();
@@ -46,7 +52,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ? '60'
       : widget.initialDuration;
   late String mode = widget.initialMode.isEmpty ? 'Online' : widget.initialMode;
-  String payMode = 'skill';
+  late String payMode;
   String selectedSkill = '';
   List<String> otherSkills = [];
   bool acceptedQuality = false;
@@ -57,12 +63,14 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool get useSkill => payMode == 'skill' || payMode == 'both';
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
-  bool get lockSchedule => widget.isCounter;
+  bool get lockSchedule => widget.isCounter || widget.isAccept;
 
   @override
   void initState() {
     super.initState();
     when = widget.initialWhen;
+    payMode = widget.initialPayMode;
+    extraTokens.text = widget.initialTokens;
     loadOtherSkills();
   }
 
@@ -180,26 +188,45 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseQuality'))));
       return;
     }
+    if (widget.isAccept && useSkill && selectedSkill.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
+      return;
+    }
     setState(() => working = true);
     try {
-      await dio.post(
-        '/chats/${widget.chatId}/swap',
-        data: {
-          'userId': Session.id,
-          'proposedByName': Session.name,
-          'skillRequested': requested,
-          'skillOffered': volunteer ? '' : (widget.isCounter ? offered : ''),
-          'payWithTokens': useTokens,
-          'volunteer': volunteer,
-          'extraTokens': useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0,
-          'duration': duration,
-          'mode': mode,
-          'level': volunteer ? 'Volunteer' : typeLabel(),
-          'location': location.text.trim(),
-          'when': when!.toUtc().toIso8601String(),
-          'scheduledAt': when!.toUtc().toIso8601String(),
-        },
-      );
+      if (widget.isAccept) {
+        await dio.post(
+          '/chats/${widget.chatId}/swap/respond',
+          data: {
+            'userId': Session.id,
+            'action': 'accepted',
+            'skillOffered': useSkill ? selectedSkill : '',
+          },
+        );
+      } else {
+        await dio.post(
+          '/chats/${widget.chatId}/swap',
+          data: {
+            'userId': Session.id,
+            'proposedByName': Session.name,
+            'skillRequested': requested,
+            'skillOffered': volunteer ? '' : (widget.isCounter ? offered : ''),
+            'payWithTokens': useTokens,
+            'volunteer': volunteer,
+            'extraTokens': useTokens
+                ? (int.tryParse(extraTokens.text) ?? 0)
+                : 0,
+            'duration': duration,
+            'mode': mode,
+            'level': volunteer ? 'Volunteer' : typeLabel(),
+            'location': location.text.trim(),
+            'when': when!.toUtc().toIso8601String(),
+            'scheduledAt': when!.toUtc().toIso8601String(),
+          },
+        );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -310,7 +337,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(widget.isCounter ? S.t('counterOffer') : S.t('newOffer')),
+        title: Text(
+          widget.isAccept
+              ? 'Accept offer'
+              : (widget.isCounter ? S.t('counterOffer') : S.t('newOffer')),
+        ),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
         ),
@@ -324,43 +355,51 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         ),
         children: [
           Text(
-            widget.isCounter
+            widget.isAccept
+                ? 'Accept this offer'
+                : widget.isCounter
                 ? S.fill('replyTo', {'name': widget.otherName})
                 : S.fill('offerTo', {'name': widget.otherName}),
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            widget.isCounter
+            widget.isAccept
+                ? 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.'
+                : widget.isCounter
                 ? 'Choose the exchange type and, if needed, one skill from their list. Time and place stay as proposed.'
                 : 'Choose the exchange type first, then complete the proposal.',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
-          typeCard(
-            'skill',
-            Icons.swap_horiz,
-            S.t('skillFromList'),
-            'Skill for skill',
-          ),
-          typeCard(
-            'both',
-            Icons.toll,
-            S.t('skillAndTokens'),
-            S.t('skillPlusTokens'),
-          ),
-          typeCard(
-            'tokens',
-            Icons.account_balance_wallet_outlined,
-            S.t('tokensOnly'),
-            S.t('payTokens'),
-          ),
-          typeCard(
-            'volunteer',
-            Icons.volunteer_activism,
-            S.t('volunteer'),
-            S.t('doVolunteer'),
-          ),
+          if (widget.isAccept)
+            lockedBox('Exchange type', typeLabel(), Icons.handshake_outlined)
+          else ...[
+            typeCard(
+              'skill',
+              Icons.swap_horiz,
+              S.t('skillFromList'),
+              'Skill for skill',
+            ),
+            typeCard(
+              'both',
+              Icons.toll,
+              S.t('skillAndTokens'),
+              S.t('skillPlusTokens'),
+            ),
+            typeCard(
+              'tokens',
+              Icons.account_balance_wallet_outlined,
+              S.t('tokensOnly'),
+              S.t('payTokens'),
+            ),
+            typeCard(
+              'volunteer',
+              Icons.volunteer_activism,
+              S.t('volunteer'),
+              S.t('doVolunteer'),
+            ),
+          ],
           if (widget.isCounter) ...[
             const SizedBox(height: 8),
             lockedBox(
@@ -371,7 +410,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               Icons.school_outlined,
             ),
           ],
-          if (!widget.isCounter || useSkill) ...[
+          if ((!widget.isCounter && !widget.isAccept) || useSkill) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -400,7 +439,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                 ),
               ),
           ],
-          if (useTokens) ...[
+          if (useTokens && !widget.isAccept) ...[
             const SizedBox(height: 12),
             TextField(
               controller: extraTokens,
@@ -420,6 +459,12 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             ),
             lockedBox(S.t('minutes'), '$duration min', Icons.timer_outlined),
             lockedBox(S.t('how'), mode, Icons.place_outlined),
+            if (widget.isAccept && useTokens)
+              lockedBox(
+                S.t('tokensLabel'),
+                extraTokens.text.isEmpty ? '0' : extraTokens.text,
+                Icons.toll,
+              ),
             if (location.text.trim().isNotEmpty)
               lockedBox(
                 mode == 'Online' ? S.t('linkNote') : S.t('meetingPlace'),
@@ -517,9 +562,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               child: Text(
                 working
                     ? S.t('sending')
-                    : (widget.isCounter
-                          ? S.t('sendCounter')
-                          : S.t('sendOffer')),
+                    : (widget.isAccept
+                          ? S.t('accept')
+                          : (widget.isCounter
+                                ? S.t('sendCounter')
+                                : S.t('sendOffer'))),
                 style: const TextStyle(color: Colors.white),
               ),
             ),

@@ -171,6 +171,43 @@ class _OfferScreenState extends State<OfferScreen> {
     }
   }
 
+  Future<void> startAccept() async {
+    final volunteer =
+        pendingSwap?['volunteer'] == true ||
+        '${pendingSwap?['level']}'.toLowerCase().contains('volunteer');
+    final tokens = int.tryParse('${pendingSwap?['extraTokens'] ?? 0}') ?? 0;
+    final offered = '${pendingSwap?['skillOffered'] ?? ''}'.trim();
+    String payMode = 'skill';
+    if (volunteer) {
+      payMode = 'volunteer';
+    } else if (tokens > 0 && offered.isNotEmpty) {
+      payMode = 'both';
+    } else if (tokens > 0) {
+      payMode = 'tokens';
+    }
+    final done = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CompleteSwapScreen(
+          otherName: widget.name,
+          chatId: widget.chatId,
+          otherId: widget.otherId,
+          photoUrl: widget.photoUrl,
+          isAccept: true,
+          initialSkillRequested:
+              pendingSwap?['skillRequested']?.toString() ?? '',
+          initialDuration: '${pendingSwap?['duration'] ?? '60'}',
+          initialMode: '${pendingSwap?['mode'] ?? 'Online'}',
+          initialLocation: '${pendingSwap?['location'] ?? ''}',
+          initialWhen: scheduledAt,
+          initialPayMode: payMode,
+          initialTokens: '$tokens',
+        ),
+      ),
+    );
+    if (done == true) await load();
+  }
+
   Future<void> startCounter() async {
     final done = await Navigator.push(
       context,
@@ -332,12 +369,7 @@ class _OfferScreenState extends State<OfferScreen> {
                     ),
                   if (pending && !iProposed) ...[
                     ElevatedButton.icon(
-                      onPressed: working
-                          ? null
-                          : () => act('/swap/respond', {
-                              'userId': Session.id,
-                              'action': 'accepted',
-                            }),
+                      onPressed: working ? null : startAccept,
                       style: AppTheme.solid(AppColors.green),
                       icon: const Icon(Icons.check_circle, color: Colors.white),
                       label: Text(
