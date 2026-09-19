@@ -88,6 +88,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     final bytes = await picked.readAsBytes();
     final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    Session.photoUrl = dataUrl;
+    await Session.save();
+    if (mounted) setState(() {});
     try {
       final response = await dio.post(
         '/auth/photo',
@@ -95,7 +98,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       final user = response.data is Map ? response.data['user'] : null;
       if (user is Map) {
+        final previous = Session.photoUrl;
         Session.apply(Map<String, dynamic>.from(user));
+        if (Session.photoUrl.trim().isEmpty) Session.photoUrl = previous;
       }
       if (mounted) {
         setState(() {});
@@ -148,6 +153,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     if (note == null) return;
     setState(() => selectedSkills.add(SkillItem(name: chosen, note: note)));
+    Session.offers = encodeSkills(selectedSkills);
+    await Session.save();
   }
 
   Future<void> save() async {

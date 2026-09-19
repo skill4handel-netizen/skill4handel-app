@@ -31,7 +31,7 @@ class Session {
     'bio': bio,
     'offers': offers,
     'needs': needs,
-    'photoUrl': photoUrl,
+    'photoUrl': photoUrl.length > 20000 ? '' : photoUrl,
     'gender': gender,
     'age': age,
     'rating': rating,
@@ -41,26 +41,35 @@ class Session {
     'emailVerified': emailVerified,
   };
 
+  static String pickText(Map user, List<String> keys, String fallback) {
+    for (final key in keys) {
+      final value = user[key]?.toString().trim() ?? '';
+      if (value.isNotEmpty) return value;
+    }
+    return fallback;
+  }
+
   static void apply(Map<String, dynamic> user) {
     id = int.tryParse('${user['id'] ?? id}') ?? id;
-    name = user['name']?.toString() ?? name;
-    email = user['email']?.toString() ?? email;
-    city = user['city']?.toString() ?? city;
-    final incomingBio = user['bio']?.toString() ?? user['needs']?.toString();
-    if (incomingBio != null && incomingBio.trim().isNotEmpty) bio = incomingBio;
-    offers = user['offers']?.toString() ?? offers;
-    needs = user['needs']?.toString() ?? needs;
-    photoUrl = user['photoUrl']?.toString() ?? photoUrl;
-    gender = user['gender']?.toString() ?? gender;
+    name = pickText(user, ['name'], name);
+    email = pickText(user, ['email'], email);
+    city = pickText(user, ['city'], city);
+    final incomingBio = pickText(user, ['bio', 'needs'], '');
+    if (incomingBio.isNotEmpty) bio = incomingBio;
+    offers = pickText(user, ['offers'], offers);
+    needs = pickText(user, ['needs'], needs);
+    photoUrl = pickText(user, ['photoUrl', 'photo_url'], photoUrl);
+    gender = pickText(user, ['gender'], gender);
     age = int.tryParse('${user['age'] ?? age}') ?? age;
     rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
     balance = num.tryParse('${user['balance'] ?? balance}') ?? balance;
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
-    if (user['emailVerified'] != null)
+    if (user['emailVerified'] != null) {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
+    }
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
           .whereType<Map>()
@@ -77,7 +86,9 @@ class Session {
   }
 
   static Future<void> save() async {
-    await _storage.write(key: 'session', value: jsonEncode(toJson()));
+    try {
+      await _storage.write(key: 'session', value: jsonEncode(toJson()));
+    } catch (_) {}
   }
 
   static Future<void> load() async {
@@ -114,4 +125,13 @@ class Session {
       city.trim().isNotEmpty &&
       photoUrl.trim().isNotEmpty &&
       offers.trim().isNotEmpty;
+
+  static String get profileMissing {
+    final missing = <String>[];
+    if (name.trim().isEmpty) missing.add('name');
+    if (city.trim().isEmpty) missing.add('city');
+    if (photoUrl.trim().isEmpty) missing.add('photo');
+    if (offers.trim().isEmpty) missing.add('skill');
+    return missing.join(', ');
+  }
 }

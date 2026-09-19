@@ -191,9 +191,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> openOffer() async {
     if (!Session.profileComplete) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(S.t('completeProfileHint'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Complete your profile before sending an offer. Missing: ${Session.profileMissing}. Save the profile page after adding them.',
+          ),
+        ),
+      );
       return;
     }
     if (chatId == null) return;
