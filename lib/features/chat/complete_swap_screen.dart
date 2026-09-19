@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/constants/skill_items.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
@@ -45,9 +46,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool working = false;
   DateTime? when;
 
-  DateTime get minWhen => widget.isCounter
-      ? DateTime.now()
-      : DateTime.now().add(const Duration(hours: 24));
+  DateTime get minWhen => DateTime.now().add(const Duration(hours: 24));
   bool get useSkill => payMode == 'skill' || payMode == 'both';
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
@@ -75,11 +74,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           ? (response.data['user'] ?? response.data)
           : null;
       final raw = user is Map ? (user['offers']?.toString() ?? '') : '';
-      final list = raw
-          .split(RegExp(r'[,/]'))
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toList();
+      final list = parseSkills(raw).map((item) => item.name).toSet().toList();
       if (mounted) setState(() => otherSkills = list);
     } catch (_) {}
   }
@@ -186,6 +181,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         },
       );
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.isCounter ? S.t('counterSentOk') : S.t('offerSentOk'),
+          ),
+        ),
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;

@@ -5,6 +5,7 @@ import 'core/constants/push_service.dart';
 import 'core/constants/session.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/login_screen.dart';
+import 'features/auth/verify_email_screen.dart';
 import 'features/home/welcome_screen.dart';
 
 Future<void> main() async {
@@ -56,17 +57,23 @@ class _SkillAppState extends State<SkillApp> {
       valueListenable: Session.themeMode,
       builder: (context, mode, _) {
         final startVerify = (verifyToken ?? '').isNotEmpty;
+        Widget home;
+        if (startVerify) {
+          home = LoginScreen(verifyToken: verifyToken);
+        } else if (Session.id > 0 && Session.emailVerified) {
+          home = MainShell(userName: Session.name);
+        } else if (Session.id > 0 && !Session.emailVerified) {
+          home = const VerifyEmailScreen();
+        } else {
+          home = const WelcomeScreen();
+        }
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Skill4Handel',
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: startVerify
-              ? LoginScreen(verifyToken: verifyToken)
-              : Session.id > 0
-              ? MainShell(userName: Session.name)
-              : const WelcomeScreen(),
+          home: home,
         );
       },
     );

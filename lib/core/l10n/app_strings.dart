@@ -284,6 +284,8 @@ class S {
     'signupPassMatch': 'The passwords do not match.',
     'signupFail': 'The account could not be created.',
     'ticketFail': 'The ticket could not be submitted. Please try again.',
+    'offerSentOk': 'The offer has been sent.',
+    'counterSentOk': 'The counter-offer has been sent.',
     'walletTitle': 'S4H wallet',
 
     'offerTo': 'Offer to {name}',
@@ -616,6 +618,8 @@ class S {
     'signupPassMatch': 'De wachtwoorden komen niet overeen.',
     'signupFail': 'Het account kon niet worden aangemaakt.',
     'ticketFail': 'Het ticket kon niet worden verstuurd. Probeer het opnieuw.',
+    'offerSentOk': 'Het voorstel is verzonden.',
+    'counterSentOk': 'Het tegenvoorstel is verzonden.',
     'walletTitle': 'S4H-portemonnee',
 
     'offerTo': 'Voorstel aan {name}',

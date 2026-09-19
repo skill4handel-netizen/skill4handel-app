@@ -18,7 +18,7 @@ class Session {
   static num balance = 0;
   static String token = '';
   static String language = 'en';
-  static bool emailVerified = true;
+  static bool emailVerified = false;
   static List<Map<String, dynamic>> reviews = [];
   static List<Map<String, dynamic>> history = [];
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);

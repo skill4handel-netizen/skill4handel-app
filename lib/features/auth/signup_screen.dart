@@ -109,9 +109,10 @@ class _SignupScreenState extends State<SignupScreen> {
           'acceptedTerms': true,
         },
       );
-      Session.apply(Map<String, dynamic>.from(response.data['user'] as Map));
-      if (response.data['token'] != null)
-        Session.token = response.data['token'].toString();
+      final user = Map<String, dynamic>.from(response.data['user'] as Map);
+      Session.apply(user);
+      Session.token = '';
+      Session.emailVerified = false;
       await Session.save();
       if (!mounted) return;
       final link = (response.data['verifyUrl'] ?? '').toString();
