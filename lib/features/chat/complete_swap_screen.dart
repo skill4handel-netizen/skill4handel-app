@@ -15,6 +15,10 @@ class CompleteSwapScreen extends StatefulWidget {
     this.photoUrl,
     this.isCounter = false,
     this.initialSkillRequested = '',
+    this.initialDuration = '60',
+    this.initialMode = 'Online',
+    this.initialLocation = '',
+    this.initialWhen,
   });
 
   final String otherName;
@@ -23,22 +27,25 @@ class CompleteSwapScreen extends StatefulWidget {
   final String? photoUrl;
   final bool isCounter;
   final String initialSkillRequested;
+  final String initialDuration;
+  final String initialMode;
+  final String initialLocation;
+  final DateTime? initialWhen;
 
   @override
   State<CompleteSwapScreen> createState() => _CompleteSwapScreenState();
 }
 
 class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
-  late final skillRequested = TextEditingController(
-    text: widget.initialSkillRequested,
-  );
-  final extraTokens = TextEditingController();
-  final location = TextEditingController();
+  late final extraTokens = TextEditingController();
+  late final location = TextEditingController(text: widget.initialLocation);
   final dio = Dio(
     BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
   );
-  String duration = '60';
-  String mode = 'Online';
+  late String duration = widget.initialDuration.isEmpty
+      ? '60'
+      : widget.initialDuration;
+  late String mode = widget.initialMode.isEmpty ? 'Online' : widget.initialMode;
   String payMode = 'skill';
   String selectedSkill = '';
   List<String> otherSkills = [];
@@ -50,18 +57,21 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool get useSkill => payMode == 'skill' || payMode == 'both';
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
+  bool get lockSchedule => widget.isCounter;
 
   @override
   void initState() {
     super.initState();
+    when = widget.initialWhen;
     loadOtherSkills();
   }
 
   String apiError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      if (data is Map && data['message'] != null)
+      if (data is Map && data['message'] != null) {
         return data['message'].toString();
+      }
     }
     return S.t('sendFailed');
   }
@@ -80,6 +90,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   }
 
   Future<void> pickWhen() async {
+    if (lockSchedule) return;
     final min = minWhen;
     final date = await showDatePicker(
       context: context,
@@ -121,11 +132,24 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     return '${local.day} ${months[local.month - 1]} ${local.year}  •  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
+  String typeLabel() {
+    switch (payMode) {
+      case 'both':
+        return 'Skill + tokens';
+      case 'tokens':
+        return 'Tokens only';
+      case 'volunteer':
+        return 'Volunteer';
+      default:
+        return 'Skill for skill';
+    }
+  }
+
   Future<void> submit() async {
     final requested = widget.isCounter
         ? widget.initialSkillRequested.trim()
         : selectedSkill;
-    final offered = widget.isCounter && useSkill ? selectedSkill : '';
+    final offered = useSkill ? selectedSkill : '';
     if (!widget.isCounter && requested.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -144,14 +168,10 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
       return;
     }
-    if (when == null || when!.isBefore(minWhen)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isCounter ? S.t('pleaseSelectTime') : S.t('pleaseTime24'),
-          ),
-        ),
-      );
+    if (when == null || (!widget.isCounter && when!.isBefore(minWhen))) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.t('pleaseTime24'))));
       return;
     }
     if (!acceptedQuality) {
@@ -168,13 +188,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           'userId': Session.id,
           'proposedByName': Session.name,
           'skillRequested': requested,
-          'skillOffered': volunteer ? '' : offered,
+          'skillOffered': volunteer ? '' : (widget.isCounter ? offered : ''),
           'payWithTokens': useTokens,
           'volunteer': volunteer,
           'extraTokens': useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0,
           'duration': duration,
           'mode': mode,
-          'level': volunteer ? 'Volunteer' : 'Normal',
+          'level': volunteer ? 'Volunteer' : typeLabel(),
           'location': location.text.trim(),
           'when': when!.toUtc().toIso8601String(),
           'scheduledAt': when!.toUtc().toIso8601String(),
@@ -251,6 +271,40 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     );
   }
 
+  Widget lockedBox(String label, String value, IconData icon) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F6F8),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.blue, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.lock_outline, size: 16, color: AppColors.muted),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -278,72 +332,43 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 6),
           Text(
             widget.isCounter
-                ? 'The requested skill stays the same. Choose one skill from their list, or use tokens or volunteer assistance.'
-                : S.t('selectNeedSkill'),
+                ? 'Choose the exchange type and, if needed, one skill from their list. Time and place stay as proposed.'
+                : 'Choose the exchange type first, then complete the proposal.',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
+          typeCard(
+            'skill',
+            Icons.swap_horiz,
+            S.t('skillFromList'),
+            'Skill for skill',
+          ),
+          typeCard(
+            'both',
+            Icons.toll,
+            S.t('skillAndTokens'),
+            S.t('skillPlusTokens'),
+          ),
+          typeCard(
+            'tokens',
+            Icons.account_balance_wallet_outlined,
+            S.t('tokensOnly'),
+            S.t('payTokens'),
+          ),
+          typeCard(
+            'volunteer',
+            Icons.volunteer_activism,
+            S.t('volunteer'),
+            S.t('doVolunteer'),
+          ),
           if (widget.isCounter) ...[
-            typeCard(
-              'skill',
-              Icons.swap_horiz,
-              S.t('skillFromList'),
-              S.t('askSkillReturn'),
-            ),
-            typeCard(
-              'both',
-              Icons.toll,
-              S.t('skillAndTokens'),
-              S.t('skillPlusTokens'),
-            ),
-            typeCard(
-              'tokens',
-              Icons.account_balance_wallet_outlined,
-              S.t('tokensOnly'),
-              S.t('payTokens'),
-            ),
-            typeCard(
-              'volunteer',
-              Icons.volunteer_activism,
-              S.t('volunteer'),
-              S.t('doVolunteer'),
-            ),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF4FF),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.lock_outline, color: AppColors.blue),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          S.t('requestedSkill'),
-                          style: TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 12,
-                          ),
-                        ),
-                        Text(
-                          widget.initialSkillRequested.isEmpty
-                              ? '—'
-                              : widget.initialSkillRequested,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            lockedBox(
+              S.t('requestedSkill'),
+              widget.initialSkillRequested.isEmpty
+                  ? '—'
+                  : widget.initialSkillRequested,
+              Icons.school_outlined,
             ),
           ],
           if (!widget.isCounter || useSkill) ...[
@@ -375,96 +400,108 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                 ),
               ),
           ],
-          if (widget.isCounter && useTokens) ...[
+          if (useTokens) ...[
             const SizedBox(height: 12),
             TextField(
               controller: extraTokens,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: S.t('s4hRange'),
-                prefixIcon: Icon(Icons.toll),
+                prefixIcon: const Icon(Icons.toll),
               ),
             ),
           ],
           const SizedBox(height: 12),
-          InkWell(
-            onTap: pickWhen,
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE4E7EC)),
-                borderRadius: BorderRadius.circular(16),
+          if (lockSchedule) ...[
+            lockedBox(
+              S.t('when'),
+              when == null ? '—' : prettyWhen(when!),
+              Icons.event_available,
+            ),
+            lockedBox(S.t('minutes'), '$duration min', Icons.timer_outlined),
+            lockedBox(S.t('how'), mode, Icons.place_outlined),
+            if (location.text.trim().isNotEmpty)
+              lockedBox(
+                mode == 'Online' ? S.t('linkNote') : S.t('meetingPlace'),
+                location.text.trim(),
+                Icons.lock_outline,
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.event_available, color: AppColors.blue),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      when == null
-                          ? (widget.isCounter
-                                ? S.t('chooseTime')
-                                : S.t('timeRule'))
-                          : prettyWhen(when!),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: when == null ? AppColors.muted : Colors.black,
+          ] else ...[
+            InkWell(
+              onTap: pickWhen,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFFE4E7EC)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_available, color: AppColors.blue),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        when == null ? S.t('timeRule') : prettyWhen(when!),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: when == null ? AppColors.muted : Colors.black,
+                        ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: duration,
+                    decoration: InputDecoration(labelText: S.t('minutes')),
+                    items: const [
+                      DropdownMenuItem(value: '30', child: Text('30')),
+                      DropdownMenuItem(value: '60', child: Text('60')),
+                      DropdownMenuItem(value: '90', child: Text('90')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => duration = value ?? '60'),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: mode,
+                    decoration: InputDecoration(labelText: S.t('how')),
+                    items: [
+                      DropdownMenuItem(
+                        value: 'Online',
+                        child: Text(S.t('online')),
+                      ),
+                      DropdownMenuItem(
+                        value: 'In person',
+                        child: Text(S.t('inPerson')),
+                      ),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => mode = value ?? 'Online'),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: duration,
-                  decoration: InputDecoration(labelText: S.t('minutes')),
-                  items: [
-                    DropdownMenuItem(value: '30', child: Text('30')),
-                    DropdownMenuItem(value: '60', child: Text('60')),
-                    DropdownMenuItem(value: '90', child: Text('90')),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => duration = value ?? '60'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: location,
+              decoration: InputDecoration(
+                labelText: mode == 'Online'
+                    ? S.t('linkNote')
+                    : S.t('meetingPlace'),
+                prefixIcon: Icon(
+                  mode == 'Online' ? Icons.link : Icons.place_outlined,
                 ),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: mode,
-                  decoration: InputDecoration(labelText: S.t('how')),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'Online',
-                      child: Text(S.t('online')),
-                    ),
-                    DropdownMenuItem(
-                      value: 'In person',
-                      child: Text(S.t('inPerson')),
-                    ),
-                  ],
-                  onChanged: (value) =>
-                      setState(() => mode = value ?? 'Online'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: location,
-            decoration: InputDecoration(
-              labelText: mode == 'Online'
-                  ? S.t('linkNote')
-                  : S.t('meetingPlace'),
-              prefixIcon: Icon(
-                mode == 'Online' ? Icons.link : Icons.place_outlined,
-              ),
             ),
-          ),
+          ],
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: acceptedQuality,
@@ -472,7 +509,6 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                 setState(() => acceptedQuality = value ?? false),
             title: Text(S.t('quality')),
           ),
-          const SizedBox(height: 8),
           SizedBox(
             height: 52,
             child: ElevatedButton(

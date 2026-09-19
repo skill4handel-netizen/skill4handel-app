@@ -154,6 +154,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  String prettyText(String raw) {
+    const mapped = {
+      'An offer has been sent. If there is no response within 24 hours, it will be cancelled.':
+          'Offer sent. Waiting for a reply within 24 hours.',
+      'A counter-offer has been sent.': 'Counter-offer sent.',
+      'New swap offer': 'New offer',
+      'Counter offer': 'Counter-offer',
+    };
+    return mapped[raw] ?? S.maybe(raw);
+  }
+
   String when(dynamic raw) {
     final parsed = DateTime.tryParse('$raw');
     if (parsed == null) return '';
@@ -312,40 +323,46 @@ class _ChatScreenState extends State<ChatScreen> {
                                 S.isSystem(rawText);
                             final isMe = fromId == Session.id;
                             if (isSystem) {
-                              return Container(
-                                width: double.infinity,
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFD1FAE5),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: const Color(0xFF6EE7B7),
+                              return Center(
+                                child: Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF4F7FB),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      S.maybe(rawText),
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Color(0xFF334155),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                  child: Column(
+                                    children: [
+                                      const Icon(
+                                        Icons.info_outline,
+                                        color: AppColors.blue,
                                       ),
-                                    ),
-                                    if (when(message['createdAt']).isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          when(message['createdAt']),
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: AppColors.muted,
-                                          ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        prettyText(rawText),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: Color(0xFF1F2937),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                  ],
+                                      if (when(message['createdAt']).isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
+                                          child: Text(
+                                            when(message['createdAt']),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: AppColors.muted,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               );
                             }
@@ -371,7 +388,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       : CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      S.maybe(rawText),
+                                      prettyText(rawText),
                                       style: TextStyle(
                                         color: isMe
                                             ? Colors.white

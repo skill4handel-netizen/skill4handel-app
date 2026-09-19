@@ -43,8 +43,9 @@ class _OfferScreenState extends State<OfferScreen> {
   String apiError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      if (data is Map && data['message'] != null)
+      if (data is Map && data['message'] != null) {
         return data['message'].toString();
+      }
     }
     return S.t('requestFailed');
   }
@@ -106,6 +107,21 @@ class _OfferScreenState extends State<OfferScreen> {
         doneBy.any((item) => item.toString() == Session.id.toString());
   }
 
+  String exchangeType(Map? offer) {
+    if (offer == null) return '';
+    final volunteer =
+        offer['volunteer'] == true ||
+        '${offer['level']}'.toLowerCase().contains('volunteer');
+    final tokens = int.tryParse('${offer['extraTokens'] ?? 0}') ?? 0;
+    final offered = '${offer['skillOffered'] ?? ''}'.trim();
+    if (volunteer) return 'Volunteer';
+    if (tokens > 0 && offered.isNotEmpty) return 'Skill + tokens';
+    if (tokens > 0) return 'Tokens only';
+    if ('${offer['level']}'.contains('Skill +')) return 'Skill + tokens';
+    if ('${offer['level']}'.contains('Tokens')) return 'Tokens only';
+    return 'Skill for skill';
+  }
+
   List<Map<String, String>> changes() {
     final current = pendingSwap;
     final previous = current?['previous'];
@@ -114,19 +130,24 @@ class _OfferScreenState extends State<OfferScreen> {
     void add(String label, dynamic a, dynamic b) {
       final left = (a ?? '—').toString();
       final right = (b ?? '—').toString();
-      if (left != right)
+      if (left != right) {
         items.add({
           'label': label,
           'from': left.isEmpty ? '—' : left,
           'to': right.isEmpty ? '—' : right,
         });
+      }
     }
 
+    add(
+      'Type',
+      exchangeType(Map<String, dynamic>.from(previous)),
+      exchangeType(current),
+    );
     add(S.t('returnSkill'), previous['skillOffered'], current['skillOffered']);
     add(S.t('tokensLabel'), previous['extraTokens'], current['extraTokens']);
     add(S.t('duration'), previous['duration'], current['duration']);
     add(S.t('mode'), previous['mode'], current['mode']);
-    add(S.t('type'), previous['level'], current['level']);
     add(
       S.t('schedule'),
       formatWhen(previous['scheduledAt'] ?? previous['when']),
@@ -162,6 +183,10 @@ class _OfferScreenState extends State<OfferScreen> {
           isCounter: true,
           initialSkillRequested:
               pendingSwap?['skillRequested']?.toString() ?? '',
+          initialDuration: '${pendingSwap?['duration'] ?? '60'}',
+          initialMode: '${pendingSwap?['mode'] ?? 'Online'}',
+          initialLocation: '${pendingSwap?['location'] ?? ''}',
+          initialWhen: scheduledAt,
         ),
       ),
     );
@@ -215,6 +240,8 @@ class _OfferScreenState extends State<OfferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final offer = pendingSwap ?? lastCompleted;
+    final type = exchangeType(offer);
     return Scaffold(
       appBar: AppBar(title: Text(S.t('offer'))),
       body: loading
@@ -233,6 +260,24 @@ class _OfferScreenState extends State<OfferScreen> {
                 if (pendingSwap == null && !completed)
                   Text(S.t('noOpenOffer'))
                 else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F8EF),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      type,
+                      style: const TextStyle(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     isCounter
                         ? S.t('counterOffer')
@@ -242,39 +287,24 @@ class _OfferScreenState extends State<OfferScreen> {
                   const SizedBox(height: 12),
                   row(
                     S.t('requested'),
-                    skillLabel(
-                      (pendingSwap?['skillRequested'] ??
-                              lastCompleted?['skillRequested'] ??
-                              '')
-                          .toString(),
-                    ),
+                    skillLabel((offer?['skillRequested'] ?? '').toString()),
                   ),
                   row(
                     S.t('inReturn'),
-                    skillLabel(
-                      (pendingSwap?['skillOffered'] ??
-                              lastCompleted?['skillOffered'] ??
-                              '')
-                          .toString(),
-                    ),
+                    skillLabel((offer?['skillOffered'] ?? '').toString()),
                   ),
-                  row(
-                    S.t('tokensLabel'),
-                    '${pendingSwap?['extraTokens'] ?? 0}',
-                  ),
+                  row(S.t('tokensLabel'), '${offer?['extraTokens'] ?? 0}'),
                   row(
                     S.t('when'),
-                    formatWhen(
-                      pendingSwap?['scheduledAt'] ?? pendingSwap?['when'],
-                    ),
+                    formatWhen(offer?['scheduledAt'] ?? offer?['when']),
                   ),
-                  row(S.t('duration'), '${pendingSwap?['duration'] ?? ''} min'),
-                  row('How', '${pendingSwap?['mode'] ?? ''}'),
+                  row(S.t('duration'), '${offer?['duration'] ?? ''} min'),
+                  row('How', '${offer?['mode'] ?? ''}'),
                   if (changes().isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       S.t('whatChanged'),
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 8),
                     for (final item in changes())
@@ -312,7 +342,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       icon: const Icon(Icons.check_circle, color: Colors.white),
                       label: Text(
                         S.t('accept'),
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                     if (canCounter) ...[
@@ -323,7 +353,7 @@ class _OfferScreenState extends State<OfferScreen> {
                         icon: const Icon(Icons.sync_alt, color: Colors.white),
                         label: Text(
                           S.t('counter'),
-                          style: TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     ],
@@ -339,7 +369,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       icon: const Icon(Icons.cancel, color: Colors.white),
                       label: Text(
                         S.t('decline'),
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                   ],
@@ -358,7 +388,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       style: AppTheme.solid(AppColors.green),
                       child: Text(
                         S.t('confirmDone'),
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                   if (completed)
@@ -367,7 +397,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       style: AppTheme.solid(AppColors.green),
                       child: Text(
                         S.t('writeReview'),
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                     ),
                 ],
