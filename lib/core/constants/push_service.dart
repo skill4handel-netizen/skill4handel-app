@@ -9,7 +9,9 @@ const String kNotifyChannelId = 'skill4handel';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
 }
 
 class PushService {
@@ -17,6 +19,7 @@ class PushService {
     BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
   );
   static final local = FlutterLocalNotificationsPlugin();
+  static String lastToken = '';
 
   static Future<void> init() async {
     if (kIsWeb) return;
@@ -73,28 +76,38 @@ class PushService {
           ),
         );
       });
-      await registerToken();
       FirebaseMessaging.instance.onTokenRefresh.listen(saveToken);
+      await registerToken();
     } catch (error) {
       print('PUSH INIT ERROR $error');
     }
   }
 
   static Future<void> registerToken() async {
+    if (kIsWeb) return;
     try {
       final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) await saveToken(token);
+      if (token != null && token.isNotEmpty) {
+        await saveToken(token);
+      } else if (lastToken.isNotEmpty) {
+        await saveToken(lastToken);
+      }
     } catch (error) {
       print('PUSH TOKEN ERROR $error');
     }
   }
 
   static Future<void> saveToken(String token) async {
+    lastToken = token;
     if (Session.id <= 0 || token.isEmpty) return;
     try {
       await dio.post(
         '/auth/device-token',
-        data: {'userId': Session.id, 'token': token, 'platform': 'android'},
+        data: {
+          'userId': Session.id,
+          'token': token,
+          'platform': kIsWeb ? 'web' : 'android',
+        },
       );
     } catch (error) {
       print('PUSH SAVE ERROR $error');

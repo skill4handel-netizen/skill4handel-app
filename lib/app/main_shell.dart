@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../core/constants/push_service.dart';
 import '../core/constants/session.dart';
 import '../core/l10n/app_strings.dart';
 import '../features/chat/chat_list_screen.dart';
@@ -28,6 +29,7 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    PushService.registerToken();
     loadUnread();
   }
 

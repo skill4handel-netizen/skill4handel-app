@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../core/constants/push_service.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/constants/skills.dart';
@@ -112,6 +113,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('photoError'))));
+    }
+  }
+
+  Future<void> sendTestPush() async {
+    try {
+      await PushService.registerToken();
+      final response = await dio.post(
+        '/auth/test-push',
+        data: {'userId': Session.id},
+      );
+      final sent = response.data is Map ? response.data['sent'] : 0;
+      final reason = response.data is Map ? response.data['reason'] : '';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            sent != null && sent != 0
+                ? 'Test notification sent.'
+                : 'Notification was not sent. ${reason ?? ''}',
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notification test failed.')),
+      );
     }
   }
 
@@ -492,6 +520,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextButton(
                 onPressed: changePassword,
                 child: Text(S.t('changePassword')),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: sendTestPush,
+                child: const Text('Send test notification'),
               ),
               TextButton(
                 onPressed: () => Navigator.push(
