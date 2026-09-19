@@ -101,6 +101,12 @@ class _OfferScreenState extends State<OfferScreen> {
       pendingSwap?['proposedBy']?.toString() == Session.id.toString();
   bool get isCounter => pendingSwap?['rawStatus']?.toString() == 'COUNTERED';
   bool get canCounter => pending && !iProposed && !isCounter;
+  bool get canCancelPending => pending;
+  bool get canCancelAccepted {
+    if (!accepted || scheduledAt == null) return false;
+    return scheduledAt!.difference(DateTime.now()).inHours >= 24;
+  }
+
   bool get iAlreadyDone {
     final doneBy = pendingSwap?['doneBy'] ?? lastCompleted?['doneBy'];
     return doneBy is List &&
@@ -360,7 +366,7 @@ class _OfferScreenState extends State<OfferScreen> {
                       ),
                   ],
                   const SizedBox(height: 16),
-                  if (pending && iProposed)
+                  if (canCancelPending || canCancelAccepted)
                     OutlinedButton(
                       onPressed: working
                           ? null
