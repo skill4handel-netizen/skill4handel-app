@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../app/main_shell.dart';
+import '../home/demo_screen.dart';
 import '../../core/constants/push_service.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
@@ -71,7 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => MainShell(userName: Session.name),
+            builder: (context) => Session.demoSeen
+                ? MainShell(userName: Session.name)
+                : DemoScreen(userName: Session.name),
           ),
           (route) => false,
         );
@@ -117,7 +120,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
-          builder: (context) => MainShell(userName: Session.name),
+          builder: (context) => Session.demoSeen
+              ? MainShell(userName: Session.name)
+              : DemoScreen(userName: Session.name),
         ),
         (route) => false,
       );

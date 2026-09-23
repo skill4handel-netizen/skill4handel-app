@@ -69,7 +69,10 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   void initState() {
     super.initState();
     when = widget.initialWhen;
-    payMode = widget.initialPayMode;
+    final incoming = widget.initialPayMode.toLowerCase();
+    payMode = incoming.contains('volunteer')
+        ? 'volunteer'
+        : (incoming.isEmpty ? 'skill' : widget.initialPayMode);
     extraTokens.text = widget.initialTokens;
     loadOtherSkills();
   }
@@ -164,7 +167,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
       return;
     }
-    if (widget.isCounter && useSkill && offered.isEmpty) {
+    if (widget.isCounter && useSkill && !volunteer && offered.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
@@ -188,7 +191,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseQuality'))));
       return;
     }
-    if (widget.isAccept && useSkill && selectedSkill.isEmpty) {
+    if (widget.isAccept && useSkill && !volunteer && selectedSkill.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
@@ -365,10 +368,12 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 6),
           Text(
             widget.isAccept
-                ? 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.'
+                ? (volunteer
+                    ? 'This is volunteer work. Confirm the locked time and place. No return skill is required.'
+                    : 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.')
                 : widget.isCounter
-                ? 'Choose the exchange type and, if needed, one skill from their list. Time and place stay as proposed.'
-                : 'Choose the exchange type first, then complete the proposal.',
+                ? 'Choose how you will reply. Volunteer work needs no return skill. Time and place stay as proposed.'
+                : 'Choose the exchange type first. Then tap the date box to set the meeting time. The earliest time is 24 hours from now.',
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
@@ -410,7 +415,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               Icons.school_outlined,
             ),
           ],
-          if ((!widget.isCounter && !widget.isAccept) || useSkill) ...[
+          if (((!widget.isCounter && !widget.isAccept) || useSkill) && !volunteer) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -475,24 +480,48 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             InkWell(
               onTap: pickWhen,
               child: Container(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFE4E7EC)),
+                  color: Colors.white,
+                  border: Border.all(color: AppColors.blue, width: 2),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.event_available, color: AppColors.blue),
+                    CircleAvatar(
+                      backgroundColor: AppColors.blue,
+                      child: const Icon(Icons.event_available, color: Colors.white),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        when == null ? S.t('timeRule') : prettyWhen(when!),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: when == null ? AppColors.muted : Colors.black,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Date and time',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            when == null
+                                ? 'Tap here to choose date and time'
+                                : prettyWhen(when!),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Text(
+                            'Earliest start is 24 hours from now.',
+                            style: TextStyle(fontSize: 12, color: AppColors.muted),
+                          ),
+                        ],
                       ),
                     ),
+                    const Icon(Icons.chevron_right, color: AppColors.blue),
                   ],
                 ),
               ),

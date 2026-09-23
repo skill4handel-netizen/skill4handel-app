@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../app/main_shell.dart';
+import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 
 class DemoScreen extends StatefulWidget {
@@ -16,31 +17,58 @@ class _DemoScreenState extends State<DemoScreen> {
 
   final slides = const [
     _Slide(
-      image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
-      title: 'Create a profile',
-      text: 'Add a photograph, your city and the skills you can offer.',
+      image:
+          'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
+      title: 'Create your profile',
+      text:
+          'Add a clear photograph, your city and up to ten skills you can offer. Other members see these skills before they connect with you.',
     ),
     _Slide(
-      image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80',
+      image:
+          'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80',
       title: 'Find a member',
-      text: 'Search by name, city or skill. Open the profile before you connect.',
+      text:
+          'Open Search and look by name, city or skill. Read the profile, rating and offered skills before you start a chat.',
     ),
     _Slide(
-      image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80',
-      title: 'Send an offer',
-      text: 'Propose a skill exchange, optional tokens, a date and a meeting format.',
+      image:
+          'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80',
+      title: 'Send a written offer',
+      text:
+          'Choose the skill you need from their list. Then choose how you will exchange: skill for skill, skill plus tokens, tokens only, or volunteer work. Set the date at least 24 hours ahead.',
     ),
     _Slide(
-      image: 'https://images.unsplash.com/photo-1529156069898-49953e654a00?auto=format&fit=crop&w=1400&q=80',
-      title: 'Complete the exchange',
-      text: 'Meet as agreed. Both members confirm completion after the scheduled time.',
+      image:
+          'https://images.unsplash.com/photo-1529156069898-49953e654a00?auto=format&fit=crop&w=1400&q=80',
+      title: 'Reply, accept or decline',
+      text:
+          'The other member may accept, decline or send one counter-offer. Volunteer work does not require a return skill. After one counter-offer, only accept or decline remains.',
     ),
     _Slide(
-      image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80',
-      title: 'Review and tokens',
-      text: 'Leave a review after completion. Tokens are used only when a direct skill swap is not possible.',
+      image:
+          'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80',
+      title: 'Complete and review',
+      text:
+          'Meet at the agreed time. Both members mark the session complete. Then both leave a review. Tokens move only when the agreed offer includes tokens.',
     ),
   ];
+
+  Future<void> finish() async {
+    Session.demoSeen = true;
+    await Session.save();
+    if (!mounted) return;
+    if (Session.token.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              MainShell(userName: widget.userName ?? Session.name),
+        ),
+      );
+    } else {
+      Navigator.pop(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +82,19 @@ class _DemoScreenState extends State<DemoScreen> {
           Image.network(
             item.image,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stack) => Container(color: AppColors.blue),
+            errorBuilder: (context, error, stack) =>
+                Container(color: AppColors.blue),
           ),
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0x66000000), Color(0x00000000), Color(0xCC000000)],
+                colors: [
+                  Color(0x66000000),
+                  Color(0x00000000),
+                  Color(0xCC000000),
+                ],
               ),
             ),
           ),
@@ -75,16 +108,34 @@ class _DemoScreenState extends State<DemoScreen> {
                     widget.userName == null || widget.userName!.isEmpty
                         ? 'Welcome'
                         : 'Welcome, ${widget.userName}',
-                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const Text(
                     'How Skill4Handel works',
                     style: TextStyle(color: Colors.white70),
                   ),
                   const Spacer(),
-                  Text(item.title, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800)),
+                  Text(
+                    item.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  Text(item.text, style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.35)),
+                  Text(
+                    item.text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      height: 1.35,
+                    ),
+                  ),
                   const SizedBox(height: 18),
                   Row(
                     children: List.generate(
@@ -109,14 +160,14 @@ class _DemoScreenState extends State<DemoScreen> {
                         if (!last) {
                           setState(() => page++);
                         } else {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => MainShell(userName: widget.userName)),
-                          );
+                          finish();
                         }
                       },
                       style: AppTheme.solid(AppColors.green),
-                      child: Text(last ? 'Continue' : 'Next', style: const TextStyle(color: Colors.white)),
+                      child: Text(
+                        last ? 'Continue' : 'Next',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],

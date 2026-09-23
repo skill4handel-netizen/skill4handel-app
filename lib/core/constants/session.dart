@@ -19,6 +19,7 @@ class Session {
   static String token = '';
   static String language = 'en';
   static bool emailVerified = false;
+  static bool demoSeen = false;
   static List<Map<String, dynamic>> reviews = [];
   static List<Map<String, dynamic>> history = [];
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
@@ -39,6 +40,7 @@ class Session {
     'token': token,
     'language': language,
     'emailVerified': emailVerified,
+    'demoSeen': demoSeen,
   };
 
   static String pickText(Map user, List<String> keys, String fallback) {
@@ -69,6 +71,9 @@ class Session {
     if (user['emailVerified'] != null) {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
+    }
+    if (user['demoSeen'] != null) {
+      demoSeen = user['demoSeen'] == true || user['demoSeen'] == 'true';
     }
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
@@ -115,6 +120,7 @@ class Session {
     token = '';
     language = 'en';
     emailVerified = true;
+    demoSeen = false;
     reviews = [];
     history = [];
     await _storage.delete(key: 'session');
