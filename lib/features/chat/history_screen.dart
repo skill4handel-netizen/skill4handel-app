@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
