@@ -54,8 +54,7 @@ class _DemoScreenState extends State<DemoScreen> {
   ];
 
   Future<void> finish() async {
-    Session.demoSeen = true;
-    await Session.save();
+    await Session.markDemoSeen();
     if (!mounted) return;
     if (Session.token.isNotEmpty) {
       Navigator.pushReplacement(

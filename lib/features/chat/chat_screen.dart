@@ -154,30 +154,42 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  String prettyText(String raw) {
-    const mapped = {
-      'An offer has been sent. If there is no response within 24 hours, it will be cancelled.':
-          'Offer sent. Waiting for a reply within 24 hours.',
-      'A counter-offer has been sent.': 'Counter-offer sent.',
-      'The offer has been accepted. The session is confirmed.':
-          'Offer accepted. The session is confirmed.',
-      'The offer has been declined.': 'Offer declined.',
-      'The offer was cancelled. Both members may start a new request.':
-          'Offer cancelled. A new request may be started.',
-      'Completion has been confirmed by one member. Waiting for the other confirmation.':
-          'One member confirmed completion. Waiting for the other confirmation.',
-      'Both members confirmed completion. Reviews can now be written.':
-          'Exchange completed. Reviews can now be written.',
-      'New swap offer': 'New offer',
-      'Counter offer': 'Counter-offer',
-    };
-    if (raw.startsWith('The offer has been accepted. Return skill:')) {
-      return raw.replaceFirst(
-        'The offer has been accepted. Return skill:',
-        'Offer accepted. Return skill:',
-      );
+  String prettyText(String raw, {int fromId = 0}) {
+    final mine = fromId == Session.id;
+    if (raw.startsWith('An offer has been sent')) {
+      return mine
+          ? 'Offer sent. Waiting for a reply within 24 hours.'
+          : 'Offer received. Open it and accept, decline or send a counter-offer.';
     }
-    return mapped[raw] ?? S.maybe(raw);
+    if (raw == 'A counter-offer has been sent.') {
+      return mine
+          ? 'Counter-offer sent.'
+          : 'Counter-offer received. Review the changes and respond.';
+    }
+    if (raw == 'The offer has been accepted. The session is confirmed.') {
+      return mine
+          ? 'You accepted the offer. The session is confirmed.'
+          : 'Your offer was accepted. The session is confirmed.';
+    }
+    if (raw.startsWith('The offer has been accepted. Return skill:')) {
+      final skill = raw.split('Return skill:').last.trim();
+      return mine
+          ? 'You accepted the offer. Return skill: $skill'
+          : 'Your offer was accepted. Return skill: $skill';
+    }
+    if (raw == 'The offer has been declined.') {
+      return mine ? 'You declined the offer.' : 'Your offer was declined.';
+    }
+    if (raw.startsWith('The offer was cancelled')) {
+      return 'Offer cancelled. A new request may be started.';
+    }
+    if (raw.startsWith('Completion has been confirmed')) {
+      return 'One member confirmed completion. Waiting for the other confirmation.';
+    }
+    if (raw.startsWith('Both members confirmed')) {
+      return 'Exchange completed. Reviews can now be written.';
+    }
+    return S.maybe(raw);
   }
 
   String when(dynamic raw) {
@@ -348,8 +360,19 @@ class _ChatScreenState extends State<ChatScreen> {
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFF4F7FB),
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: AppColors.blue,
+                                      width: 1.5,
+                                    ),
                                     borderRadius: BorderRadius.circular(16),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x22000000),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   child: Column(
                                     children: [
@@ -359,7 +382,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        prettyText(rawText),
+                                        prettyText(rawText, fromId: fromId),
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           color: Color(0xFF1F2937),
@@ -407,7 +430,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       : CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      prettyText(rawText),
+                                      prettyText(rawText, fromId: fromId),
                                       style: TextStyle(
                                         color: isMe
                                             ? Colors.white

@@ -63,7 +63,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   bool get useSkill => payMode == 'skill' || payMode == 'both';
   bool get useTokens => payMode == 'tokens' || payMode == 'both';
   bool get volunteer => payMode == 'volunteer';
-  bool get lockSchedule => widget.isCounter || widget.isAccept;
+  bool get lockSchedule => widget.isAccept;
 
   @override
   void initState() {
@@ -179,7 +179,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
       return;
     }
-    if (when == null || (!widget.isCounter && when!.isBefore(minWhen))) {
+    if (when == null || when!.isBefore(minWhen)) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTime24'))));
@@ -369,10 +369,10 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           Text(
             widget.isAccept
                 ? (volunteer
-                    ? 'This is volunteer work. Confirm the locked time and place. No return skill is required.'
-                    : 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.')
+                      ? 'This is volunteer work. Confirm the locked time and place. No return skill is required.'
+                      : 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.')
                 : widget.isCounter
-                ? 'Choose how you will reply. Volunteer work needs no return skill. Time and place stay as proposed.'
+                ? 'Change the exchange type, return skill, date, duration or meeting format. The skill they asked for stays locked.'
                 : 'Choose the exchange type first. Then tap the date box to set the meeting time. The earliest time is 24 hours from now.',
             style: const TextStyle(color: AppColors.muted),
           ),
@@ -415,7 +415,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               Icons.school_outlined,
             ),
           ],
-          if (((!widget.isCounter && !widget.isAccept) || useSkill) && !volunteer) ...[
+          if (((!widget.isCounter && !widget.isAccept) || useSkill) &&
+              !volunteer) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -490,7 +491,10 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                   children: [
                     CircleAvatar(
                       backgroundColor: AppColors.blue,
-                      child: const Icon(Icons.event_available, color: Colors.white),
+                      child: const Icon(
+                        Icons.event_available,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -516,7 +520,10 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                           ),
                           const Text(
                             'Earliest start is 24 hours from now.',
-                            style: TextStyle(fontSize: 12, color: AppColors.muted),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
                           ),
                         ],
                       ),

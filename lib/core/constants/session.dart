@@ -72,9 +72,6 @@ class Session {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
     }
-    if (user['demoSeen'] != null) {
-      demoSeen = user['demoSeen'] == true || user['demoSeen'] == 'true';
-    }
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
           .whereType<Map>()
@@ -139,5 +136,23 @@ class Session {
     if (photoUrl.trim().isEmpty) missing.add('photo');
     if (offers.trim().isEmpty) missing.add('skill');
     return missing.join(', ');
+  }
+
+  static String demoKey([int? userId]) => 'demo_seen_${userId ?? id}';
+
+  static Future<bool> hasSeenDemo() async {
+    try {
+      final flag = await _storage.read(key: demoKey());
+      if (flag == '1') demoSeen = true;
+    } catch (_) {}
+    return demoSeen;
+  }
+
+  static Future<void> markDemoSeen() async {
+    demoSeen = true;
+    try {
+      if (id != 0) await _storage.write(key: demoKey(), value: '1');
+      await save();
+    } catch (_) {}
   }
 }

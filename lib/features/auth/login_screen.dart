@@ -53,6 +53,35 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  Future<void> goAfterLogin([Map? user]) async {
+    final created = DateTime.tryParse(
+      '${user?['createdAt'] ?? user?['created_at'] ?? ''}',
+    );
+    if (created != null && DateTime.now().difference(created).inHours >= 24) {
+      await Session.markDemoSeen();
+    }
+    final seen = await Session.hasSeenDemo();
+    if (!mounted) return;
+    if (!seen) {
+      await Session.markDemoSeen();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DemoScreen(userName: Session.name),
+        ),
+        (route) => false,
+      );
+      return;
+    }
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MainShell(userName: Session.name),
+      ),
+      (route) => false,
+    );
+  }
+
   Future<void> confirmToken(String token) async {
     setState(() {
       loading = true;
@@ -69,14 +98,10 @@ class _LoginScreenState extends State<LoginScreen> {
         await Session.save();
         await PushService.registerToken();
         if (!mounted) return;
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Session.demoSeen
-                ? MainShell(userName: Session.name)
-                : DemoScreen(userName: Session.name),
-          ),
-          (route) => false,
+        await goAfterLogin(
+          data['user'] is Map
+              ? Map<String, dynamic>.from(data['user'] as Map)
+              : null,
         );
         return;
       }
@@ -117,15 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await Session.save();
       await PushService.registerToken();
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => Session.demoSeen
-              ? MainShell(userName: Session.name)
-              : DemoScreen(userName: Session.name),
-        ),
-        (route) => false,
-      );
+      await goAfterLogin(user);
     } on DioException catch (error) {
       final raw = error.response?.data;
       final message = raw is Map ? raw['message']?.toString() ?? '' : '';
