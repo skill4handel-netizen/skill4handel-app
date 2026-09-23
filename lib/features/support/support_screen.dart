@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../home/demo_screen.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key, this.initialType, this.initialOtherName});
@@ -243,6 +244,34 @@ class _SupportScreenState extends State<SupportScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
+          sectionTitle('Help', Icons.menu_book_outlined),
+          Material(
+            color: const Color(0xFFE8F1FF),
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.blue,
+                child: Icon(Icons.play_circle_outline, color: Colors.white),
+              ),
+              title: const Text(
+                'How Skill4Handel works',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('Open the short product guide'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DemoScreen()),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
           sectionTitle(S.t('contact'), Icons.phone_in_talk),
           contactCard(
             Icons.email_outlined,

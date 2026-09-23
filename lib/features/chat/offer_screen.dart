@@ -178,11 +178,13 @@ class _OfferScreenState extends State<OfferScreen> {
   }
 
   Future<void> startAccept() async {
-    final volunteer =
-        pendingSwap?['volunteer'] == true ||
-        '${pendingSwap?['level']}'.toLowerCase().contains('volunteer');
     final tokens = int.tryParse('${pendingSwap?['extraTokens'] ?? 0}') ?? 0;
     final offered = '${pendingSwap?['skillOffered'] ?? ''}'.trim();
+    final raw = '${pendingSwap?['rawStatus'] ?? ''}'.toUpperCase();
+    final volunteer =
+        pendingSwap?['volunteer'] == true ||
+        '${pendingSwap?['level']}'.toLowerCase().contains('volunteer') ||
+        (raw == 'COUNTERED' && offered.isEmpty && tokens <= 0);
     String payMode = 'skill';
     if (volunteer) {
       payMode = 'volunteer';

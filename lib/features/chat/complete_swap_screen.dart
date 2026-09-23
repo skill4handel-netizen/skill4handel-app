@@ -179,7 +179,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
       return;
     }
-    if (when == null || when!.isBefore(minWhen)) {
+    if (!widget.isAccept && (when == null || when!.isBefore(minWhen))) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTime24'))));
@@ -191,12 +191,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseQuality'))));
       return;
     }
-    if (widget.isAccept && useSkill && !volunteer && selectedSkill.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
-      return;
-    }
+    // Accept confirms the existing offer. No new skill is required.
     setState(() => working = true);
     try {
       if (widget.isAccept) {
@@ -205,7 +200,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           data: {
             'userId': Session.id,
             'action': 'accepted',
-            'skillOffered': useSkill ? selectedSkill : '',
+            'skillOffered': volunteer ? '' : selectedSkill,
           },
         );
       } else {
@@ -415,7 +410,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
               Icons.school_outlined,
             ),
           ],
-          if (((!widget.isCounter && !widget.isAccept) || useSkill) &&
+          if (!widget.isAccept &&
+              ((!widget.isCounter) || useSkill) &&
               !volunteer) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
