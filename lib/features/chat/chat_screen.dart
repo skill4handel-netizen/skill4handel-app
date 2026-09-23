@@ -30,6 +30,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
+  final scrollController = ScrollController();
   final dio = Dio(
     BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
   );
@@ -43,6 +44,13 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     chatId = widget.chatId;
     openChat();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    scrollController.dispose();
+    super.dispose();
   }
 
   String apiError(Object error) {
@@ -88,6 +96,73 @@ class _ChatScreenState extends State<ChatScreen> {
       messages = [];
     }
     if (mounted) setState(() => loading = false);
+    jumpToEnd();
+  }
+
+  void jumpToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    });
+  }
+
+  bool isOfferLog(String raw) {
+    final t = raw.toLowerCase();
+    return t.contains('offer') ||
+        t.contains('counter-offer') ||
+        t.contains('counter offer') ||
+        t.contains('exchange completed') ||
+        t.contains('completion') ||
+        t.contains('session is confirmed') ||
+        t.contains('cancelled') ||
+        t.contains('declined') ||
+        t.contains('accepted') ||
+        t.contains('expired');
+  }
+
+  bool isFinishedLog(String raw) {
+    final t = raw.toLowerCase();
+    return t.contains('completed') ||
+        t.contains('reviews can now') ||
+        t.contains('both members confirmed');
+  }
+
+  bool sameDay(dynamic raw) {
+    final parsed = DateTime.tryParse('$raw');
+    if (parsed == null) return true;
+    final local = parsed.toLocal();
+    final now = DateTime.now();
+    return local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+  }
+
+  List<Map<String, dynamic>> visibleMessages() {
+    final offerIndexes = <int>[];
+    for (var i = 0; i < messages.length; i++) {
+      final raw = messages[i]['text']?.toString() ?? '';
+      final fromId = int.tryParse('${messages[i]['fromId'] ?? 0}') ?? 0;
+      final system =
+          fromId == 0 ||
+          (messages[i]['type']?.toString() ?? '') == 'system' ||
+          S.isSystem(raw);
+      if (system && isOfferLog(raw)) offerIndexes.add(i);
+    }
+    final latestOffer = offerIndexes.isEmpty ? -1 : offerIndexes.last;
+    final out = <Map<String, dynamic>>[];
+    for (var i = 0; i < messages.length; i++) {
+      final raw = messages[i]['text']?.toString() ?? '';
+      final fromId = int.tryParse('${messages[i]['fromId'] ?? 0}') ?? 0;
+      final system =
+          fromId == 0 ||
+          (messages[i]['type']?.toString() ?? '') == 'system' ||
+          S.isSystem(raw);
+      if (system && isOfferLog(raw) && i != latestOffer) continue;
+      if (system && isFinishedLog(raw) && !sameDay(messages[i]['createdAt']))
+        continue;
+      out.add(messages[i]);
+    }
+    return out;
   }
 
   void openProfile() {
@@ -198,7 +273,9 @@ class _ChatScreenState extends State<ChatScreen> {
     final local = parsed.toLocal();
     final hh = local.hour.toString().padLeft(2, '0');
     final mm = local.minute.toString().padLeft(2, '0');
-    return '${local.day.toString().padLeft(2, '0')}-${local.month.toString().padLeft(2, '0')} $hh:$mm';
+    final dd = local.day.toString().padLeft(2, '0');
+    final mo = local.month.toString().padLeft(2, '0');
+    return '$dd/$mo/${local.year}  $hh:$mm';
   }
 
   Future<void> openOffer() async {
@@ -252,11 +329,17 @@ class _ChatScreenState extends State<ChatScreen> {
         data: {'fromId': Session.id, 'text': text},
       );
       setState(() => applyChat(response.data));
+      jumpToEnd();
     } catch (_) {
       setState(
-        () =>
-            messages.add({'type': 'text', 'fromId': Session.id, 'text': text}),
+        () => messages.add({
+          'type': 'text',
+          'fromId': Session.id,
+          'text': text,
+          'createdAt': DateTime.now().toIso8601String(),
+        }),
       );
+      jumpToEnd();
     }
   }
 
@@ -340,10 +423,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: messages.isEmpty
                       ? Center(child: Text(S.t('noMessages')))
                       : ListView.builder(
+                          controller: scrollController,
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                          itemCount: messages.length,
+                          itemCount: visibleMessages().length,
                           itemBuilder: (context, index) {
-                            final message = messages[index];
+                            final message = visibleMessages()[index];
                             final fromId =
                                 int.tryParse('${message['fromId'] ?? 0}') ?? 0;
                             final rawText = message['text']?.toString() ?? '';

@@ -161,7 +161,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         ? widget.initialSkillRequested.trim()
         : selectedSkill;
     final offered = useSkill ? selectedSkill : '';
-    if (!widget.isCounter && requested.isEmpty) {
+    if (!widget.isAccept && !widget.isCounter && requested.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
