@@ -188,7 +188,19 @@ class _LoginScreenState extends State<LoginScreen> {
     } on DioException catch (error) {
       final raw = error.response?.data;
       final message = raw is Map ? raw['message']?.toString() ?? '' : '';
-      if (message.toLowerCase().contains('not verified') ||
+      if (error.response?.statusCode == 429) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                message.isNotEmpty
+                    ? message
+                    : 'Too many attempts. Please wait a few minutes.',
+              ),
+            ),
+          );
+        }
+      } else if (message.toLowerCase().contains('not verified') ||
           message.toLowerCase().contains('email not')) {
         setState(() {
           waitingVerify = true;
