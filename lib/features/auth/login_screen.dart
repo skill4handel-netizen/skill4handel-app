@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../app/main_shell.dart';
 import '../home/demo_screen.dart';
 import '../../core/constants/push_service.dart';
@@ -108,6 +109,48 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => notice = S.t('emailVerifiedLogin'));
     } catch (_) {
       setState(() => notice = S.t('verifyFailed'));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> loginWithGoogle() async {
+    setState(() => loading = true);
+    try {
+      final google = GoogleSignIn(
+        scopes: const ['email', 'profile'],
+        serverClientId:
+            '763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com',
+      );
+      final account = await google.signIn();
+      if (account == null) return;
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('missing-token');
+      }
+      final response = await dio.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+      final user = Map<String, dynamic>.from(response.data['user'] as Map);
+      Session.apply(user);
+      if (response.data['token'] != null) {
+        Session.token = response.data['token'].toString();
+      }
+      await Session.save();
+      await PushService.registerToken();
+      if (!mounted) return;
+      await goAfterLogin(user);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Google sign-in could not be completed. Try email login, or add the Android app in Google Cloud.',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -268,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                       const SizedBox(height: 20),
-                      if (!waitingVerify)
+                      if (!waitingVerify) ...[
                         SizedBox(
                           width: double.infinity,
                           height: 52,
@@ -284,6 +327,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton.icon(
+                            onPressed: loading ? null : loginWithGoogle,
+                            icon: const Icon(Icons.g_mobiledata, size: 32),
+                            label: const Text(
+                              'Continue with Google',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (waitingVerify)
                         SizedBox(
                           width: double.infinity,

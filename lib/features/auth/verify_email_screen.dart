@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
@@ -37,15 +36,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     } finally {
       if (mounted) setState(() => sending = false);
     }
-  }
-
-  Future<void> openLink() async {
-    final url = widget.verifyUrl.isNotEmpty
-        ? widget.verifyUrl
-        : 'https://skill4handel-api.onrender.com/auth/verify';
-    try {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } catch (_) {}
   }
 
   void goLogin() {
@@ -89,20 +79,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
+          const SizedBox(height: 16),
+          const Text(
+            'Open the message in your email inbox and tap the confirmation link there. The app cannot confirm the address for you.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, height: 1.35),
+          ),
           const SizedBox(height: 24),
-          if (widget.verifyUrl.isNotEmpty)
-            SizedBox(
-              height: 52,
-              child: ElevatedButton(
-                onPressed: openLink,
-                style: AppTheme.solid(AppColors.blue),
-                child: Text(
-                  S.t('verifyOpen'),
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
-          const SizedBox(height: 10),
           OutlinedButton(
             onPressed: sending ? null : resend,
             child: Text(sending ? S.t('saving') : S.t('verifyResend')),
