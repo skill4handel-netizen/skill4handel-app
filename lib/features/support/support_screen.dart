@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/session.dart';
@@ -17,9 +18,7 @@ class SupportScreen extends StatefulWidget {
 }
 
 class _SupportScreenState extends State<SupportScreen> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   final text = TextEditingController();
   late String type = widget.initialType ?? 'support';
   bool sending = false;

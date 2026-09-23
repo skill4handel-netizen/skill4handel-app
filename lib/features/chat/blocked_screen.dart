@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
@@ -12,9 +13,7 @@ class BlockedScreen extends StatefulWidget {
 }
 
 class _BlockedScreenState extends State<BlockedScreen> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   List<Map<String, dynamic>> items = [];
 
   @override

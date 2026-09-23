@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/favorites.dart';
 import '../../core/constants/session.dart';
@@ -39,9 +40,7 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   late String name = widget.name;
   late String email = widget.email;
   late String city = widget.city;

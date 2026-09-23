@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/session.dart';
@@ -25,9 +26,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   late final name = TextEditingController(
     text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''),
   );

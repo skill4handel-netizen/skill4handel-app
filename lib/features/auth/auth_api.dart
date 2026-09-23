@@ -1,12 +1,8 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 
 class AuthApi {
-  final dio = Dio(
-    BaseOptions(
-      baseUrl: 'https://skill4handel-api.onrender.com/',
-      headers: {'Content-Type': 'application/json'},
-    ),
-  );
+  final dio = Api.client;
 
   Future<Map<String, dynamic>> signup({
     required String name,

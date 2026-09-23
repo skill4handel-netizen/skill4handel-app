@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../app/main_shell.dart';
@@ -20,9 +21,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   final email = TextEditingController();
   final password = TextEditingController();
   bool showPass = false;

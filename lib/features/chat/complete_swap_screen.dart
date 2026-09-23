@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
@@ -45,9 +46,7 @@ class CompleteSwapScreen extends StatefulWidget {
 class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   late final extraTokens = TextEditingController();
   late final location = TextEditingController(text: widget.initialLocation);
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   late String duration = widget.initialDuration.isEmpty
       ? '60'
       : widget.initialDuration;

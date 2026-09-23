@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/api/api_client.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -13,9 +13,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'),
-  );
+  final dio = Api.client;
   bool loading = false;
   String message = '';
 

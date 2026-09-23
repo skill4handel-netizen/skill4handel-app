@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,7 +16,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final cityController = TextEditingController(text: Session.city);
   final offersController = TextEditingController(text: Session.offers);
   final needsController = TextEditingController(text: Session.needs);
-  final dio = Dio(BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'));
+  final dio = Api.client;
   bool loading = false;
   String error = '';
 

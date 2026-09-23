@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../core/constants/push_service.dart';
 import '../core/constants/session.dart';
@@ -20,9 +21,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  final dio = Api.client;
   int index = 0;
   int unreadChats = 0;
 

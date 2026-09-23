@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../api/api_client.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -15,9 +16,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class PushService {
-  static final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com'),
-  );
+  static final dio = Api.client;
   static final local = FlutterLocalNotificationsPlugin();
   static String lastToken = '';
 
