@@ -1,5 +1,5 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../core/api/api_client.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -12,10 +12,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://skill4handel-api.onrender.com/'),
-  );
+  final dio = Api.client;
   bool loading = false;
   String message = '';
 
@@ -24,23 +21,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       loading = true;
       message = '';
     });
-
     try {
       await dio.post(
         '/auth/forgot-password',
-        data: {
-          'email': emailController.text.trim().toLowerCase(),
-          'password': passwordController.text,
-        },
+        data: {'email': emailController.text.trim().toLowerCase()},
       );
-      if (!mounted) return;
-      Navigator.pop(context);
-    } catch (e) {
-      setState(() {
-        message = S.t('noAccountEmail');
-        loading = false;
-      });
-    }
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      loading = false;
+      message =
+          'If this email has an account, a reset link has been sent. Open that email and choose a new password.';
+    });
   }
 
   @override
@@ -61,30 +53,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
-                S.t('forgotHint'),
-                style: const TextStyle(color: AppColors.muted, fontSize: 16),
+              const Text(
+                'Enter the email address of your account. A one-time link will be sent. The link expires after two hours.',
+                style: TextStyle(color: AppColors.muted, fontSize: 16),
               ),
               const SizedBox(height: 28),
               TextField(
                 controller: emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: S.t('email'),
                   border: const OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: S.t('newPassword'),
-                  border: const OutlineInputBorder(),
-                ),
-              ),
               if (message.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(message, style: const TextStyle(color: Colors.red)),
+                Text(message),
               ],
               const SizedBox(height: 24),
               SizedBox(
