@@ -4,6 +4,7 @@ import '../core/constants/push_service.dart';
 import '../core/constants/session.dart';
 import '../core/l10n/app_strings.dart';
 import '../features/chat/chat_list_screen.dart';
+import '../features/chat/chat_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/search/search_screen.dart';
@@ -23,12 +24,23 @@ class _MainShellState extends State<MainShell> {
   final dio = Api.client;
   int index = 0;
   int unreadChats = 0;
+  bool openingChat = false;
 
   @override
   void initState() {
     super.initState();
     PushService.registerToken();
+    PushService.onChatOpened = openPendingChat;
     loadUnread();
+    WidgetsBinding.instance.addPostFrameCallback((_) => openPendingChat());
+  }
+
+  @override
+  void dispose() {
+    if (PushService.onChatOpened == openPendingChat) {
+      PushService.onChatOpened = null;
+    }
+    super.dispose();
   }
 
   Future<void> loadUnread() async {
@@ -43,6 +55,42 @@ class _MainShellState extends State<MainShell> {
       final count = chats.where((chat) => chat['unread'] == true).length;
       if (mounted) setState(() => unreadChats = count);
     } catch (_) {}
+  }
+
+  Future<void> openPendingChat() async {
+    final chatId = PushService.pendingChatId;
+    if (chatId <= 0 || openingChat || !mounted) return;
+    openingChat = true;
+    PushService.pendingChatId = 0;
+    try {
+      final response = await dio.get(
+        '/chats/$chatId',
+        queryParameters: {'userId': Session.id},
+      );
+      final data = Map<String, dynamic>.from(response.data as Map);
+      final userA = int.tryParse('${data['userA'] ?? 0}') ?? 0;
+      final userB = int.tryParse('${data['userB'] ?? 0}') ?? 0;
+      final otherId = userA == Session.id ? userB : userA;
+      final name = userA == Session.id
+          ? '${data['nameB'] ?? ''}'
+          : '${data['nameA'] ?? ''}';
+      if (!mounted || otherId <= 0) return;
+      setState(() => index = 2);
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            name: name.isEmpty ? S.t('chat') : name,
+            otherId: otherId,
+            chatId: chatId,
+          ),
+        ),
+      );
+      loadUnread();
+    } catch (_) {
+    } finally {
+      openingChat = false;
+    }
   }
 
   void goTo(int value) {

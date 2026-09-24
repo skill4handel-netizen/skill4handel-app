@@ -18,6 +18,20 @@ class PushService {
   static final dio = Api.client;
   static final local = FlutterLocalNotificationsPlugin();
   static String lastToken = '';
+  static int pendingChatId = 0;
+  static VoidCallback? onChatOpened;
+
+  static int chatIdFrom(RemoteMessage message) {
+    return int.tryParse('${message.data['chatId'] ?? ''}') ?? 0;
+  }
+
+  static void remember(RemoteMessage message) {
+    final id = chatIdFrom(message);
+    if (id > 0) {
+      pendingChatId = id;
+      onChatOpened?.call();
+    }
+  }
 
   static Future<void> init() async {
     if (kIsWeb) return;
@@ -26,6 +40,13 @@ class PushService {
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
       await local.initialize(
         const InitializationSettings(android: androidInit),
+        onDidReceiveNotificationResponse: (response) {
+          final id = int.tryParse(response.payload ?? '') ?? 0;
+          if (id > 0) {
+            pendingChatId = id;
+            onChatOpened?.call();
+          }
+        },
       );
       const channel = AndroidNotificationChannel(
         kNotifyChannelId,
@@ -60,6 +81,7 @@ class PushService {
             message.data['title'] ??
             'Skill4Handel';
         final body = message.notification?.body ?? message.data['body'] ?? '';
+        final chatId = chatIdFrom(message);
         local.show(
           DateTime.now().millisecondsSinceEpoch ~/ 1000,
           title,
@@ -72,8 +94,12 @@ class PushService {
               priority: Priority.high,
             ),
           ),
+          payload: chatId > 0 ? '$chatId' : null,
         );
       });
+      FirebaseMessaging.onMessageOpenedApp.listen(remember);
+      final initial = await FirebaseMessaging.instance.getInitialMessage();
+      if (initial != null) remember(initial);
       FirebaseMessaging.instance.onTokenRefresh.listen(saveToken);
       await registerToken();
     } catch (error) {
