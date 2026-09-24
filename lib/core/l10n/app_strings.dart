@@ -37,6 +37,11 @@ class S {
     'saveError': 'The profile could not be saved.',
     'darkMode': 'Dark mode',
     'logOut': 'Log out',
+    'deleteAccount': 'Delete account',
+    'deleteAccountBody':
+        'This removes your profile, chats, offers and wallet history. This cannot be undone.',
+    'deleteAccountConfirm': 'Type your password to delete this account.',
+    'accountDeleted': 'The account was deleted.',
     'blocked': 'Blocked people',
     'terms': 'Terms and rules',
     'support': 'Support',
@@ -375,6 +380,12 @@ class S {
     'saveError': 'Het profiel kon niet worden opgeslagen.',
     'darkMode': 'Donkere modus',
     'logOut': 'Uitloggen',
+    'deleteAccount': 'Account verwijderen',
+    'deleteAccountBody':
+        'Hiermee worden uw profiel, chats, aanbiedingen en portemonnee-geschiedenis verwijderd. Dit kan niet ongedaan worden gemaakt.',
+    'deleteAccountConfirm':
+        'Voer uw wachtwoord in om dit account te verwijderen.',
+    'accountDeleted': 'Het account is verwijderd.',
     'blocked': 'Geblokkeerde personen',
     'terms': 'Voorwaarden en regels',
     'support': 'Ondersteuning',

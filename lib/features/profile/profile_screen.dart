@@ -272,6 +272,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> deleteAccount() async {
+    final password = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(S.t('deleteAccount')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(S.t('deleteAccountBody')),
+              const SizedBox(height: 12),
+              TextField(
+                controller: password,
+                obscureText: true,
+                decoration: InputDecoration(labelText: S.t('password')),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(S.t('cancel')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(S.t('deleteAccount')),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok != true) return;
+    try {
+      await dio.delete('/auth/account', data: {'password': password.text});
+      if (!mounted) return;
+      await Session.clear();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is DioException
+          ? '${error.response?.data?['message'] ?? S.t('saveError')}'
+          : S.t('saveError');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final photo = photoOf(Session.photoUrl);
@@ -523,6 +577,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: OutlinedButton(
                   onPressed: logout,
                   child: Text(S.t('logOut')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: deleteAccount,
+                  child: Text(S.t('deleteAccount')),
                 ),
               ),
             ],
