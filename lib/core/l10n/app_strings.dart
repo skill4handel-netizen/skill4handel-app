@@ -9,6 +9,15 @@ class S {
     'welcomeTag': 'Skill sharing without money.',
     'privacy': 'Privacy and safety',
     'createAccount': 'Create account',
+    'phoneOptional': 'Phone number',
+    'phoneHint':
+        'Optional. Used only by Skill4Handel if contact is required. Other members cannot see this number.',
+    'accessNeed': 'I have a mobility or accessibility need',
+    'accessHint':
+        'This is shown on your profile with an accessibility mark so other members can take it into account.',
+    'accessMark': 'Accessibility need',
+    'requiredMark': 'Required fields are marked with *',
+
     'logIn': 'Log in',
     'language': 'Language',
     'english': 'English',
@@ -401,6 +410,15 @@ class S {
     'welcomeTag': 'Vaardigheden delen zonder geld.',
     'privacy': 'Privacy en veiligheid',
     'createAccount': 'Account aanmaken',
+    'phoneOptional': 'Telefoonnummer',
+    'phoneHint':
+        'Optioneel. Alleen gebruikt door Skill4Handel als contact nodig is. Andere leden zien dit nummer niet.',
+    'accessNeed': 'Ik heb een motorische of toegankelijkheidsbehoefte',
+    'accessHint':
+        'Dit wordt op uw profiel getoond met een toegankelijkheidsteken, zodat andere leden er rekening mee kunnen houden.',
+    'accessMark': 'Toegankelijkheidsbehoefte',
+    'requiredMark': 'Verplichte velden zijn gemarkeerd met *',
+
     'logIn': 'Inloggen',
     'language': 'Taal',
     'english': 'English',

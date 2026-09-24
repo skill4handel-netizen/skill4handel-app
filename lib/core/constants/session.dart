@@ -18,6 +18,8 @@ class Session {
   static num balance = 0;
   static String token = '';
   static String language = 'en';
+  static String phone = '';
+  static bool accessibility = false;
   static bool emailVerified = false;
   static bool demoSeen = false;
   static List<Map<String, dynamic>> reviews = [];
@@ -39,6 +41,8 @@ class Session {
     'balance': balance,
     'token': token,
     'language': language,
+    'phone': phone,
+    'accessibility': accessibility,
     'emailVerified': emailVerified,
     'demoSeen': demoSeen,
   };

@@ -378,6 +378,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+              if (Session.accessibility)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.accessible, color: AppColors.blue),
+                    const SizedBox(width: 6),
+                    Text(
+                      S.t('accessMark'),
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              if (Session.phone.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${S.t('phoneOptional')}: ${Session.phone}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted),
+                ),
+              ],
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
                 initialValue: Session.language == 'nl' ? 'nl' : 'en',

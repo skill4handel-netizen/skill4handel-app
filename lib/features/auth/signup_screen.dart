@@ -21,6 +21,8 @@ class _SignupScreenState extends State<SignupScreen> {
   final email = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
+  final phone = TextEditingController();
+  bool accessibility = false;
   int? year;
   int? month;
   int? day;
@@ -105,6 +107,8 @@ class _SignupScreenState extends State<SignupScreen> {
           'birthDate': birthDate!.toIso8601String(),
           'language': Session.language,
           'acceptedTerms': true,
+          'phone': phone.text.trim(),
+          'accessibility': accessibility,
         },
       );
       final user = Map<String, dynamic>.from(response.data['user'] as Map);
@@ -171,7 +175,7 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 20),
           DropdownButtonFormField<String>(
             initialValue: Session.language == 'nl' ? 'nl' : 'en',
-            decoration: InputDecoration(labelText: S.t('language')),
+            decoration: InputDecoration(labelText: '${S.t('language')} *'),
             items: [
               DropdownMenuItem(value: 'en', child: Text(S.t('english'))),
               DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
@@ -183,18 +187,18 @@ class _SignupScreenState extends State<SignupScreen> {
           TextField(
             controller: name,
             decoration: InputDecoration(
-              labelText: S.t('name'),
+              labelText: '${S.t('name')} *',
               prefixIcon: Icon(Icons.person),
             ),
           ),
           const SizedBox(height: 12),
-          CityPicker(controller: city, label: S.t('city')),
+          CityPicker(controller: city, label: '${S.t('city')} *'),
           const SizedBox(height: 12),
           TextField(
             controller: email,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              labelText: S.t('email'),
+              labelText: '${S.t('email')} *',
               prefixIcon: Icon(Icons.email_outlined),
             ),
           ),
@@ -203,7 +207,7 @@ class _SignupScreenState extends State<SignupScreen> {
             controller: password,
             obscureText: !showPass,
             decoration: InputDecoration(
-              labelText: S.t('password'),
+              labelText: '${S.t('password')} *',
               prefixIcon: const Icon(Icons.key),
               suffixIcon: IconButton(
                 onPressed: () => setState(() => showPass = !showPass),
@@ -216,7 +220,7 @@ class _SignupScreenState extends State<SignupScreen> {
             controller: confirm,
             obscureText: !showConfirm,
             decoration: InputDecoration(
-              labelText: S.t('confirmPassword'),
+              labelText: '${S.t('confirmPassword')} *',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
                 onPressed: () => setState(() => showConfirm = !showConfirm),
@@ -237,7 +241,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: day,
-                  decoration: InputDecoration(labelText: S.t('day')),
+                  decoration: InputDecoration(labelText: '${S.t('day')} *'),
                   items: [
                     for (var i = 1; i <= daysInMonth(); i++)
                       DropdownMenuItem(value: i, child: Text('$i')),
@@ -250,7 +254,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 flex: 2,
                 child: DropdownButtonFormField<int>(
                   initialValue: month,
-                  decoration: InputDecoration(labelText: S.t('month')),
+                  decoration: InputDecoration(labelText: '${S.t('month')} *'),
                   items: [
                     for (var i = 1; i <= 12; i++)
                       DropdownMenuItem(value: i, child: Text(months[i - 1])),
@@ -263,7 +267,7 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             initialValue: year,
-            decoration: InputDecoration(labelText: S.t('year')),
+            decoration: InputDecoration(labelText: '${S.t('year')} *'),
             items: [
               for (var i = now.year - 18; i >= now.year - 90; i--)
                 DropdownMenuItem(value: i, child: Text('$i')),
@@ -272,6 +276,32 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 6),
           Text('18 years or older', style: TextStyle(color: AppColors.muted)),
+          Text(
+            S.t('requiredMark'),
+            style: TextStyle(color: AppColors.muted, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: phone,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              labelText: S.t('phoneOptional'),
+              prefixIcon: Icon(Icons.phone_outlined),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            S.t('phoneHint'),
+            style: TextStyle(color: AppColors.muted, fontSize: 12),
+          ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: accessibility,
+            onChanged: (value) =>
+                setState(() => accessibility = value ?? false),
+            title: Text(S.t('accessNeed')),
+            subtitle: Text(S.t('accessHint'), style: TextStyle(fontSize: 12)),
+          ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             value: accepted,

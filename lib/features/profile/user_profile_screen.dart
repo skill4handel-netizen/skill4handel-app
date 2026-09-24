@@ -22,6 +22,7 @@ class UserProfileScreen extends StatefulWidget {
     this.rating = 0,
     this.reviews = const [],
     this.photoUrl,
+    this.accessibility = false,
   });
 
   final String name;
@@ -33,6 +34,7 @@ class UserProfileScreen extends StatefulWidget {
   final double rating;
   final List<Map<String, dynamic>> reviews;
   final String? photoUrl;
+  final bool accessibility;
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -47,6 +49,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   late String needs = widget.needs;
   late String photo = widget.photoUrl?.trim() ?? '';
   late double rating = widget.rating;
+  late bool accessibility = widget.accessibility;
   late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(
     widget.reviews,
   );
@@ -89,6 +92,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         needs = user['needs']?.toString() ?? needs;
         photo = (user['photoUrl'] ?? user['photo_url'] ?? photo).toString();
         rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
+        accessibility =
+            user['accessibility'] == true || user['accessibility'] == 'true';
         if (user['reviews'] is List) {
           reviews = (user['reviews'] as List)
               .whereType<Map>()
@@ -199,6 +204,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
+          if (accessibility) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.accessible, color: AppColors.blue),
+                const SizedBox(width: 6),
+                Text(
+                  S.t('accessMark'),
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
