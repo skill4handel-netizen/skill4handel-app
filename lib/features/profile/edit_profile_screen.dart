@@ -1,6 +1,7 @@
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit profile')),
+      appBar: AppBar(title: Text(S.t('editProfile'))),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -62,35 +63,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('fullName'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: cityController,
-                decoration: const InputDecoration(
-                  labelText: 'City',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('city'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: offersController,
-                decoration: const InputDecoration(
-                  labelText: 'Skills I can share',
-                  hintText: 'English, photography...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('skillsOffer'),
+                  hintText: S.t('skillsShareHint'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: needsController,
-                decoration: const InputDecoration(
-                  labelText: 'Skills I need',
-                  hintText: 'Dutch, design...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: S.t('skillsNeed'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               if (error.isNotEmpty) ...[

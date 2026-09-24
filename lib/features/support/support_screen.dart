@@ -260,7 +260,7 @@ class _SupportScreenState extends State<SupportScreen> {
                 'How Skill4Handel works',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: const Text('Open the short product guide'),
+              subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.push(

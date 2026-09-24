@@ -118,11 +118,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(S.t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Block'),
+            child: Text(S.t('block')),
           ),
         ],
       ),
@@ -155,7 +155,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(S.t('close')),
           ),
         ],
       ),
@@ -277,7 +277,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 );
               },
               style: AppTheme.solid(AppColors.green),
-              child: Text('Connect', style: TextStyle(color: Colors.white)),
+              child: Text(
+                S.t('connect'),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -287,7 +290,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: OutlinedButton.icon(
                   onPressed: reportUser,
                   icon: const Icon(Icons.flag_outlined),
-                  label: const Text('Report'),
+                  label: Text(S.t('report')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -295,7 +298,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: OutlinedButton.icon(
                   onPressed: blockUser,
                   icon: const Icon(Icons.block),
-                  label: const Text('Block'),
+                  label: Text(S.t('block')),
                 ),
               ),
             ],

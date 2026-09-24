@@ -396,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
               InputDecorator(
-                decoration: InputDecoration(labelText: 'Age'),
+                decoration: InputDecoration(labelText: S.t('age')),
                 child: Text(
                   Session.age > 0 ? '${Session.age}' : S.t('setAtRegistration'),
                   style: const TextStyle(fontWeight: FontWeight.w800),

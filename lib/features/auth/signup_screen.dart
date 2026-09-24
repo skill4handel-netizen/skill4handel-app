@@ -135,20 +135,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom + 24;
     final now = DateTime.now();
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
+    final months = S.months();
     return Scaffold(
       appBar: AppBar(
         title: Text(S.t('createAccount')),
@@ -250,7 +237,7 @@ class _SignupScreenState extends State<SignupScreen> {
               Expanded(
                 child: DropdownButtonFormField<int>(
                   initialValue: day,
-                  decoration: InputDecoration(labelText: 'Day'),
+                  decoration: InputDecoration(labelText: S.t('day')),
                   items: [
                     for (var i = 1; i <= daysInMonth(); i++)
                       DropdownMenuItem(value: i, child: Text('$i')),
@@ -263,7 +250,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 flex: 2,
                 child: DropdownButtonFormField<int>(
                   initialValue: month,
-                  decoration: InputDecoration(labelText: 'Month'),
+                  decoration: InputDecoration(labelText: S.t('month')),
                   items: [
                     for (var i = 1; i <= 12; i++)
                       DropdownMenuItem(value: i, child: Text(months[i - 1])),
@@ -276,7 +263,7 @@ class _SignupScreenState extends State<SignupScreen> {
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
             initialValue: year,
-            decoration: InputDecoration(labelText: 'Year'),
+            decoration: InputDecoration(labelText: S.t('year')),
             items: [
               for (var i = now.year - 18; i >= now.year - 90; i--)
                 DropdownMenuItem(value: i, child: Text('$i')),

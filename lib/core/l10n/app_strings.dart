@@ -76,6 +76,14 @@ class S {
     'tokens': 'S4H tokens',
     'noTransactions': 'No transactions yet.',
     'age': 'Age',
+    'day': 'Day',
+    'month': 'Month',
+    'year': 'Year',
+    'editProfile': 'Edit profile',
+    'fullName': 'Full name',
+    'connect': 'Connect',
+    'productGuide': 'Open the short product guide',
+    'skillsShareHint': 'English, photography…',
     'noMessages': 'No messages yet.',
     'blockTitle': 'Block this member?',
     'blockBody':
@@ -406,6 +414,14 @@ class S {
     'tokens': 'S4H-tokens',
     'noTransactions': 'Nog geen transacties.',
     'age': 'Leeftijd',
+    'day': 'Dag',
+    'month': 'Maand',
+    'year': 'Jaar',
+    'editProfile': 'Profiel bewerken',
+    'fullName': 'Volledige naam',
+    'connect': 'Verbinden',
+    'productGuide': 'Korte productgids openen',
+    'skillsShareHint': 'Engels, fotografie…',
     'noMessages': 'Nog geen berichten.',
     'blockTitle': 'Dit lid blokkeren?',
     'blockBody':
@@ -697,6 +713,39 @@ class S {
     return mapped.containsKey(raw.trim()) ||
         raw.startsWith('Offer cancelled') ||
         raw.startsWith('The offer');
+  }
+
+  static List<String> months() {
+    if (lang == 'nl') {
+      return [
+        'januari',
+        'februari',
+        'maart',
+        'april',
+        'mei',
+        'juni',
+        'juli',
+        'augustus',
+        'september',
+        'oktober',
+        'november',
+        'december',
+      ];
+    }
+    return [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
   }
 
   static String maybe(String raw) {
