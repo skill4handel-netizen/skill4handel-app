@@ -58,7 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (data is Map && data['message'] != null)
         return data['message'].toString();
     }
-    return 'The request could not be completed.';
+    return S.t('requestFailed');
   }
 
   void applyChat(dynamic data) {
@@ -231,37 +231,32 @@ class _ChatScreenState extends State<ChatScreen> {
   String prettyText(String raw, {int fromId = 0}) {
     final mine = fromId == Session.id;
     if (raw.startsWith('An offer has been sent')) {
-      return mine
-          ? 'Offer sent. Waiting for a reply within 24 hours.'
-          : 'Offer received. Open it and accept, decline or send a counter-offer.';
+      return mine ? S.t('offerSentWait') : S.t('offerReceivedWait');
     }
     if (raw == 'A counter-offer has been sent.') {
-      return mine
-          ? 'Counter-offer sent.'
-          : 'Counter-offer received. Review the changes and respond.';
+      return mine ? S.t('counterSent') : S.t('counterReceived');
     }
     if (raw == 'The offer has been accepted. The session is confirmed.') {
-      return mine
-          ? 'You accepted the offer. The session is confirmed.'
-          : 'Your offer was accepted. The session is confirmed.';
+      return mine ? S.t('offerAcceptedMine') : S.t('offerAcceptedTheirs');
     }
     if (raw.startsWith('The offer has been accepted. Return skill:')) {
       final skill = raw.split('Return skill:').last.trim();
-      return mine
-          ? 'You accepted the offer. Return skill: $skill'
-          : 'Your offer was accepted. Return skill: $skill';
+      return S.fill(
+        mine ? 'offerAcceptedReturnMine' : 'offerAcceptedReturnTheirs',
+        {'skill': skill},
+      );
     }
     if (raw == 'The offer has been declined.') {
-      return mine ? 'You declined the offer.' : 'Your offer was declined.';
+      return mine ? S.t('offerDeclinedMine') : S.t('offerDeclinedTheirs');
     }
     if (raw.startsWith('The offer was cancelled')) {
-      return 'Offer cancelled. A new request may be started.';
+      return S.t('offerCancelledNew');
     }
     if (raw.startsWith('Completion has been confirmed')) {
-      return 'One member confirmed completion. Waiting for the other confirmation.';
+      return S.t('completionOne');
     }
     if (raw.startsWith('Both members confirmed')) {
-      return 'Exchange completed. Reviews can now be written.';
+      return S.t('completionBoth');
     }
     return S.maybe(raw);
   }

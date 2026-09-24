@@ -29,7 +29,7 @@ class _SupportScreenState extends State<SupportScreen> {
       if (data is Map && data['message'] != null)
         return data['message'].toString();
       if (error.response?.statusCode != null) {
-        return 'The ticket could not be submitted (${error.response?.statusCode}). Please try again.';
+        return S.t('ticketFail');
       }
     }
     return S.t('ticketFail');
@@ -256,9 +256,9 @@ class _SupportScreenState extends State<SupportScreen> {
                 backgroundColor: AppColors.blue,
                 child: Icon(Icons.play_circle_outline, color: Colors.white),
               ),
-              title: const Text(
-                'How Skill4Handel works',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                S.t('howItWorks'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),

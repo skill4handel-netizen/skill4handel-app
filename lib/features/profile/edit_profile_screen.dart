@@ -110,7 +110,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: Text(loading ? 'Please wait...' : 'Save'),
+                  child: Text(loading ? S.t('pleaseWait') : S.t('save')),
                 ),
               ),
             ],

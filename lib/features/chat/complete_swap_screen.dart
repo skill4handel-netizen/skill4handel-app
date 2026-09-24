@@ -145,13 +145,13 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
   String typeLabel() {
     switch (payMode) {
       case 'both':
-        return 'Skill + tokens';
+        return S.t('skillPlusTokens');
       case 'tokens':
-        return 'Tokens only';
+        return S.t('tokensOnly');
       case 'volunteer':
         return 'Volunteer';
       default:
-        return 'Skill for skill';
+        return S.t('skillForSkill');
     }
   }
 
@@ -336,7 +336,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       appBar: AppBar(
         title: Text(
           widget.isAccept
-              ? 'Accept offer'
+              ? S.t('acceptOffer')
               : (widget.isCounter ? S.t('counterOffer') : S.t('newOffer')),
         ),
         flexibleSpace: Container(
@@ -353,7 +353,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         children: [
           Text(
             widget.isAccept
-                ? 'Accept this offer'
+                ? S.t('acceptThisOffer')
                 : widget.isCounter
                 ? S.fill('replyTo', {'name': widget.otherName})
                 : S.fill('offerTo', {'name': widget.otherName}),
@@ -362,17 +362,19 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           const SizedBox(height: 6),
           Text(
             widget.isAccept
-                ? (volunteer
-                      ? 'This is volunteer work. Confirm the locked time and place. No return skill is required.'
-                      : 'All agreed terms stay locked. If this is skill for skill, choose one skill from their list. To change time, tokens or place, use Counter offer instead.')
+                ? (volunteer ? S.t('volunteerHelp') : S.t('lockedAcceptHelp'))
                 : widget.isCounter
-                ? 'Change the exchange type, return skill, date, duration or meeting format. The skill they asked for stays locked.'
-                : 'Choose the exchange type first. Then tap the date box to set the meeting time. The earliest time is 24 hours from now.',
+                ? S.t('counterHelp')
+                : S.t('newOfferHelp'),
             style: const TextStyle(color: AppColors.muted),
           ),
           const SizedBox(height: 16),
           if (widget.isAccept)
-            lockedBox('Exchange type', typeLabel(), Icons.handshake_outlined)
+            lockedBox(
+              S.t('exchangeType'),
+              typeLabel(),
+              Icons.handshake_outlined,
+            )
           else ...[
             typeCard(
               'skill',
@@ -496,9 +498,9 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Date and time',
-                            style: TextStyle(
+                          Text(
+                            S.t('dateAndTime'),
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.muted,
                               fontWeight: FontWeight.w700,
@@ -506,16 +508,16 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                           ),
                           Text(
                             when == null
-                                ? 'Tap here to choose date and time'
+                                ? S.t('tapDateTime')
                                 : prettyWhen(when!),
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               color: Colors.black,
                             ),
                           ),
-                          const Text(
-                            'Earliest start is 24 hours from now.',
-                            style: TextStyle(
+                          Text(
+                            S.t('earliest24h'),
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppColors.muted,
                             ),

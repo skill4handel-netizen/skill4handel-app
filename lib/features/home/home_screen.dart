@@ -144,9 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
         final mine = swap['proposedBy']?.toString() == Session.id.toString();
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason': mine
-              ? 'Offer sent. Awaiting a response within 24 hours.'
-              : 'An offer is awaiting your response.',
+          'reason': mine ? S.t('offerSentWait') : S.t('actAwaiting'),
           'chat': chat,
         });
       } else if (status == 'accepted') {
@@ -169,8 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else if (status == 'cancelled' || status == 'expired') {
         items.add({
           'title': item['otherName'] ?? 'Member',
-          'reason':
-              'The previous offer was closed. Both members may start a new request.',
+          'reason': S.t('actClosed'),
           'chatId': item['chatId'],
           'otherId': item['otherId'],
           'name': item['otherName'],

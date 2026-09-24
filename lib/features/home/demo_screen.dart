@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../app/main_shell.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/l10n/app_strings.dart';
 
 class DemoScreen extends StatefulWidget {
   const DemoScreen({super.key, this.userName});
@@ -15,41 +16,36 @@ class DemoScreen extends StatefulWidget {
 class _DemoScreenState extends State<DemoScreen> {
   int page = 0;
 
-  final slides = const [
+  List<_Slide> get slides => [
     _Slide(
       image:
           'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80',
-      title: 'Create your profile',
-      text:
-          'Add a clear photograph, your city and up to ten skills you can offer. Other members see these skills before they connect with you.',
+      title: S.t('demoTitle1'),
+      text: S.t('demoText1'),
     ),
     _Slide(
       image:
           'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1400&q=80',
-      title: 'Find a member',
-      text:
-          'Open Search and look by name, city or skill. Read the profile, rating and offered skills before you start a chat.',
+      title: S.t('demoTitle2'),
+      text: S.t('demoText2'),
     ),
     _Slide(
       image:
           'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1400&q=80',
-      title: 'Send a written offer',
-      text:
-          'Choose the skill you need from their list. Then choose how you will exchange: skill for skill, skill plus tokens, tokens only, or volunteer work. Set the date at least 24 hours ahead.',
+      title: S.t('demoTitle3'),
+      text: S.t('demoText3'),
     ),
     _Slide(
       image:
           'https://images.unsplash.com/photo-1529156069898-49953e654a00?auto=format&fit=crop&w=1400&q=80',
-      title: 'Reply, accept or decline',
-      text:
-          'The other member may accept, decline or send one counter-offer. Volunteer work does not require a return skill. After one counter-offer, only accept or decline remains.',
+      title: S.t('demoTitle4'),
+      text: S.t('demoText4'),
     ),
     _Slide(
       image:
           'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1400&q=80',
-      title: 'Complete and review',
-      text:
-          'Meet at the agreed time. Both members mark the session complete. Then both leave a review. Tokens move only when the agreed offer includes tokens.',
+      title: S.t('demoTitle5'),
+      text: S.t('demoText5'),
     ),
   ];
 
@@ -113,8 +109,8 @@ class _DemoScreenState extends State<DemoScreen> {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const Text(
-                    'How Skill4Handel works',
+                  Text(
+                    S.t('howItWorks'),
                     style: TextStyle(color: Colors.white70),
                   ),
                   const Spacer(),
@@ -164,7 +160,7 @@ class _DemoScreenState extends State<DemoScreen> {
                       },
                       style: AppTheme.solid(AppColors.green),
                       child: Text(
-                        last ? 'Continue' : 'Next',
+                        last ? S.t('demoContinue') : S.t('demoNext'),
                         style: const TextStyle(color: Colors.white),
                       ),
                     ),

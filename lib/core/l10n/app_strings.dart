@@ -343,6 +343,56 @@ class S {
     'profileLockedCity': 'City of residence',
     'deleteChat': 'Delete conversation',
     'deleteChatConfirm': 'This conversation will be removed from your list.',
+    'howItWorks': 'How Skill4Handel works',
+    'demoNext': 'Next',
+    'demoContinue': 'Continue',
+    'demoTitle1': 'Create your profile',
+    'demoText1':
+        'Add a clear photograph, your city and up to ten skills you can offer. Other members see these skills before they connect with you.',
+    'demoTitle2': 'Find a member',
+    'demoText2':
+        'Open Search and look by name, city or skill. Read the profile, rating and offered skills before you start a chat.',
+    'demoTitle3': 'Send a written offer',
+    'demoText3':
+        'Choose the skill you need from their list. Then choose how you will exchange: skill for skill, skill plus tokens, tokens only, or volunteer work. Set the date at least 24 hours ahead.',
+    'demoTitle4': 'Reply, accept or decline',
+    'demoText4':
+        'The other member may accept, decline or send one counter-offer. Volunteer work does not require a return skill. After one counter-offer, only accept or decline remains.',
+    'demoTitle5': 'Complete and review',
+    'demoText5':
+        'Meet at the agreed time. Both members mark the session complete. Then both leave a review. Tokens move only when the agreed offer includes tokens.',
+    'skillForSkill': 'Skill for skill',
+    'acceptOffer': 'Accept offer',
+    'acceptThisOffer': 'Accept this offer',
+    'volunteerHelp':
+        'This is volunteer work. Confirm the locked time and place. No return skill is required.',
+    'lockedAcceptHelp':
+        'All agreed terms stay locked. If this is skill for skill, choose one skill from their list.',
+    'counterHelp':
+        'Change the exchange type, return skill, date, duration or meeting format. The skill they asked for stays locked.',
+    'newOfferHelp':
+        'Choose the exchange type first. Then tap the date box to set the meeting time. The earliest time is 24 hours from now.',
+    'exchangeType': 'Exchange type',
+    'dateAndTime': 'Date and time',
+    'tapDateTime': 'Tap here to choose date and time',
+    'earliest24h': 'The earliest start is 24 hours from now.',
+    'offerSentWait': 'Offer sent. Awaiting a response within 24 hours.',
+    'offerReceivedWait':
+        'Offer received. Open it and accept, decline or send a counter-offer.',
+    'counterSent': 'Counter-offer sent.',
+    'counterReceived':
+        'Counter-offer received. Review the changes and respond.',
+    'offerAcceptedMine': 'You accepted the offer. The session is confirmed.',
+    'offerAcceptedTheirs': 'Your offer was accepted. The session is confirmed.',
+    'offerDeclinedMine': 'You declined the offer.',
+    'offerDeclinedTheirs': 'Your offer was declined.',
+    'offerCancelledNew': 'Offer cancelled. A new request may be started.',
+    'offerAcceptedReturnMine': 'You accepted the offer. Return skill: {skill}',
+    'offerAcceptedReturnTheirs':
+        'Your offer was accepted. Return skill: {skill}',
+    'completionOne':
+        'One member confirmed completion. Waiting for the other confirmation.',
+    'completionBoth': 'Exchange completed. Reviews can now be written.',
   };
 
   static const _nl = {
@@ -691,6 +741,60 @@ class S {
     'profileLockedCity': 'Woonplaats',
     'deleteChat': 'Gesprek verwijderen',
     'deleteChatConfirm': 'Dit gesprek verdwijnt uit jouw overzicht.',
+    'howItWorks': 'Zo werkt Skill4Handel',
+    'demoNext': 'Volgende',
+    'demoContinue': 'Doorgaan',
+    'demoTitle1': 'Maak uw profiel',
+    'demoText1':
+        'Voeg een duidelijke foto, uw stad en maximaal tien vaardigheden toe. Andere leden zien deze vaardigheden voordat zij contact maken.',
+    'demoTitle2': 'Zoek een lid',
+    'demoText2':
+        'Open Zoeken en zoek op naam, stad of vaardigheid. Lees het profiel, de beoordeling en de aangeboden vaardigheden voordat u een chat start.',
+    'demoTitle3': 'Stuur een schriftelijk aanbod',
+    'demoText3':
+        'Kies de vaardigheid die u nodig hebt uit hun lijst. Kies daarna de ruilvorm: vaardigheid voor vaardigheid, vaardigheid plus tokens, alleen tokens, of vrijwilligerswerk. Zet de datum minstens 24 uur vooruit.',
+    'demoTitle4': 'Reageer, accepteer of wijs af',
+    'demoText4':
+        'Het andere lid kan accepteren, afwijzen of één tegenaanbod sturen. Bij vrijwilligerswerk is geen tegenprestatie nodig. Na één tegenaanbod blijft alleen accepteren of afwijzen over.',
+    'demoTitle5': 'Rond af en beoordeel',
+    'demoText5':
+        'Kom op de afgesproken tijd bijeen. Beide leden markeren de sessie als afgerond. Daarna laten beide een beoordeling achter. Tokens gaan alleen over als dat is afgesproken.',
+    'skillForSkill': 'Vaardigheid voor vaardigheid',
+    'acceptOffer': 'Aanbod accepteren',
+    'acceptThisOffer': 'Dit aanbod accepteren',
+    'volunteerHelp':
+        'Dit is vrijwilligerswerk. Bevestig de vastgezette tijd en plaats. Een tegenvaardigheid is niet nodig.',
+    'lockedAcceptHelp':
+        'Alle afgesproken voorwaarden blijven vaststaan. Bij vaardigheid voor vaardigheid kiest u één vaardigheid uit hun lijst.',
+    'counterHelp':
+        'Wijzig het type ruil, de tegenvaardigheid, datum, duur of ontmoetingsvorm. De gevraagde vaardigheid blijft vaststaan.',
+    'newOfferHelp':
+        'Kies eerst het type ruil. Tik daarna op het datumveld. De vroegste tijd is 24 uur vanaf nu.',
+    'exchangeType': 'Type ruil',
+    'dateAndTime': 'Datum en tijd',
+    'tapDateTime': 'Tik hier om datum en tijd te kiezen',
+    'earliest24h': 'De vroegste start is 24 uur vanaf nu.',
+    'offerSentWait': 'Aanbod verzonden. Binnen 24 uur volgt een reactie.',
+    'offerReceivedWait':
+        'Aanbod ontvangen. Open het en accepteer, wijs af of stuur een tegenaanbod.',
+    'counterSent': 'Tegenaanbod verzonden.',
+    'counterReceived':
+        'Tegenaanbod ontvangen. Bekijk de wijzigingen en reageer.',
+    'offerAcceptedMine':
+        'U hebt het aanbod geaccepteerd. De sessie is bevestigd.',
+    'offerAcceptedTheirs': 'Uw aanbod is geaccepteerd. De sessie is bevestigd.',
+    'offerDeclinedMine': 'U hebt het aanbod afgewezen.',
+    'offerDeclinedTheirs': 'Uw aanbod is afgewezen.',
+    'offerCancelledNew':
+        'Aanbod geannuleerd. Er kan een nieuw verzoek worden gestart.',
+    'offerAcceptedReturnMine':
+        'U hebt het aanbod geaccepteerd. Tegenvaardigheid: {skill}',
+    'offerAcceptedReturnTheirs':
+        'Uw aanbod is geaccepteerd. Tegenvaardigheid: {skill}',
+    'completionOne':
+        'Eén lid heeft de afronding bevestigd. Wachten op de andere bevestiging.',
+    'completionBoth':
+        'De uitwisseling is afgerond. Beoordelingen kunnen nu worden geschreven.',
   };
 
   static String t(String key) {
