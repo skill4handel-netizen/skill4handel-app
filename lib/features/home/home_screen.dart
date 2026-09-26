@@ -671,8 +671,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'Activity',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                  S.t('activity'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (live.isEmpty)

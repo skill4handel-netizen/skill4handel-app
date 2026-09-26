@@ -302,6 +302,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            S.t('connectHint'),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.muted, fontSize: 13),
+          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -323,9 +329,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Reviews',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          Text(
+            S.t('reviews'),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           if (reviews.isEmpty)

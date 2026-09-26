@@ -95,7 +95,10 @@ class S {
     'year': 'Year',
     'editProfile': 'Edit profile',
     'fullName': 'Full name',
-    'connect': 'Connect',
+    'connect': 'Start conversation',
+    'connectHint':
+        'If you wish to negotiate an exchange with this member, start a conversation.',
+    'activity': 'Activity',
     'productGuide': 'Open the short product guide',
     'skillsShareHint': 'English, photography…',
     'noMessages': 'No messages yet.',
@@ -357,19 +360,19 @@ class S {
     'demoContinue': 'Continue',
     'demoTitle1': 'Create your profile',
     'demoText1':
-        'Add a clear photograph, your city and up to ten skills you can offer. Other members see these skills before they connect with you.',
+        'Add a clear photograph, your city and up to ten skills you can offer. Other members see those skills before they start a conversation with you. A telephone number is optional and remains private.',
     'demoTitle2': 'Find a member',
     'demoText2':
-        'Open Search and look by name, city or skill. Read the profile, rating and offered skills before you start a chat.',
+        'Open Search and look by name, city or skill. Read the profile, the rating and the skills on offer. If you wish to negotiate an exchange, start a conversation. This is not a follow list.',
     'demoTitle3': 'Send a written offer',
     'demoText3':
-        'Choose the skill you need from their list. Then choose how you will exchange: skill for skill, skill plus tokens, tokens only, or volunteer work. Set the date at least 24 hours ahead.',
+        'In the conversation, open the offer form. Choose the skill you need from that member\'s list. Then choose the exchange type: skill for skill, skill plus tokens, tokens only, or volunteer work. Set the meeting at least 24 hours ahead.',
     'demoTitle4': 'Reply, accept or decline',
     'demoText4':
-        'The other member may accept, decline or send one counter-offer. Volunteer work does not require a return skill. After one counter-offer, only accept or decline remains.',
+        'The other member may accept, decline or send one counter-offer. Volunteer work does not require a skill in return. After one counter-offer, only accept or decline remains. Offers expire if there is no reply within 24 hours.',
     'demoTitle5': 'Complete and review',
     'demoText5':
-        'Meet at the agreed time. Both members mark the session complete. Then both leave a review. Tokens move only when the agreed offer includes tokens.',
+        'Meet at the agreed time. Both members mark the session complete. Then both leave a review. Tokens move only when the accepted offer includes tokens. History of offers is kept separately from the conversation.',
     'skillForSkill': 'Skill for skill',
     'acceptOffer': 'Accept offer',
     'acceptThisOffer': 'Accept this offer',
@@ -498,7 +501,10 @@ class S {
     'year': 'Jaar',
     'editProfile': 'Profiel bewerken',
     'fullName': 'Volledige naam',
-    'connect': 'Verbinden',
+    'connect': 'Gesprek starten',
+    'connectHint':
+        'Wilt u met dit lid een ruil bespreken, start dan een gesprek.',
+    'activity': 'Activiteit',
     'productGuide': 'Korte productgids openen',
     'skillsShareHint': 'Engels, fotografie…',
     'noMessages': 'Nog geen berichten.',
@@ -764,19 +770,19 @@ class S {
     'demoContinue': 'Doorgaan',
     'demoTitle1': 'Maak uw profiel',
     'demoText1':
-        'Voeg een duidelijke foto, uw stad en maximaal tien vaardigheden toe. Andere leden zien deze vaardigheden voordat zij contact maken.',
+        'Voeg een duidelijke foto, uw stad en maximaal tien vaardigheden toe. Andere leden zien die vaardigheden voordat zij een gesprek starten. Een telefoonnummer is optioneel en blijft privé.',
     'demoTitle2': 'Zoek een lid',
     'demoText2':
-        'Open Zoeken en zoek op naam, stad of vaardigheid. Lees het profiel, de beoordeling en de aangeboden vaardigheden voordat u een chat start.',
+        'Open Zoeken en zoek op naam, stad of vaardigheid. Lees het profiel, de beoordeling en de aangeboden vaardigheden. Wilt u een ruil bespreken, start dan een gesprek. Dit is geen volglijst.',
     'demoTitle3': 'Stuur een schriftelijk aanbod',
     'demoText3':
-        'Kies de vaardigheid die u nodig hebt uit hun lijst. Kies daarna de ruilvorm: vaardigheid voor vaardigheid, vaardigheid plus tokens, alleen tokens, of vrijwilligerswerk. Zet de datum minstens 24 uur vooruit.',
+        'Open in het gesprek het aanbodformulier. Kies de vaardigheid die u nodig hebt uit de lijst van dat lid. Kies daarna het type ruil: vaardigheid voor vaardigheid, vaardigheid plus tokens, alleen tokens, of vrijwilligerswerk. Plan de ontmoeting minstens 24 uur vooruit.',
     'demoTitle4': 'Reageer, accepteer of wijs af',
     'demoText4':
-        'Het andere lid kan accepteren, afwijzen of één tegenaanbod sturen. Bij vrijwilligerswerk is geen tegenprestatie nodig. Na één tegenaanbod blijft alleen accepteren of afwijzen over.',
+        'Het andere lid kan accepteren, afwijzen of één tegenaanbod sturen. Bij vrijwilligerswerk is geen tegenvaardigheid nodig. Na één tegenaanbod blijft alleen accepteren of afwijzen over. Een aanbod vervalt als er binnen 24 uur geen reactie komt.',
     'demoTitle5': 'Rond af en beoordeel',
     'demoText5':
-        'Kom op de afgesproken tijd bijeen. Beide leden markeren de sessie als afgerond. Daarna laten beide een beoordeling achter. Tokens gaan alleen over als dat is afgesproken.',
+        'Kom op de afgesproken tijd bijeen. Beide leden markeren de sessie als afgerond. Daarna laten beide een beoordeling achter. Tokens gaan alleen over als het geaccepteerde aanbod tokens bevat. Het overzicht van aanbiedingen staat los van het gesprek.',
     'skillForSkill': 'Vaardigheid voor vaardigheid',
     'acceptOffer': 'Aanbod accepteren',
     'acceptThisOffer': 'Dit aanbod accepteren',
