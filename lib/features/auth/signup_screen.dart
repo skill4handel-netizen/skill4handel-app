@@ -115,8 +115,8 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       final user = Map<String, dynamic>.from(response.data['user'] as Map);
       Session.apply(user);
-      Session.token = '';
       Session.emailVerified = false;
+      if ((response.data['token'] ?? '').toString().isNotEmpty) Session.token = response.data['token'].toString();
       await Session.save();
       if (!mounted) return;
       final link = (response.data['verifyUrl'] ?? '').toString();
