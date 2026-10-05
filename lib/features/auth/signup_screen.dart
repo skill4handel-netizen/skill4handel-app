@@ -70,7 +70,15 @@ class _SignupScreenState extends State<SignupScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('signupPassMatch'))));
       return;
     }
-    if (password.text.length < 6) {
+    final pwd = password.text;
+    final strong = pwd.length >= 8 && RegExp(r'[A-Za-z]').hasMatch(pwd) && RegExp(r'[0-9]').hasMatch(pwd);
+    if (!strong) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Use at least 8 characters, including one letter and one number.')),
+      );
+      return;
+    }
+    if (false && password.text.length < 6) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('signupPassLen'))));

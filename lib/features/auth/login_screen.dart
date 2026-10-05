@@ -94,6 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           : <String, dynamic>{};
       if (data['user'] is Map) {
         Session.apply(Map<String, dynamic>.from(data['user'] as Map));
+        Session.emailVerified = true;
         if (data['token'] != null) Session.token = data['token'].toString();
         await Session.save();
         await PushService.registerToken();
@@ -368,29 +369,30 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const ForgotPasswordScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(S.t('forgotPassword')),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SignupScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(S.t('createAccount')),
-                      ),
+                      if (!waitingVerify) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
+                            },
+                            child: Text(S.t('forgotPassword')),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => const SignupScreen()));
+                            },
+                            child: Text(S.t('createAccount')),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -23,6 +23,7 @@ class ProfileScreen extends StatefulWidget {
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
+
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -37,9 +38,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String gender = Session.gender.isNotEmpty ? Session.gender : 'prefer_not';
   late List<SkillItem> selectedSkills = parseSkills(Session.offers);
   bool saving = false;
+  bool dirty = false;
+  String baseline = '';
+
+  String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), gender, encodeSkills(selectedSkills), Session.photoUrl].join('|');
+
 
   int get customCount =>
       selectedSkills.where((item) => !allowedSkills.contains(item.name)).length;
+
+  @override
+  void initState() {
+    super.initState();
+    baseline = snapshot();
+    for (final c in [name, city, bio]) {
+      c.addListener(() => setState(() => dirty = snapshot() != baseline));
+    }
+  }
 
   ImageProvider? photoOf(String url) {
     if (url.isEmpty) return null;
@@ -89,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
     Session.photoUrl = dataUrl;
     await Session.save();
-    if (mounted) setState(() {});
+    if (mounted) setState(() => dirty = snapshot() != baseline);
     try {
       final response = await dio.post(
         '/auth/photo',
@@ -151,7 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
     if (note == null) return;
-    setState(() => selectedSkills.add(SkillItem(name: chosen, note: note)));
+    setState(() { selectedSkills.add(SkillItem(name: chosen, note: note)); dirty = snapshot() != baseline; });
     Session.offers = encodeSkills(selectedSkills);
     await Session.save();
   }
@@ -544,7 +559,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: saving ? null : save,
+                  onPressed: saving || !dirty ? null : save,
                   style: AppTheme.solid(AppColors.green),
                   child: Text(
                     saving ? S.t('saving') : S.t('save'),
@@ -563,35 +578,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   setState(() {});
                 },
               ),
-              TextButton(
-                onPressed: changePassword,
-                child: Text(S.t('changePassword')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BlockedScreen(),
-                  ),
-                ),
-                child: Text(S.t('blocked')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TermsScreen()),
-                ),
-                child: Text(S.t('terms')),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SupportScreen(),
-                  ),
-                ),
-                child: Text(S.t('support')),
-              ),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: changePassword, child: Text(S.t('changePassword')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())), child: Text(S.t('terms')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support')))),
               const SizedBox(height: 8),
               SizedBox(
                 height: 52,
