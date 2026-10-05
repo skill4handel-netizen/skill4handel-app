@@ -148,10 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
           'chat': chat,
         });
       } else if (status == 'accepted') {
+        final when = DateTime.tryParse('${swap['scheduledAt'] ?? swap['when'] ?? ''}');
+        final overdue = when != null && when.isBefore(DateTime.now());
         items.add({
           'title': chat['name'] ?? 'Member',
-          'reason':
-              'Open session. Confirm completion after the scheduled time.',
+          'reason': overdue
+              ? 'This session time has passed. Mark it done before you can exchange with this member again.'
+              : 'Open session. Confirm completion after the scheduled time.',
           'chat': chat,
         });
       }
