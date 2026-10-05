@@ -78,12 +78,6 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       return;
     }
-    if (false && password.text.length < 6) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(S.t('signupPassLen'))));
-      return;
-    }
     if (birthDate == null || age == null) {
       ScaffoldMessenger.of(
         context,

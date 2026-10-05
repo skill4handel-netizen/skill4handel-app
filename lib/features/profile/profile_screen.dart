@@ -41,7 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool dirty = false;
   String baseline = '';
 
-  String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), gender, encodeSkills(selectedSkills), Session.photoUrl].join('|');
+  String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), gender, Session.language, encodeSkills(selectedSkills), Session.photoUrl].join('|');
 
 
   int get customCount =>
@@ -423,7 +423,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   DropdownMenuItem(value: 'nl', child: Text(S.t('dutch'))),
                 ],
                 onChanged: (value) =>
-                    setState(() => Session.language = value ?? 'en'),
+                    setState(() { Session.language = value ?? 'en'; dirty = snapshot() != baseline; }),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -481,8 +481,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Text(S.t('preferNot')),
                   ),
                 ],
-                onChanged: (value) =>
-                    setState(() => gender = value ?? 'prefer_not'),
+                onChanged: (value) => setState(() {
+                  gender = value ?? 'prefer_not';
+                  dirty = snapshot() != baseline;
+                }),
               ),
               const SizedBox(height: 12),
               InputDecorator(
@@ -571,11 +573,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 contentPadding: EdgeInsets.zero,
                 title: Text(S.t('darkMode')),
                 value: Session.themeMode.value == ThemeMode.dark,
-                onChanged: (value) {
-                  Session.themeMode.value = value
-                      ? ThemeMode.dark
-                      : ThemeMode.light;
-                  setState(() {});
+                onChanged: (value) async {
+                  Session.themeMode.value = value ? ThemeMode.dark : ThemeMode.light;
+                  await Session.save();
+                  if (mounted) setState(() {});
                 },
               ),
               const SizedBox(height: 8),

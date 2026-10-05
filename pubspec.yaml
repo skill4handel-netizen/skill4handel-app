@@ -1,7 +1,7 @@
 name: skill4handel
 description: "Skill4Handel mobile app"
 publish_to: "none"
-version: 3.0.1+4
+version: 3.0.5+8
 
 environment:
   sdk: ^3.12.2

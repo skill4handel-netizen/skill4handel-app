@@ -45,6 +45,7 @@ class Session {
     'accessibility': accessibility,
     'emailVerified': emailVerified,
     'demoSeen': demoSeen,
+    'theme': themeMode.value == ThemeMode.dark ? 'dark' : 'light',
   };
 
   static String pickText(Map user, List<String> keys, String fallback) {
@@ -76,6 +77,8 @@ class Session {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
     }
+    if (user['theme'] == 'dark') themeMode.value = ThemeMode.dark;
+    if (user['theme'] == 'light') themeMode.value = ThemeMode.light;
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
           .whereType<Map>()

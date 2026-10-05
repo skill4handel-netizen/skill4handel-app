@@ -43,6 +43,16 @@ class SkillApp extends StatefulWidget {
 
 class _SkillAppState extends State<SkillApp> {
   String? verifyToken;
+  Widget? lockedHome;
+
+  Widget startHome() {
+    if (lockedHome != null) return lockedHome!;
+    final startVerify = (verifyToken ?? '').isNotEmpty;
+    if (startVerify) return LoginScreen(verifyToken: verifyToken);
+    if (Session.id > 0 && Session.emailVerified) return MainShell(userName: Session.name);
+    if (Session.id > 0 && !Session.emailVerified) return const VerifyEmailScreen();
+    return const WelcomeScreen();
+  }
 
   @override
   void initState() {
@@ -65,24 +75,13 @@ class _SkillAppState extends State<SkillApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: Session.themeMode,
       builder: (context, mode, _) {
-        final startVerify = (verifyToken ?? '').isNotEmpty;
-        Widget home;
-        if (startVerify) {
-          home = LoginScreen(verifyToken: verifyToken);
-        } else if (Session.id > 0 && Session.emailVerified) {
-          home = MainShell(userName: Session.name);
-        } else if (Session.id > 0 && !Session.emailVerified) {
-          home = const VerifyEmailScreen();
-        } else {
-          home = const WelcomeScreen();
-        }
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Skill4Handel',
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: mode,
-          home: home,
+          home: lockedHome ??= startHome(),
         );
       },
     );
