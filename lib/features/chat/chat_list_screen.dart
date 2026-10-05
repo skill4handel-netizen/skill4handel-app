@@ -1,4 +1,5 @@
 import '../../core/api/api_client.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
@@ -82,31 +83,36 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Future<void> deleteChat(Map<String, dynamic> chat) async {
+    final swap = chat['pendingSwap'];
+    final status = swap is Map ? swap['status']?.toString() : '';
+    final name = chat['name']?.toString() ?? 'this member';
+    final blocked = status == 'accepted';
+    final sessionLine = status == 'accepted'
+        ? 'Open accepted session with $name. It stays until both members mark it done. This chat cannot be deleted yet.'
+        : status == 'pending'
+            ? 'There is an unanswered offer with $name. Deleting this chat cancels that offer.'
+            : 'There is no open session with $name.';
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(S.t('deleteChat')),
-        content: Text(S.t('deleteChatConfirm')),
+        content: Text('$sessionLine\n\nDeleting this chat removes the messages, the offer record in this chat, and the chat itself. The other member is notified. Wallet history and reviews already saved are not deleted.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(S.t('cancel')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(S.t('delete')),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(S.t('cancel'))),
+          if (!blocked)
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(S.t('delete'))),
         ],
       ),
     );
-    if (ok != true) return;
+    if (ok != true || blocked) return;
     try {
-      await dio.delete(
-        '/chats/${chat['id']}',
-        queryParameters: {'userId': Session.id},
-      );
+      await dio.delete('/chats/${chat['id']}', queryParameters: {'userId': Session.id});
       load();
-    } catch (_) {}
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is DioException ? '${error.response?.data?['message'] ?? S.t('saveError')}' : S.t('saveError');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   @override
