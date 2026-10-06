@@ -13,6 +13,7 @@ import '../chat/chat_screen.dart';
 import '../chat/history_screen.dart';
 import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
+import '../notifications/notifications_screen.dart';
 import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -325,6 +326,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                  },
+                  icon: const Icon(Icons.notifications_none, color: Colors.white),
                 ),
                 IconButton(
                   onPressed: refresh,
