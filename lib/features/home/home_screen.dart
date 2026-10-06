@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> history = [];
   List<SafePlace> places = [];
   int unread = 0;
+  int unreadAlerts = 0;
 
   @override
   void initState() {
@@ -85,6 +86,13 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     } catch (_) {
       history = [];
+    }
+    try {
+      final alertResponse = await dio.get('/auth/alerts', queryParameters: {'userId': Session.id});
+      final alerts = ((alertResponse.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      unreadAlerts = alerts.where((item) => item['is_read'] != true).length;
+    } catch (_) {
+      unreadAlerts = 0;
     }
     try {
       places = await PlacesService.load(Session.city);
@@ -328,10 +336,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                  onPressed: () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                    refresh();
                   },
-                  icon: const Icon(Icons.notifications_none, color: Colors.white),
+                  icon: Badge(
+                    isLabelVisible: unreadAlerts > 0,
+                    label: Text('$unreadAlerts'),
+                    child: const Icon(Icons.notifications_none, color: Colors.white),
+                  ),
                 ),
                 IconButton(
                   onPressed: refresh,

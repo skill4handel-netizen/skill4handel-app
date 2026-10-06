@@ -341,6 +341,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Widget menuButton(IconData icon, String label, Color color, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SizedBox(
+        height: 52,
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          icon: Icon(icon, color: Colors.white),
+          label: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final photo = photoOf(Session.photoUrl);
@@ -548,13 +569,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                 ],
               ),
-              OutlinedButton.icon(
-                onPressed: addSkill,
-                icon: const Icon(Icons.add),
+              ElevatedButton.icon(
+                onPressed: selectedSkills.length >= 10 ? null : addSkill,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                icon: const Icon(Icons.add, color: Colors.white),
                 label: Text(
-                  selectedSkills.length >= 10
-                      ? S.t('limitReached')
-                      : S.t('addSkill'),
+                  selectedSkills.length >= 10 ? S.t('limitReached') : S.t('addSkill'),
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(height: 20),
@@ -580,29 +605,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: changePassword, child: Text(S.t('changePassword')))),
-              const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked')))),
-              const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())), child: Text(S.t('terms')))),
-              const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support')))),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: logout,
-                  child: Text(S.t('logOut')),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: deleteAccount,
-                  child: Text(S.t('deleteAccount')),
-                ),
-              ),
+              menuButton(Icons.lock, S.t('changePassword'), AppColors.blue, changePassword),
+              menuButton(Icons.block, S.t('blocked'), AppColors.purple, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen()))),
+              menuButton(Icons.description, S.t('terms'), const Color(0xFF1F4E79), () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()))),
+              menuButton(Icons.support_agent, S.t('support'), AppColors.coral, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()))),
+              menuButton(Icons.logout, S.t('logOut'), const Color(0xFF5D6D7E), logout),
+              menuButton(Icons.delete_forever, S.t('deleteAccount'), const Color(0xFFB42318), deleteAccount),
             ],
           ),
         ),
