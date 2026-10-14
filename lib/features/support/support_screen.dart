@@ -217,6 +217,64 @@ class _SupportScreenState extends State<SupportScreen> {
     );
   }
 
+  Widget chatBubble(String text, {required bool mine}) {
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 280),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: mine ? AppColors.blue : const Color(0xFFF3F6FA),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(mine ? 16 : 4),
+            bottomRight: Radius.circular(mine ? 4 : 16),
+          ),
+        ),
+        child: Text(text, style: TextStyle(color: mine ? Colors.white : AppColors.text, height: 1.3)),
+      ),
+    );
+  }
+
+  List<String> adminMessages(String reply) {
+    return reply
+        .split(RegExp(r'\[Admin [^\]]+\]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  Widget ticketChat(Map<String, dynamic> ticket) {
+    final replies = adminMessages(ticket['adminReply']?.toString() ?? '');
+    final status = ticket['status']?.toString() ?? 'open';
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: AppTheme.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const CircleAvatar(radius: 16, backgroundColor: AppColors.blue, child: Icon(Icons.support_agent, color: Colors.white, size: 18)),
+              const SizedBox(width: 8),
+              Expanded(child: Text('${ticket['type'] ?? 'support'} · $status', style: const TextStyle(fontWeight: FontWeight.w800))),
+            ],
+          ),
+          const SizedBox(height: 10),
+          chatBubble(ticket['text']?.toString() ?? '', mine: true),
+          if (replies.isEmpty)
+            chatBubble('Support has received your message and will reply here.', mine: false)
+          else
+            ...replies.map((reply) => chatBubble(reply, mine: false)),
+        ],
+      ),
+    );
+  }
+
   Widget faq(IconData icon, String title, String body) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -370,28 +428,10 @@ class _SupportScreenState extends State<SupportScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          sectionTitle('Your tickets', Icons.mark_chat_read_outlined),
+          sectionTitle('Chat with support', Icons.forum_outlined),
           if (tickets.isEmpty)
-            const Text('No tickets yet', style: TextStyle(color: AppColors.muted)),
-          ...tickets.map((ticket) {
-            final reply = ticket['adminReply']?.toString() ?? '';
-            return Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: AppTheme.card(color: reply.isEmpty ? Colors.white : AppColors.mint),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${ticket['type'] ?? 'support'} · ${ticket['status'] ?? 'open'}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 6),
-                  Text(ticket['text']?.toString() ?? ''),
-                  const SizedBox(height: 8),
-                  Text(reply.isEmpty ? 'Waiting for a reply' : 'Reply: ${reply.trim()}', style: TextStyle(fontWeight: FontWeight.w700, color: reply.isEmpty ? AppColors.muted : AppColors.blueDeep)),
-                ],
-              ),
-            );
-          }),
+            const Text('Your messages with support will appear here.', style: TextStyle(color: AppColors.muted)),
+          ...tickets.map(ticketChat),
           const SizedBox(height: 24),
           sectionTitle(S.t('faq'), Icons.help_outline),
           faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),
