@@ -22,6 +22,23 @@ class _SupportScreenState extends State<SupportScreen> {
   final text = TextEditingController();
   late String type = widget.initialType ?? 'support';
   bool sending = false;
+  List<Map<String, dynamic>> tickets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadTickets();
+  }
+
+  Future<void> loadTickets() async {
+    try {
+      final response = await dio.get('/auth/tickets', queryParameters: {'userId': Session.id});
+      tickets = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+    } catch (_) {
+      tickets = [];
+    }
+    if (mounted) setState(() {});
+  }
 
   String cleanError(Object error) {
     if (error is DioException) {
@@ -56,6 +73,7 @@ class _SupportScreenState extends State<SupportScreen> {
       );
       text.clear();
       type = widget.initialType ?? 'support';
+      await loadTickets();
       if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(
@@ -351,6 +369,29 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          sectionTitle('Your tickets', Icons.mark_chat_read_outlined),
+          if (tickets.isEmpty)
+            const Text('No tickets yet', style: TextStyle(color: AppColors.muted)),
+          ...tickets.map((ticket) {
+            final reply = ticket['adminReply']?.toString() ?? '';
+            return Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: AppTheme.card(color: reply.isEmpty ? Colors.white : AppColors.mint),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${ticket['type'] ?? 'support'} · ${ticket['status'] ?? 'open'}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  Text(ticket['text']?.toString() ?? ''),
+                  const SizedBox(height: 8),
+                  Text(reply.isEmpty ? 'Waiting for a reply' : 'Reply: ${reply.trim()}', style: TextStyle(fontWeight: FontWeight.w700, color: reply.isEmpty ? AppColors.muted : AppColors.blueDeep)),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 24),
           sectionTitle(S.t('faq'), Icons.help_outline),
           faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),

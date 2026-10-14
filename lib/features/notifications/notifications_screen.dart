@@ -4,6 +4,7 @@ import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../chat/chat_screen.dart';
+import '../support/support_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -52,6 +53,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final kind = item['kind']?.toString() ?? '';
     final chatId = int.tryParse('${item['ref_id'] ?? 0}') ?? 0;
     final otherId = int.tryParse('${item['other_id'] ?? 0}') ?? 0;
+    if (kind == 'support' && mounted) {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen()));
+      load();
+      return;
+    }
     if (kind == 'offer' && chatId > 0 && otherId > 0 && mounted) {
       await Navigator.push(
         context,
