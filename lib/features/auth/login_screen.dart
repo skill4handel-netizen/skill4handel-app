@@ -122,6 +122,10 @@ class _LoginScreenState extends State<LoginScreen> {
         serverClientId:
             '763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com',
       );
+      await google.signOut();
+      try {
+        await google.disconnect();
+      } catch (_) {}
       final account = await google.signIn();
       if (account == null) return;
       final auth = await account.authentication;
