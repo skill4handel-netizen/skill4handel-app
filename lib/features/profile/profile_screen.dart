@@ -213,13 +213,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('saved'))));
       widget.onSaved?.call();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) {
         return;
       }
+      final message = error is DioException
+          ? '${error.response?.data is Map ? (error.response?.data['message'] ?? S.t('saveError')) : S.t('saveError')}'
+          : S.t('saveError');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(S.t('saveError'))));
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() => saving = false);
