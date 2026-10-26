@@ -32,6 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''),
   );
   late final city = TextEditingController(text: Session.city);
+  String meetingMode = Session.meetingMode.isEmpty ? 'both' : Session.meetingMode;
   late final bio = TextEditingController(
     text: Session.bio.isNotEmpty ? Session.bio : Session.needs,
   );
@@ -171,6 +172,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await Session.save();
   }
 
+  bool get canChangeCity {
+    final raw = Session.cityChangedAt;
+    if (raw.isEmpty) return true;
+    final changed = DateTime.tryParse(raw);
+    if (changed == null) return true;
+    return DateTime.now().difference(changed).inDays >= 30 || city.text.trim() == Session.city;
+  }
+
   Future<void> save() async {
     setState(() => saving = true);
     try {
@@ -182,6 +191,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'name': name.text,
           'city': city.text,
           'offers': encoded,
+          'meetingMode': meetingMode,
           'needs': bio.text.trim(),
           'gender': gender,
           'age': Session.age,
@@ -467,17 +477,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
-              InputDecorator(
+              TextField(
+                controller: city,
+                enabled: canChangeCity,
                 decoration: InputDecoration(labelText: S.t('city')),
-                child: Text(
-                  Session.city.isEmpty ? '-' : Session.city,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
               ),
               const SizedBox(height: 4),
               Text(
-                S.t('cityLockedHint'),
+                canChangeCity
+                    ? 'You can change your city once every 30 days.'
+                    : 'City can be changed again after 30 days.',
                 style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: meetingMode,
+                decoration: const InputDecoration(labelText: 'Meeting type'),
+                items: const [
+                  DropdownMenuItem(value: 'both', child: Text('Online and in person')),
+                  DropdownMenuItem(value: 'online', child: Text('Online')),
+                  DropdownMenuItem(value: 'in-person', child: Text('In person')),
+                ],
+                onChanged: (value) => setState(() => meetingMode = value ?? 'both'),
               ),
               const SizedBox(height: 12),
               TextField(

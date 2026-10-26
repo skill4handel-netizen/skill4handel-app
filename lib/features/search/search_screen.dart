@@ -19,6 +19,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final dio = Api.client;
   List<Map<String, dynamic>> all = [];
   List<Map<String, dynamic>> results = [];
+  String cityFilter = 'all';
+  String modeFilter = 'all';
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         all = users;
         results = users;
+        applyFilters();
       });
     } catch (_) {
       setState(() {
@@ -109,6 +112,24 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+
+  void applyFilters() {
+    final q = controller.text.trim().toLowerCase();
+    results = all.where((person) {
+      final city = (person['city'] ?? '').toString();
+      final mode = (person['meetingMode'] ?? person['meeting_mode'] ?? 'both').toString();
+      final hay = '${person['name']} ${person['city']} ${person['offers']} ${person['needs']}'.toLowerCase();
+      if (q.isNotEmpty && !hay.contains(q)) return false;
+      if (cityFilter != 'all' && city != cityFilter) return false;
+      if (modeFilter != 'all' && mode != 'both' && mode != modeFilter) return false;
+      return true;
+    }).toList();
+  }
+
+  List<String> otherCities() {
+    return all.map((person) => (person['city'] ?? '').toString()).where((city) => city.isNotEmpty && city != cityFilter).toSet().take(5).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -125,7 +146,7 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               TextField(
                 controller: controller,
-                onChanged: search,
+                onChanged: (_) { applyFilters(); setState(() {}); },
                 decoration: InputDecoration(
                   hintText: S.t('searchHint'),
                   prefixIcon: const Icon(Icons.search, color: AppColors.blue),
@@ -137,12 +158,40 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: cityFilter,
+                decoration: const InputDecoration(labelText: 'City'),
+                items: [
+                  const DropdownMenuItem(value: 'all', child: Text('All cities')),
+                  ...all.map((person) => (person['city'] ?? '').toString()).where((city) => city.isNotEmpty).toSet().map((city) => DropdownMenuItem(value: city, child: Text(city))),
+                ],
+                onChanged: (value) => setState(() { cityFilter = value ?? 'all'; applyFilters(); }),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                initialValue: modeFilter,
+                decoration: const InputDecoration(labelText: 'Meeting type'),
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('Online and in person')),
+                  DropdownMenuItem(value: 'online', child: Text('Online')),
+                  DropdownMenuItem(value: 'in-person', child: Text('In person')),
+                ],
+                onChanged: (value) => setState(() { modeFilter = value ?? 'all'; applyFilters(); }),
+              ),
+              const SizedBox(height: 8),
+              const Text('Distance filter is available in the paid version.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
               const SizedBox(height: 14),
-              if (results.isEmpty)
-                Text(
-                  S.t('noUsers'),
-                  style: const TextStyle(color: AppColors.muted),
-                )
+              if (results.isEmpty) ...[
+                Text(S.t('noUsers'), style: const TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 8),
+                const Text('Try another city or a pilot skill such as Languages, Basic computers, Cooking, or Light sports.', style: TextStyle(color: AppColors.muted)),
+                if (otherCities().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: otherCities().map((city) => ActionChip(label: Text(city), onPressed: () => setState(() { cityFilter = city; applyFilters(); }))).toList()),
+                ],
+              ]
               else
                 ...results.map((person) {
                   final name = person['name']?.toString() ?? S.t('user');

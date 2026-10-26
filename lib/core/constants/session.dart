@@ -8,6 +8,8 @@ class Session {
   static String name = '';
   static String email = '';
   static String city = '';
+  static String cityChangedAt = '';
+  static String meetingMode = 'both';
   static String bio = '';
   static String offers = '';
   static String needs = '';
@@ -33,6 +35,8 @@ class Session {
     'name': name,
     'email': email,
     'city': city,
+    'cityChangedAt': cityChangedAt,
+    'meetingMode': meetingMode,
     'bio': bio,
     'offers': offers,
     'needs': needs,
@@ -64,6 +68,8 @@ class Session {
     name = pickText(user, ['name'], name);
     email = pickText(user, ['email'], email);
     city = pickText(user, ['city'], city);
+    cityChangedAt = pickText(user, ['cityChangedAt', 'city_changed_at'], cityChangedAt);
+    meetingMode = pickText(user, ['meetingMode', 'meeting_mode'], meetingMode.isEmpty ? 'both' : meetingMode);
     final incomingBio = pickText(user, ['bio', 'needs'], '');
     if (incomingBio.isNotEmpty) bio = incomingBio;
     offers = pickText(user, ['offers'], offers);
@@ -116,6 +122,8 @@ class Session {
     name = '';
     email = '';
     city = '';
+    cityChangedAt = '';
+    meetingMode = 'both';
     bio = '';
     offers = '';
     needs = '';
