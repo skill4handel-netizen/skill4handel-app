@@ -142,13 +142,11 @@ class _LoginScreenState extends State<LoginScreen> {
       await PushService.registerToken();
       if (!mounted) return;
       await goAfterLogin(user);
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Google sign-in could not be completed. Try email login, or add the Android app in Google Cloud.',
-          ),
+        SnackBar(
+          content: Text('Google sign-in failed: $error'),
         ),
       );
     } finally {
