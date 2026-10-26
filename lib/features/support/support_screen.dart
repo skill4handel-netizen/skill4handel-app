@@ -23,6 +23,7 @@ class _SupportScreenState extends State<SupportScreen> {
   late String type = widget.initialType ?? 'support';
   bool sending = false;
   List<Map<String, dynamic>> tickets = [];
+  int section = 0;
 
   @override
   void initState() {
@@ -246,6 +247,66 @@ class _SupportScreenState extends State<SupportScreen> {
         .toList();
   }
 
+
+  Widget ticketTab(int value, String label, IconData icon) {
+    final selected = section == value;
+    return InkWell(
+      onTap: () => setState(() => section = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.blue : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: selected ? AppColors.blue : const Color(0xFFE4E7EC)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: selected ? Colors.white : AppColors.blue, size: 18),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.ink, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget ticketCard(Map<String, dynamic> ticket) {
+    final status = (ticket['status'] ?? 'open').toString();
+    final open = status != 'closed';
+    final reply = (ticket['adminReply'] ?? '').toString().trim();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: AppTheme.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text((ticket['type'] ?? 'support').toString(), style: const TextStyle(fontWeight: FontWeight.w800))),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: open ? const Color(0xFFFFF4D6) : const Color(0xFFE8F8EF),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(open ? 'Open' : 'Closed', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(ticket['text']?.toString() ?? ''),
+          const SizedBox(height: 10),
+          Text('Support reply', style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(reply.isEmpty ? 'No reply yet.' : reply, style: const TextStyle(color: AppColors.muted)),
+        ],
+      ),
+    );
+  }
+
   Widget ticketChat(Map<String, dynamic> ticket) {
     final replies = adminMessages(ticket['adminReply']?.toString() ?? '');
     final status = ticket['status']?.toString() ?? 'open';
@@ -319,6 +380,21 @@ class _SupportScreenState extends State<SupportScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
+
+          Row(
+            children: [
+              Expanded(child: ticketTab(0, 'My tickets', Icons.confirmation_number_outlined)),
+              const SizedBox(width: 8),
+              Expanded(child: ticketTab(1, 'New request', Icons.edit_outlined)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (section == 0) ...[
+            if (tickets.isEmpty)
+              const Text('No tickets yet. Use New request to contact support.', style: TextStyle(color: AppColors.muted)),
+            ...tickets.map(ticketCard),
+          ],
+          if (section == 1) ...[
           sectionTitle('Help', Icons.menu_book_outlined),
           Material(
             color: const Color(0xFFE8F1FF),
@@ -427,11 +503,7 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          sectionTitle('Chat with support', Icons.forum_outlined),
-          if (tickets.isEmpty)
-            const Text('Your messages with support will appear here.', style: TextStyle(color: AppColors.muted)),
-          ...tickets.map(ticketChat),
+          ],
           const SizedBox(height: 24),
           sectionTitle(S.t('faq'), Icons.help_outline),
           faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),

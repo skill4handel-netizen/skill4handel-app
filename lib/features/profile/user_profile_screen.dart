@@ -167,6 +167,39 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+
+  Future<void> reportReview(Map<String, dynamic> item) async {
+    final reason = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report review'),
+        content: TextField(
+          controller: reason,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Why is this review inappropriate?'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send report')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/review/report', data: {
+        'userId': Session.id,
+        'reviewId': item['id'],
+        'reason': reason.text.trim(),
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review report sent to support.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final skills = parseSkills(offers);
@@ -338,10 +371,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Text(S.t('noReviewsYet'), style: TextStyle(color: AppColors.muted))
           else
             ...reviews.map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})',
+              (item) => Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: AppTheme.card(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${item['fromName'] ?? 'Member'} · ${item['rating'] ?? ''} stars', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    if ((item['text'] ?? '').toString().isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(item['text'].toString()),
+                    ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => reportReview(item),
+                        icon: const Icon(Icons.flag_outlined, size: 18),
+                        label: const Text('Report review'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
