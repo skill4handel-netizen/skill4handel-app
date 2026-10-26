@@ -86,9 +86,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final swap = chat['pendingSwap'];
     final status = swap is Map ? swap['status']?.toString() : '';
     final name = chat['name']?.toString() ?? 'this member';
-    final blocked = status == 'accepted';
+    final reviewPending = chat['reviewPending'] == true;
+    final blocked = status == 'accepted' || reviewPending;
     final sessionLine = status == 'accepted'
-        ? 'Open accepted session with $name. It stays until both members mark it done. This chat cannot be deleted yet.'
+        ? 'Open accepted session with $name. It stays until the exchange is completed and the review is written. This chat cannot be deleted yet.'
+        : reviewPending
+            ? 'The exchange with $name is waiting for your review. This chat cannot be deleted until the review is written.'
         : status == 'pending'
             ? 'There is an unanswered offer with $name. Deleting this chat cancels that offer.'
             : 'There is no open session with $name.';
@@ -169,10 +172,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      '${when(chat['lastAt'])}  ${S.maybe(chat['last']?.toString() ?? '')}'
-                          .trim(),
-                      maxLines: 1,
+                      [
+                        if (chat['pendingSwap'] is Map && chat['pendingSwap']['status'] == 'accepted') 'Exchange open',
+                        if (chat['reviewPending'] == true) 'Review pending',
+                        '${when(chat['lastAt'])}  ${S.maybe(chat['last']?.toString() ?? '')}'.trim(),
+                      ].where((part) => part.trim().isNotEmpty).join(' · '),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: chat['reviewPending'] == true ? const Color(0xFFB54708) : null,
+                        fontWeight: chat['reviewPending'] == true ? FontWeight.w800 : FontWeight.w500,
+                      ),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

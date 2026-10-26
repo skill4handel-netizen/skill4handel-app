@@ -4,6 +4,7 @@ import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
 import '../chat/chat_screen.dart';
+import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -58,7 +59,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       load();
       return;
     }
-    if (kind == 'offer' && chatId > 0 && otherId > 0 && mounted) {
+    final title = item['title']?.toString().toLowerCase() ?? '';
+    if ((kind == 'review' || title.contains('review')) && otherId > 0 && mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReviewScreen(
+            otherId: otherId,
+            otherName: item['other_name']?.toString().isNotEmpty == true ? item['other_name'].toString() : 'Member',
+            skill: '',
+          ),
+        ),
+      );
+      load();
+      return;
+    }
+    if ((kind == 'offer' || kind == 'system') && chatId > 0 && otherId > 0 && mounted) {
       await Navigator.push(
         context,
         MaterialPageRoute(
