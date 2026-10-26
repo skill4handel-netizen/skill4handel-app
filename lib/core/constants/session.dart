@@ -16,6 +16,8 @@ class Session {
   static int age = 0;
   static double rating = 0;
   static num balance = 0;
+  static num reserved = 0;
+  static num available = 0;
   static String token = '';
   static String language = 'en';
   static String phone = '';
@@ -39,13 +41,14 @@ class Session {
     'age': age,
     'rating': rating,
     'balance': balance,
+    'reserved': reserved,
+    'available': available,
     'token': token,
     'language': language,
     'phone': phone,
     'accessibility': accessibility,
     'emailVerified': emailVerified,
     'demoSeen': demoSeen,
-    'theme': themeMode.value == ThemeMode.dark ? 'dark' : 'light',
   };
 
   static String pickText(Map user, List<String> keys, String fallback) {
@@ -70,6 +73,8 @@ class Session {
     age = int.tryParse('${user['age'] ?? age}') ?? age;
     rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
     balance = num.tryParse('${user['balance'] ?? balance}') ?? balance;
+    reserved = num.tryParse('${user['reserved'] ?? reserved}') ?? reserved;
+    available = num.tryParse('${user['available'] ?? user['balance'] ?? available}') ?? available;
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
@@ -77,8 +82,6 @@ class Session {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
     }
-    if (user['theme'] == 'dark') themeMode.value = ThemeMode.dark;
-    if (user['theme'] == 'light') themeMode.value = ThemeMode.light;
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
           .whereType<Map>()
@@ -121,6 +124,8 @@ class Session {
     age = 0;
     rating = 0;
     balance = 0;
+    reserved = 0;
+    available = 0;
     token = '';
     language = 'en';
     emailVerified = true;

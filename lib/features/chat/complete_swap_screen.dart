@@ -178,6 +178,14 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
       return;
     }
+    final tokenAmount = useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0;
+    final available = Session.available > 0 ? Session.available : Session.balance;
+    if (tokenAmount > available) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot offer more tokens than your available balance.')),
+      );
+      return;
+    }
     if (!widget.isAccept && (when == null || when!.isBefore(minWhen))) {
       ScaffoldMessenger.of(
         context,
