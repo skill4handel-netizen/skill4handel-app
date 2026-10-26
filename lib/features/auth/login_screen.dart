@@ -197,9 +197,9 @@ class _LoginScreenState extends State<LoginScreen> {
           notice = S.t('verifyBeforeLogin');
         });
       } else if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(S.t('wrongEmailPassword'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message.isNotEmpty ? message : S.t('wrongEmailPassword'))),
+        );
       }
     } catch (_) {
       if (!mounted) return;
