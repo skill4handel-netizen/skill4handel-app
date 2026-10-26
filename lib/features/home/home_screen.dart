@@ -189,6 +189,32 @@ class _HomeScreenState extends State<HomeScreen> {
     return items;
   }
 
+
+  List<String> dutyWarnings() {
+    final out = <String>[];
+    for (final chat in chats) {
+      final swap = chat['pendingSwap'];
+      if (swap is! Map) continue;
+      final status = swap['status']?.toString();
+      final doneBy = swap['doneBy'];
+      final mineDone = doneBy is List && doneBy.any((value) => value.toString() == Session.id.toString());
+      final name = (chat['name'] ?? 'the other member').toString();
+      if (status == 'accepted' && !mineDone) {
+        out.add('Confirm completion with $name within 72 hours. New exchanges stay blocked until you confirm completion and write the review.');
+      }
+      if (status == 'disputed') {
+        out.add('The exchange with $name is in arbitration. Tokens will not move until an admin decides.');
+      }
+    }
+    for (final item in history) {
+      if (item['status']?.toString() == 'completed' && !reviewedByMe(item)) {
+        final name = (item['otherName'] ?? 'the other member').toString();
+        out.add('Write your review for $name. New exchanges stay blocked until the review is submitted.');
+      }
+    }
+    return out;
+  }
+
   void openChatFrom(Map<String, dynamic> item) {
     final chat = item['chat'] as Map?;
     Navigator.push(
@@ -378,6 +404,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
+                ...dutyWarnings().map(
+                  (warning) => Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE8E8),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Text(
+                      warning,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
                 Container(
                   decoration: AppTheme.card(),
                   clipBehavior: Clip.antiAlias,
