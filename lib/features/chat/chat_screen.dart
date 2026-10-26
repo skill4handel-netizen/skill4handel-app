@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
@@ -33,20 +34,24 @@ class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
   final scrollController = ScrollController();
   final dio = Api.client;
+  Timer? poll;
   int? chatId;
   Map<String, dynamic>? pendingSwap;
   List<Map<String, dynamic>> messages = [];
   bool loading = true;
+  bool sending = false;
 
   @override
   void initState() {
     super.initState();
     chatId = widget.chatId;
     openChat();
+    poll = Timer.periodic(const Duration(seconds: 3), (_) => refreshChat());
   }
 
   @override
   void dispose() {
+    poll?.cancel();
     controller.dispose();
     scrollController.dispose();
     super.dispose();
@@ -96,6 +101,25 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     if (mounted) setState(() => loading = false);
     jumpToEnd();
+  }
+
+  Future<void> refreshChat() async {
+    if (!mounted || chatId == null || sending) return;
+    try {
+      final response = await dio.get('/chats/$chatId', queryParameters: {'userId': Session.id});
+      final next = ((response.data['messages'] as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      final oldLast = messages.isEmpty ? '' : '${messages.last['id'] ?? messages.last['text']}';
+      final newLast = next.isEmpty ? '' : '${next.last['id'] ?? next.last['text']}';
+      final changed = next.length != messages.length || oldLast != newLast;
+      if (!changed) return;
+      final nearBottom = !scrollController.hasClients ||
+          scrollController.position.pixels >= scrollController.position.maxScrollExtent - 120;
+      if (!mounted) return;
+      setState(() => applyChat(response.data));
+      if (nearBottom) jumpToEnd();
+    } catch (_) {}
   }
 
   void jumpToEnd() {
@@ -313,18 +337,21 @@ class _ChatScreenState extends State<ChatScreen> {
     await openChat();
   }
 
-  Future<void> send() async {
-    final text = controller.text.trim();
-    if (text.isEmpty || chatId == null) return;
+  Future<void> send([String? preset]) async {
+    final text = (preset ?? controller.text).trim();
+    if (text.isEmpty || chatId == null || sending) return;
     controller.clear();
+    sending = true;
     try {
       final response = await dio.post(
         '/chats/$chatId/messages',
         data: {'fromId': Session.id, 'text': text},
       );
+      if (!mounted) return;
       setState(() => applyChat(response.data));
       jumpToEnd();
     } catch (_) {
+      if (!mounted) return;
       setState(
         () => messages.add({
           'type': 'text',
@@ -334,6 +361,8 @@ class _ChatScreenState extends State<ChatScreen> {
         }),
       );
       jumpToEnd();
+    } finally {
+      sending = false;
     }
   }
 
@@ -534,6 +563,28 @@ class _ChatScreenState extends State<ChatScreen> {
                             );
                           },
                         ),
+                ),
+                SizedBox(
+                  height: 44,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                    children: [
+                      for (final starter in [
+                        S.t('starterHello'),
+                        S.t('starterSkill'),
+                        S.t('starterSchedule'),
+                        S.t('starterOffer'),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(starter, style: const TextStyle(fontSize: 12)),
+                            onPressed: () => send(starter),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPad),

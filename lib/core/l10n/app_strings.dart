@@ -102,6 +102,10 @@ class S {
     'productGuide': 'Open the short product guide',
     'skillsShareHint': 'English, photography…',
     'noMessages': 'No messages yet.',
+    'starterHello': 'Hello. I would like to exchange a skill.',
+    'starterSkill': 'Which skill can you offer?',
+    'starterSchedule': 'Can we schedule a session?',
+    'starterOffer': 'I would like to send an offer.',
     'blockTitle': 'Block this member?',
     'blockBody':
         'This member will no longer appear in Search, Matches or Chat.',
@@ -508,6 +512,10 @@ class S {
     'productGuide': 'Korte productgids openen',
     'skillsShareHint': 'Engels, fotografie…',
     'noMessages': 'Nog geen berichten.',
+    'starterHello': 'Hallo. Ik wil graag een vaardigheid ruilen.',
+    'starterSkill': 'Welke vaardigheid kunt u aanbieden?',
+    'starterSchedule': 'Kunnen wij een sessie plannen?',
+    'starterOffer': 'Ik wil graag een voorstel sturen.',
     'blockTitle': 'Dit lid blokkeren?',
     'blockBody':
         'Dit lid is daarna niet meer zichtbaar in Zoeken, Matches of Chat.',
