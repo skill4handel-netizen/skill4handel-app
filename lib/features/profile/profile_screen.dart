@@ -12,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/skill_picker.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
+import '../support/guide_screen.dart';
 import '../chat/blocked_screen.dart';
 import '../support/support_screen.dart';
 
@@ -631,6 +632,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 8),
               menuButton(Icons.lock, S.t('changePassword'), AppColors.blue, changePassword),
               menuButton(Icons.block, S.t('blocked'), AppColors.purple, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen()))),
+              menuButton(Icons.menu_book, S.t('guide'), AppColors.green, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GuideScreen()))),
               menuButton(Icons.description, S.t('terms'), const Color(0xFF1F4E79), () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()))),
               menuButton(Icons.support_agent, S.t('support'), AppColors.coral, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()))),
               menuButton(Icons.logout, S.t('logOut'), const Color(0xFF5D6D7E), logout),
