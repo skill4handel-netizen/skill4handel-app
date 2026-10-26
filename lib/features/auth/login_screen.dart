@@ -168,15 +168,6 @@ class _LoginScreenState extends State<LoginScreen> {
         data: {'email': email.text.trim(), 'password': password.text},
       );
       final user = Map<String, dynamic>.from(response.data['user'] as Map);
-      final verified =
-          user['emailVerified'] == true || user['emailVerified'] == 'true';
-      if (!verified) {
-        setState(() {
-          waitingVerify = true;
-          notice = S.t('verifyBeforeLogin');
-        });
-        return;
-      }
       Session.apply(user);
       if (response.data['token'] != null)
         Session.token = response.data['token'].toString();
