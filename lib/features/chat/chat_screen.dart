@@ -402,7 +402,12 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                MaterialPageRoute(
+                  builder: (context) => HistoryScreen(
+                    otherId: widget.otherId,
+                    otherName: widget.name,
+                  ),
+                ),
               );
             },
             icon: const Icon(Icons.history, size: 26),

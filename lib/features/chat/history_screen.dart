@@ -8,7 +8,10 @@ import '../reviews/review_screen.dart';
 import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({super.key, this.otherId, this.otherName});
+
+  final int? otherId;
+  final String? otherName;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -88,6 +91,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ...item,
             ...swap,
             'otherName': item['name'],
+            'otherId': item['otherId'],
             'group': 'closed',
             'status': 'expired',
           });
@@ -96,6 +100,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ...item,
             ...?swap,
             'otherName': item['name'],
+            'otherId': item['otherId'],
             'group': status == 'accepted' ? 'open' : 'pending',
           });
         }
@@ -131,9 +136,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (mounted) setState(() => allItems = merged);
   }
 
+  bool samePerson(Map item) {
+    final wanted = widget.otherId;
+    if (wanted == null) return true;
+    return (int.tryParse('${item['otherId'] ?? 0}') ?? 0) == wanted;
+  }
+
+  List<Map<String, dynamic>> get personItems => allItems.where(samePerson).toList();
+
   List<Map<String, dynamic>> get visible {
-    if (filter == 'all') return allItems;
-    return allItems.where((item) => item['group'] == filter).toList();
+    final base = personItems;
+    if (filter == 'all') return base;
+    return base.where((item) => item['group'] == filter).toList();
   }
 
   bool alreadyReviewed(Map item) {
@@ -272,7 +286,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(S.t('history')),
+        title: Text(widget.otherName == null || widget.otherName!.isEmpty
+            ? S.t('history')
+            : '${S.t('historyWith')} ${widget.otherName}'),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
         ),
@@ -302,6 +318,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                 ),
+                if (widget.otherId == null) ...[
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
@@ -319,6 +336,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                 ),
+                ],
               ],
             ),
             const SizedBox(height: 16),

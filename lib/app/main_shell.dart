@@ -151,7 +151,7 @@ class _MainShellState extends State<MainShell> {
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.support_agent),
-            label: S.t('support'),
+            label: S.t('help'),
           ),
         ],
       ),

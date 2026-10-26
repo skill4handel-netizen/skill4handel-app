@@ -6,6 +6,8 @@ import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../home/demo_screen.dart';
+import 'guide_screen.dart';
+import '../chat/history_screen.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key, this.initialType, this.initialOtherName});
@@ -395,31 +397,52 @@ class _SupportScreenState extends State<SupportScreen> {
             ...tickets.map(ticketCard),
           ],
           if (section == 1) ...[
-          sectionTitle('Help', Icons.menu_book_outlined),
+          sectionTitle(S.t('helpSection'), Icons.menu_book_outlined),
+          Material(
+            color: const Color(0xFFE8F8EA),
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.green,
+                child: Icon(Icons.rule, color: Colors.white),
+              ),
+              title: Text(S.t('rulesGuide'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(S.t('rulesGuideHint')),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GuideScreen())),
+            ),
+          ),
+          const SizedBox(height: 10),
           Material(
             color: const Color(0xFFE8F1FF),
             borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               leading: const CircleAvatar(
                 backgroundColor: AppColors.blue,
                 child: Icon(Icons.play_circle_outline, color: Colors.white),
               ),
-              title: Text(
-                S.t('howItWorks'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
+              title: Text(S.t('productTour'), style: const TextStyle(fontWeight: FontWeight.w800)),
               subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const DemoScreen()),
-                );
-              },
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Material(
+            color: const Color(0xFFFFF4D6),
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFFCA8A04),
+                child: Icon(Icons.history, color: Colors.white),
+              ),
+              title: Text(S.t('exchangeHistory'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(S.t('exchangeHistoryHint')),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())),
             ),
           ),
           const SizedBox(height: 20),
