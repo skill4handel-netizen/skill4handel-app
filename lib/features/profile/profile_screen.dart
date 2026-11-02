@@ -10,6 +10,7 @@ import '../../core/l10n/app_strings.dart';
 import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/skill_picker.dart';
+import '../../core/widgets/city_picker.dart';
 import '../auth/login_screen.dart';
 import '../auth/terms_screen.dart';
 import '../chat/blocked_screen.dart';
@@ -35,6 +36,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late final phone = TextEditingController(text: Session.phone);
   bool accessibility = Session.accessibility;
   bool willingVolunteer = Session.willingVolunteer;
+  int? day;
+  int? month;
+  int? year;
+  final months = const ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   late final bio = TextEditingController(
     text: Session.bio.isNotEmpty ? Session.bio : Session.needs,
   );
@@ -191,7 +196,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'offers': encoded,
           'needs': bio.text.trim(),
           'gender': gender,
-          'age': Session.age,
+          'age': year == null ? Session.age : DateTime.now().year - year!,
+          'birthDate': year == null ? null : DateTime(year!, month ?? 1, day ?? 1).toIso8601String(),
           'language': Session.language,
         },
       );
@@ -571,10 +577,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: city,
-                decoration: InputDecoration(labelText: S.t('city')),
+              CityPicker(controller: city, label: S.t('city')),
+              const SizedBox(height: 12),
+              Text(S.t('dateOfBirth'), style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      initialValue: day,
+                      decoration: InputDecoration(labelText: S.t('day')),
+                      items: [for (var i = 1; i <= 31; i++) DropdownMenuItem(value: i, child: Text('$i'))],
+                      onChanged: (value) => setState(() => day = value),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<int>(
+                      initialValue: month,
+                      decoration: InputDecoration(labelText: S.t('month')),
+                      items: [for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(months[i - 1]))],
+                      onChanged: (value) => setState(() => month = value),
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<int>(
+                initialValue: year,
+                decoration: InputDecoration(labelText: S.t('year')),
+                items: [for (var i = DateTime.now().year - 18; i >= DateTime.now().year - 90; i--) DropdownMenuItem(value: i, child: Text('$i'))],
+                onChanged: (value) => setState(() => year = value),
+              ),
+              const SizedBox(height: 6),
+              const Text('18 years or older', style: TextStyle(color: AppColors.muted)),
               const SizedBox(height: 12),
               TextField(
                 controller: phone,

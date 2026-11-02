@@ -414,7 +414,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           if (!widget.isAccept &&
               ((!widget.isCounter) || useSkill) &&
               !volunteer &&
-              payMode != 'tokens') ...[
+              payMode != 'tokens' && !volunteer) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -604,7 +604,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                       if (!widget.isAccept &&
                           !widget.isCounter &&
                           requested.isEmpty &&
-                          payMode != 'tokens' &&
+                          payMode != 'tokens' && !volunteer &&
                           !volunteer) {
                         missing.add('Skill');
                       }

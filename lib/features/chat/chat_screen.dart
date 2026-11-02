@@ -608,7 +608,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
                       for (final starter in [
-                        'Hello ${widget.name.trim()}. I would like to exchange a skill.',
                         S.t('starterSkill'),
                         S.t('starterSchedule'),
                         S.t('starterOffer'),

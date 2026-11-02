@@ -416,7 +416,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         Text(
-                          statusText(item),
+                          item['status']?.toString() == 'cancelled' || item['status']?.toString() == 'expired'
+                              ? 'Cancelled'
+                              : statusText(item),
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         if ((item['skillRequested'] ?? '')
@@ -437,7 +439,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Row(
                           children: [
                             if (group != 'closed')
-                              TextButton(
+                              if ((int.tryParse('${item['chatId'] ?? item['id'] ?? 0}') ?? 0) > 0)
+                          TextButton(
                                 onPressed: () => openChat(item),
                                 child: Text(S.t('openChat')),
                               ),

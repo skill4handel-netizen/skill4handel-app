@@ -461,11 +461,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      mine
-                          ? '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})'
-                          : '${item['fromName'] ?? 'Member'}: (${item['rating'] ?? ''} stars)',
+                    Row(
+                      children: [
+                        Expanded(child: Text('${item['fromName'] ?? 'Member'}')),
+                        ...List.generate(5, (i) => Icon(
+                          i < (int.tryParse('${item['rating'] ?? 0}') ?? 0) ? Icons.star : Icons.star_border,
+                          color: const Color(0xFFE3A008),
+                          size: 16,
+                        )),
+                      ],
                     ),
+                    if (mine || !within24)
+                      Text(item['text']?.toString() ?? ''),
                     if (canReport)
                       TextButton(
                         onPressed: () => reportReview(item),

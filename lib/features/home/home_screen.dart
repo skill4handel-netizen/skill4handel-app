@@ -11,6 +11,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
 import '../chat/history_screen.dart';
+import '../notifications/notifications_screen.dart';
 import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
 import 'favorites_screen.dart';
@@ -39,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> history = [];
   List<SafePlace> places = [];
   int unread = 0;
+  int unreadAlerts = 0;
 
   @override
   void initState() {
@@ -73,6 +75,13 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       chats = [];
       unread = 0;
+    }
+    try {
+      final alertResponse = await dio.get('/auth/alerts', queryParameters: {'userId': Session.id});
+      final alerts = ((alertResponse.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
+      unreadAlerts = alerts.where((item) => item['read'] != true).length;
+    } catch (_) {
+      unreadAlerts = 0;
     }
     try {
       final response = await dio.get(
@@ -327,6 +336,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 IconButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                    );
+                    refresh();
+                  },
+                  icon: Badge(
+                    isLabelVisible: unreadAlerts > 0,
+                    label: Text('$unreadAlerts'),
+                    child: const Icon(Icons.notifications_none, color: Colors.white),
+                  ),
+                ),
+                IconButton(
                   onPressed: refresh,
                   icon: const Icon(Icons.refresh, color: Colors.white),
                 ),
@@ -390,6 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
+                if (Session.offers.trim().isEmpty || Session.city.trim().isEmpty)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
