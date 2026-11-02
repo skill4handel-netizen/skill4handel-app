@@ -280,43 +280,6 @@ class _SupportScreenState extends State<SupportScreen> {
             () => openLink('mailto:info@skill4handel.com'),
           ),
           const SizedBox(height: 16),
-          sectionTitle('New ticket', Icons.confirmation_number_outlined),
-
-          Material(
-            color: const Color(0xFFE8F1FF),
-            borderRadius: BorderRadius.circular(16),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.blue,
-                child: Icon(Icons.play_circle_outline, color: Colors.white),
-              ),
-              title: Text(
-                S.t('howItWorks'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text(S.t('productGuide')),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const DemoScreen()),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          sectionTitle(S.t('contact'), Icons.phone_in_talk),
-          contactCard(
-            Icons.email_outlined,
-            S.t('email'),
-            'info@skill4handel.com',
-            () => openLink('mailto:info@skill4handel.com'),
-          ),
-          const SizedBox(height: 8),
           contactCard(
             Icons.language,
             S.t('website'),
@@ -324,7 +287,6 @@ class _SupportScreenState extends State<SupportScreen> {
             () => openLink('https://www.skill4handel.com'),
           ),
           const SizedBox(height: 20),
-          sectionTitle(S.t('newTicket'), Icons.edit_note),
           if (reported.isNotEmpty)
             Container(
               width: double.infinity,

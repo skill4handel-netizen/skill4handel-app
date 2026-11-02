@@ -32,6 +32,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''),
   );
   late final city = TextEditingController(text: Session.city);
+  late final phone = TextEditingController(text: Session.phone);
+  bool accessibility = Session.accessibility;
+  bool willingVolunteer = Session.willingVolunteer;
   late final bio = TextEditingController(
     text: Session.bio.isNotEmpty ? Session.bio : Session.needs,
   );
@@ -39,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late List<SkillItem> selectedSkills = parseSkills(Session.offers);
   bool saving = false;
   bool dirty = false;
+  bool editing = false;
   String baseline = '';
 
   String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), gender, Session.language, encodeSkills(selectedSkills), Session.photoUrl].join('|');
@@ -181,6 +185,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'id': Session.id,
           'name': name.text,
           'city': city.text,
+          'phone': phone.text.trim(),
+          'accessibility': accessibility,
+          'willingVolunteer': willingVolunteer,
           'offers': encoded,
           'needs': bio.text.trim(),
           'gender': gender,
@@ -195,6 +202,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       Session.offers = encoded;
       Session.bio = bio.text.trim();
       Session.needs = bio.text.trim();
+      Session.city = city.text.trim();
+      Session.phone = phone.text.trim();
+      Session.accessibility = accessibility;
+      Session.willingVolunteer = willingVolunteer;
       await Session.save();
       if (!mounted) {
         return;
@@ -356,6 +367,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MediaQuery.of(context).padding.bottom + 24,
             ),
             children: [
+              if (!editing) ...[
+                Container(
+                  decoration: AppTheme.card(),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 4 / 3,
+                            child: photo != null
+                                ? Image(image: photo!, fit: BoxFit.cover)
+                                : Container(
+                                    color: AppColors.soft,
+                                    child: Center(
+                                      child: Text(
+                                        Session.name.isNotEmpty ? Session.name[0].toUpperCase() : 'U',
+                                        style: const TextStyle(fontSize: 72, color: AppColors.blue),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Material(
+                              color: Colors.white,
+                              shape: const CircleBorder(),
+                              child: IconButton(
+                                onPressed: () => setState(() => editing = true),
+                                icon: const Icon(Icons.edit, color: AppColors.blue, size: 20),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(Session.name.isEmpty ? S.t('profile') : Session.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600)),
+                            if (Session.city.isNotEmpty) Text(Session.city, style: const TextStyle(color: AppColors.muted)),
+                            const SizedBox(height: 10),
+                            Text(Session.bio.trim().isEmpty ? S.t('bioHint') : Session.bio),
+                            if (selectedSkills.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(S.t('skillsOffer'), style: const TextStyle(fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                children: [
+                                  for (final skill in selectedSkills)
+                                    Container(
+                                      margin: const EdgeInsets.only(right: 8, bottom: 8),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(color: const Color(0xFFEEE8FF), borderRadius: BorderRadius.circular(20)),
+                                      child: Text(skill.name),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: () => setState(() => editing = true),
+                    child: const Text('Edit profile', style: TextStyle(fontWeight: FontWeight.w500)),
+                  ),
+                ),
+              ],
+              if (editing) ...[
+              Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: () => setState(() => editing = false), icon: const Icon(Icons.arrow_back), label: const Text('Profile'))),
+              const SizedBox(height: 8),
               Center(
                 child: Stack(
                   children: [
@@ -480,17 +571,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
-              InputDecorator(
+              TextField(
+                controller: city,
                 decoration: InputDecoration(labelText: S.t('city')),
-                child: Text(
-                  Session.city.isEmpty ? '-' : Session.city,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                S.t('cityLockedHint'),
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phone,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(labelText: S.t('phoneOptional')),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: accessibility,
+                onChanged: (value) => setState(() => accessibility = value ?? false),
+                title: Text(S.t('accessNeed')),
+              ),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: willingVolunteer,
+                onChanged: (value) => setState(() => willingVolunteer = value ?? false),
+                title: const Text('I am willing to offer voluntary help'),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -637,6 +738,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Text(S.t('deleteAccount')),
                 ),
               ),
+              ],
             ],
           ),
         ),

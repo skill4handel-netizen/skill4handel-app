@@ -44,7 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     chatId = widget.chatId;
     if (widget.name.trim().isNotEmpty) {
-      controller.text = 'Hello ${widget.name.trim()}';
+      controller.text = 'Hello ${widget.name.trim()}. I would like to exchange a skill.';
     }
     openChat();
   }
@@ -417,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                MaterialPageRoute(builder: (context) => HistoryScreen(otherId: widget.otherId, otherName: widget.name)),
               );
             },
             icon: const Icon(Icons.history, size: 26),
@@ -600,6 +600,31 @@ class _ChatScreenState extends State<ChatScreen> {
                             );
                           },
                         ),
+                ),
+                SizedBox(
+                  height: 42,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      for (final starter in [
+                        'Hello ${widget.name.trim()}. I would like to exchange a skill.',
+                        S.t('starterSkill'),
+                        S.t('starterSchedule'),
+                        S.t('starterOffer'),
+                      ])
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(starter, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                            onPressed: () {
+                              controller.text = starter;
+                              send();
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPad),

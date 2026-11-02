@@ -8,7 +8,9 @@ import '../reviews/review_screen.dart';
 import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen({super.key, this.otherId = 0, this.otherName = ''});
+  final int otherId;
+  final String otherName;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -143,9 +145,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (mounted) setState(() => allItems = merged);
   }
 
+  List<Map<String, dynamic>> get scoped {
+    if (widget.otherId <= 0) return allItems;
+    return allItems.where((item) {
+      final id = int.tryParse('${item['otherId'] ?? 0}') ?? 0;
+      return id == widget.otherId;
+    }).toList();
+  }
+
   List<Map<String, dynamic>> get visible {
-    if (filter == 'all') return allItems;
-    return allItems.where((item) => item['group'] == filter).toList();
+    if (filter == 'all') return scoped;
+    return scoped.where((item) => item['group'] == filter).toList();
   }
 
   bool alreadyReviewed(Map item) {
@@ -302,7 +312,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(S.t('history')),
+        title: Text(widget.otherName.isNotEmpty ? 'History with ${widget.otherName}' : S.t('history')),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
         ),
@@ -320,44 +330,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: () => setState(() => tab = 0),
-                    style: AppTheme.solid(
-                      tab == 0 ? AppColors.blue : Colors.grey,
+                    style: AppTheme.solid(tab == 0 ? AppColors.blue : Colors.grey).copyWith(
+                      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6)),
                     ),
-                    icon: const Icon(Icons.swap_horiz, color: Colors.white),
-                    label: Text(
-                      S.t('offersTab'),
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: Text('Offers', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: () => setState(() => tab = 1),
-                    style: AppTheme.solid(
-                      tab == 1 ? AppColors.blue : Colors.grey,
+                    style: AppTheme.solid(tab == 1 ? AppColors.blue : Colors.grey).copyWith(
+                      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6)),
                     ),
-                    icon: const Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      S.t('wallet'),
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: Text('Wallet', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: ElevatedButton(
                     onPressed: () => setState(() => tab = 2),
-                    style: AppTheme.solid(
-                      tab == 2 ? AppColors.blue : Colors.grey,
+                    style: AppTheme.solid(tab == 2 ? AppColors.blue : Colors.grey).copyWith(
+                      padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6)),
                     ),
-                    icon: const Icon(Icons.confirmation_number_outlined, color: Colors.white),
-                    label: const Text('Tickets', style: TextStyle(color: Colors.white)),
+                    child: const Text('Tickets', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
                   ),
                 ),
               ],
