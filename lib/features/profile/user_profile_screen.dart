@@ -109,6 +109,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } catch (_) {}
   }
 
+
+  Future<void> reportReview(Map item) async {
+    final reason = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Report review'),
+        content: TextField(
+          controller: reason,
+          maxLines: 4,
+          decoration: const InputDecoration(hintText: 'Write the reason'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(S.t('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(S.t('send'))),
+        ],
+      ),
+    );
+    final text = reason.text.trim();
+    reason.dispose();
+    if (ok != true || text.isEmpty) return;
+    try {
+      await dio.post('/auth/review/report', data: {
+        'reviewId': item['id'],
+        'reason': text,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review report sent.')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not report this review.')));
+    }
+  }
+
   Future<void> reportUser() async {
     final reason = TextEditingController();
     final ok = await showDialog<bool>(
@@ -409,14 +443,38 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           if (reviews.isEmpty)
             Text(S.t('noReviewsYet'), style: TextStyle(color: AppColors.muted))
           else
-            ...reviews.map(
-              (item) => Padding(
+            ...reviews.map((item) {
+              final fromId = int.tryParse('${item['fromId'] ?? 0}') ?? 0;
+              final toId = int.tryParse('${item['toId'] ?? 0}') ?? 0;
+              final mine = Session.id == fromId || Session.id == toId;
+              final created = DateTime.tryParse('${item['createdAt'] ?? ''}');
+              final within24 = created != null &&
+                  DateTime.now().difference(created).inHours < 24;
+              final mutual = reviews.any((other) {
+                final of = int.tryParse('${other['fromId'] ?? 0}') ?? 0;
+                final ot = int.tryParse('${other['toId'] ?? 0}') ?? 0;
+                return of == toId && ot == fromId;
+              });
+              final canReport = mine && within24 && mutual;
+              return Padding(
                 padding: const EdgeInsets.only(bottom: 10),
-                child: Text(
-                  '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      mine
+                          ? '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})'
+                          : '${item['fromName'] ?? 'Member'}: (${item['rating'] ?? ''} stars)',
+                    ),
+                    if (canReport)
+                      TextButton(
+                        onPressed: () => reportReview(item),
+                        child: const Text('Report this review'),
+                      ),
+                  ],
                 ),
-              ),
-            ),
+              );
+            }),
         ],
       ),
     );
