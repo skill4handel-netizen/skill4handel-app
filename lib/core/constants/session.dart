@@ -8,8 +8,6 @@ class Session {
   static String name = '';
   static String email = '';
   static String city = '';
-  static String cityChangedAt = '';
-  static String meetingMode = 'both';
   static String bio = '';
   static String offers = '';
   static String needs = '';
@@ -18,12 +16,11 @@ class Session {
   static int age = 0;
   static double rating = 0;
   static num balance = 0;
-  static num reserved = 0;
-  static num available = 0;
   static String token = '';
   static String language = 'en';
   static String phone = '';
   static bool accessibility = false;
+  static bool willingVolunteer = false;
   static bool emailVerified = false;
   static bool demoSeen = false;
   static List<Map<String, dynamic>> reviews = [];
@@ -35,8 +32,6 @@ class Session {
     'name': name,
     'email': email,
     'city': city,
-    'cityChangedAt': cityChangedAt,
-    'meetingMode': meetingMode,
     'bio': bio,
     'offers': offers,
     'needs': needs,
@@ -45,14 +40,14 @@ class Session {
     'age': age,
     'rating': rating,
     'balance': balance,
-    'reserved': reserved,
-    'available': available,
     'token': token,
     'language': language,
     'phone': phone,
     'accessibility': accessibility,
+    'willingVolunteer': willingVolunteer,
     'emailVerified': emailVerified,
     'demoSeen': demoSeen,
+    'theme': themeMode.value == ThemeMode.dark ? 'dark' : 'light',
   };
 
   static String pickText(Map user, List<String> keys, String fallback) {
@@ -68,8 +63,6 @@ class Session {
     name = pickText(user, ['name'], name);
     email = pickText(user, ['email'], email);
     city = pickText(user, ['city'], city);
-    cityChangedAt = pickText(user, ['cityChangedAt', 'city_changed_at'], cityChangedAt);
-    meetingMode = pickText(user, ['meetingMode', 'meeting_mode'], meetingMode.isEmpty ? 'both' : meetingMode);
     final incomingBio = pickText(user, ['bio', 'needs'], '');
     if (incomingBio.isNotEmpty) bio = incomingBio;
     offers = pickText(user, ['offers'], offers);
@@ -79,8 +72,6 @@ class Session {
     age = int.tryParse('${user['age'] ?? age}') ?? age;
     rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
     balance = num.tryParse('${user['balance'] ?? balance}') ?? balance;
-    reserved = num.tryParse('${user['reserved'] ?? reserved}') ?? reserved;
-    available = num.tryParse('${user['available'] ?? user['balance'] ?? available}') ?? available;
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
@@ -88,6 +79,16 @@ class Session {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
     }
+    if (user['accessibility'] != null) {
+      accessibility =
+          user['accessibility'] == true || user['accessibility'] == 'true';
+    }
+    if (user['willingVolunteer'] != null) {
+      willingVolunteer =
+          user['willingVolunteer'] == true || user['willingVolunteer'] == 'true';
+    }
+    if (user['theme'] == 'dark') themeMode.value = ThemeMode.dark;
+    if (user['theme'] == 'light') themeMode.value = ThemeMode.light;
     if (user['reviews'] is List) {
       reviews = (user['reviews'] as List)
           .whereType<Map>()
@@ -122,8 +123,6 @@ class Session {
     name = '';
     email = '';
     city = '';
-    cityChangedAt = '';
-    meetingMode = 'both';
     bio = '';
     offers = '';
     needs = '';
@@ -132,8 +131,6 @@ class Session {
     age = 0;
     rating = 0;
     balance = 0;
-    reserved = 0;
-    available = 0;
     token = '';
     language = 'en';
     emailVerified = true;

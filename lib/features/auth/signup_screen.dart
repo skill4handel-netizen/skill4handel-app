@@ -4,9 +4,6 @@ import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/city_picker.dart';
-import '../../core/widgets/skill_picker.dart';
-import '../../core/constants/skill_items.dart';
-import '../../core/l10n/skill_labels.dart';
 import 'terms_screen.dart';
 import 'verify_email_screen.dart';
 
@@ -21,12 +18,12 @@ class _SignupScreenState extends State<SignupScreen> {
   final dio = Api.client;
   final name = TextEditingController();
   final city = TextEditingController();
-  List<SkillItem> selectedSkills = [];
   final email = TextEditingController();
   final password = TextEditingController();
   final confirm = TextEditingController();
   final phone = TextEditingController();
   bool accessibility = false;
+  bool willingVolunteer = false;
   int? year;
   int? month;
   int? day;
@@ -107,7 +104,6 @@ class _SignupScreenState extends State<SignupScreen> {
         data: {
           'name': name.text.trim(),
           'city': city.text.trim(),
-          'offers': encodeSkills(selectedSkills),
           'email': email.text.trim(),
           'password': password.text,
           'age': age,
@@ -116,6 +112,7 @@ class _SignupScreenState extends State<SignupScreen> {
           'acceptedTerms': true,
           'phone': phone.text.trim(),
           'accessibility': accessibility,
+          'willingVolunteer': willingVolunteer,
         },
       );
       final user = Map<String, dynamic>.from(response.data['user'] as Map);
@@ -200,31 +197,6 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
           const SizedBox(height: 12),
           CityPicker(controller: city, label: '${S.t('city')} *'),
-
-          const SizedBox(height: 12),
-          Text('Skill you can offer *', style: TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final skill in selectedSkills)
-                InputChip(
-                  label: Text(skillLabel(skill.name)),
-                  onDeleted: () => setState(() => selectedSkills.remove(skill)),
-                ),
-              ActionChip(
-                avatar: const Icon(Icons.add, size: 18),
-                label: const Text('Add skill'),
-                onPressed: () async {
-                  final picked = await pickSkill(context, alreadySelected: selectedSkills.map((item) => item.name).toList());
-                  if (picked == null || picked.trim().isEmpty) return;
-                  setState(() => selectedSkills.add(SkillItem(name: picked.trim())));
-                },
-              ),
-            ],
-          ),
-          const Text('Pilot skills are licence-free. Other is still available, up to 3 custom skills.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
           const SizedBox(height: 12),
           TextField(
             controller: email,
@@ -333,6 +305,17 @@ class _SignupScreenState extends State<SignupScreen> {
                 setState(() => accessibility = value ?? false),
             title: Text(S.t('accessNeed')),
             subtitle: Text(S.t('accessHint'), style: TextStyle(fontSize: 12)),
+          ),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: willingVolunteer,
+            onChanged: (value) =>
+                setState(() => willingVolunteer = value ?? false),
+            title: const Text('I am willing to offer voluntary help'),
+            subtitle: const Text(
+              'A volunteer badge will appear on your profile.',
+              style: TextStyle(fontSize: 12),
+            ),
           ),
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,

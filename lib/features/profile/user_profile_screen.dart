@@ -23,6 +23,7 @@ class UserProfileScreen extends StatefulWidget {
     this.reviews = const [],
     this.photoUrl,
     this.accessibility = false,
+    this.willingVolunteer = false,
   });
 
   final String name;
@@ -35,6 +36,7 @@ class UserProfileScreen extends StatefulWidget {
   final List<Map<String, dynamic>> reviews;
   final String? photoUrl;
   final bool accessibility;
+  final bool willingVolunteer;
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -50,6 +52,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   late String photo = widget.photoUrl?.trim() ?? '';
   late double rating = widget.rating;
   late bool accessibility = widget.accessibility;
+  late bool willingVolunteer = widget.willingVolunteer;
   late List<Map<String, dynamic>> reviews = List<Map<String, dynamic>>.from(
     widget.reviews,
   );
@@ -94,6 +97,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         rating = double.tryParse('${user['rating'] ?? rating}') ?? rating;
         accessibility =
             user['accessibility'] == true || user['accessibility'] == 'true';
+        willingVolunteer =
+            user['willingVolunteer'] == true || user['willingVolunteer'] == 'true';
         if (user['reviews'] is List) {
           reviews = (user['reviews'] as List)
               .whereType<Map>()
@@ -105,13 +110,53 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> reportUser() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            SupportScreen(initialType: 'report', initialOtherName: name),
+    final reason = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.t('report')),
+        content: TextField(
+          controller: reason,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Write the reason for this report',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(S.t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(S.t('send')),
+          ),
+        ],
       ),
     );
+    final text = reason.text.trim();
+    reason.dispose();
+    if (ok != true || text.isEmpty) return;
+    try {
+      await dio.post(
+        '/auth/ticket',
+        data: {
+          'userId': Session.id,
+          'type': 'report',
+          'message': text,
+          'otherName': name,
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report sent.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not send the report.')),
+      );
+    }
   }
 
   Future<void> blockUser() async {
@@ -167,39 +212,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-
-  Future<void> reportReview(Map<String, dynamic> item) async {
-    final reason = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Report review'),
-        content: TextField(
-          controller: reason,
-          maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Why is this review inappropriate?'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send report')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await dio.post('/auth/review/report', data: {
-        'userId': Session.id,
-        'reviewId': item['id'],
-        'reason': reason.text.trim(),
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Review report sent to support.')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final skills = parseSkills(offers);
@@ -237,17 +249,44 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800),
           ),
-          if (accessibility) ...[
+          if (accessibility || willingVolunteer) ...[
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
               children: [
-                const Icon(Icons.accessible, color: AppColors.blue),
-                const SizedBox(width: 6),
-                Text(
-                  S.t('accessMark'),
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+                if (accessibility)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.blue.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.accessible, color: AppColors.blue, size: 18),
+                        SizedBox(width: 6),
+                        Text('Accessibility', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                if (willingVolunteer)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.green.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.volunteer_activism, color: AppColors.green, size: 18),
+                        SizedBox(width: 6),
+                        Text('Volunteer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ],
@@ -371,28 +410,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Text(S.t('noReviewsYet'), style: TextStyle(color: AppColors.muted))
           else
             ...reviews.map(
-              (item) => Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 10),
-                padding: const EdgeInsets.all(12),
-                decoration: AppTheme.card(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${item['fromName'] ?? 'Member'} · ${item['rating'] ?? ''} stars', style: const TextStyle(fontWeight: FontWeight.w800)),
-                    if ((item['text'] ?? '').toString().isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(item['text'].toString()),
-                    ],
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () => reportReview(item),
-                        icon: const Icon(Icons.flag_outlined, size: 18),
-                        label: const Text('Report review'),
-                      ),
-                    ),
-                  ],
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  '${item['fromName'] ?? 'Member'}: ${item['text'] ?? ''} (${item['rating'] ?? ''})',
                 ),
               ),
             ),

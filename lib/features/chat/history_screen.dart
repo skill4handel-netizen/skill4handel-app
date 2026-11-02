@@ -8,10 +8,7 @@ import '../reviews/review_screen.dart';
 import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key, this.otherId, this.otherName});
-
-  final int? otherId;
-  final String? otherName;
+  const HistoryScreen({super.key});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -21,6 +18,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final dio = Api.client;
   List<Map<String, dynamic>> allItems = [];
   List<Map<String, dynamic>> walletItems = [];
+  List<Map<String, dynamic>> ticketItems = [];
   String filter = 'all';
   int tab = 0;
 
@@ -91,7 +89,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ...item,
             ...swap,
             'otherName': item['name'],
-            'otherId': item['otherId'],
             'group': 'closed',
             'status': 'expired',
           });
@@ -100,7 +97,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ...item,
             ...?swap,
             'otherName': item['name'],
-            'otherId': item['otherId'],
             'group': status == 'accepted' ? 'open' : 'pending',
           });
         }
@@ -133,21 +129,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {
       walletItems = List<Map<String, dynamic>>.from(Session.history);
     }
+    try {
+      final tickets = await dio.get(
+        '/auth/tickets',
+        queryParameters: {'userId': Session.id},
+      );
+      ticketItems = ((tickets.data as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    } catch (_) {
+      ticketItems = [];
+    }
     if (mounted) setState(() => allItems = merged);
   }
 
-  bool samePerson(Map item) {
-    final wanted = widget.otherId;
-    if (wanted == null) return true;
-    return (int.tryParse('${item['otherId'] ?? 0}') ?? 0) == wanted;
-  }
-
-  List<Map<String, dynamic>> get personItems => allItems.where(samePerson).toList();
-
   List<Map<String, dynamic>> get visible {
-    final base = personItems;
-    if (filter == 'all') return base;
-    return base.where((item) => item['group'] == filter).toList();
+    if (filter == 'all') return allItems;
+    return allItems.where((item) => item['group'] == filter).toList();
   }
 
   bool alreadyReviewed(Map item) {
@@ -235,6 +233,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: Text(S.t('delete')),
           ),
+
+            if (tab == 2) ...[
+              const SizedBox(height: 8),
+              if (ticketItems.isEmpty)
+                Text(
+                  'No tickets yet.',
+                  style: TextStyle(color: AppColors.muted),
+                )
+              else
+                ...ticketItems.map((item) => Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.confirmation_number_outlined),
+                        title: Text(item['type']?.toString() ?? 'Ticket'),
+                        subtitle: Text(item['text']?.toString() ?? item['message']?.toString() ?? ''),
+                        trailing: Text(formatWhen(item['createdAt'] ?? item['created_at'])),
+                      ),
+                    )),
+            ],
         ],
       ),
     );
@@ -286,9 +302,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(widget.otherName == null || widget.otherName!.isEmpty
-            ? S.t('history')
-            : '${S.t('historyWith')} ${widget.otherName}'),
+        title: Text(S.t('history')),
         flexibleSpace: Container(
           decoration: const BoxDecoration(gradient: AppTheme.headerGradient),
         ),
@@ -318,7 +332,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                 ),
-                if (widget.otherId == null) ...[
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
@@ -336,7 +349,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                 ),
-                ],
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => setState(() => tab = 2),
+                    style: AppTheme.solid(
+                      tab == 2 ? AppColors.blue : Colors.grey,
+                    ),
+                    icon: const Icon(Icons.confirmation_number_outlined, color: Colors.white),
+                    label: const Text('Tickets', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),

@@ -32,7 +32,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     text: Session.name.isNotEmpty ? Session.name : (widget.userName ?? ''),
   );
   late final city = TextEditingController(text: Session.city);
-  String meetingMode = Session.meetingMode.isEmpty ? 'both' : Session.meetingMode;
   late final bio = TextEditingController(
     text: Session.bio.isNotEmpty ? Session.bio : Session.needs,
   );
@@ -172,14 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await Session.save();
   }
 
-  bool get canChangeCity {
-    final raw = Session.cityChangedAt;
-    if (raw.isEmpty) return true;
-    final changed = DateTime.tryParse(raw);
-    if (changed == null) return true;
-    return DateTime.now().difference(changed).inDays >= 30 || city.text.trim() == Session.city;
-  }
-
   Future<void> save() async {
     setState(() => saving = true);
     try {
@@ -191,7 +182,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'name': name.text,
           'city': city.text,
           'offers': encoded,
-          'meetingMode': meetingMode,
           'needs': bio.text.trim(),
           'gender': gender,
           'age': Session.age,
@@ -213,16 +203,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('saved'))));
       widget.onSaved?.call();
-    } catch (error) {
+    } catch (_) {
       if (!mounted) {
         return;
       }
-      final message = error is DioException
-          ? '${error.response?.data is Map ? (error.response?.data['message'] ?? S.t('saveError')) : S.t('saveError')}'
-          : S.t('saveError');
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ).showSnackBar(SnackBar(content: Text(S.t('saveError'))));
     } finally {
       if (mounted) {
         setState(() => saving = false);
@@ -354,27 +341,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Widget menuButton(IconData icon, String label, Color color, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: SizedBox(
-        height: 52,
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          icon: Icon(icon, color: Colors.white),
-          label: Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final photo = photoOf(Session.photoUrl);
@@ -428,16 +394,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              if (Session.accessibility)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              if (Session.accessibility || Session.willingVolunteer)
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 10,
+                  runSpacing: 6,
                   children: [
-                    const Icon(Icons.accessible, color: AppColors.blue),
-                    const SizedBox(width: 6),
-                    Text(
-                      S.t('accessMark'),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
+                    if (Session.accessibility)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.blue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.accessible, color: AppColors.blue, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Accessibility',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (Session.willingVolunteer)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.green.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.volunteer_activism, color: AppColors.green, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Volunteer',
+                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               if (Session.phone.isNotEmpty) ...[
@@ -480,28 +480,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: city,
-                enabled: canChangeCity,
+              InputDecorator(
                 decoration: InputDecoration(labelText: S.t('city')),
+                child: Text(
+                  Session.city.isEmpty ? '-' : Session.city,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
-                canChangeCity
-                    ? 'You can change your city once every 30 days.'
-                    : 'City can be changed again after 30 days.',
+                S.t('cityLockedHint'),
                 style: const TextStyle(color: AppColors.muted, fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: meetingMode,
-                decoration: const InputDecoration(labelText: 'Meeting type'),
-                items: const [
-                  DropdownMenuItem(value: 'both', child: Text('Online and in person')),
-                  DropdownMenuItem(value: 'online', child: Text('Online')),
-                  DropdownMenuItem(value: 'in-person', child: Text('In person')),
-                ],
-                onChanged: (value) => setState(() => meetingMode = value ?? 'both'),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -593,17 +582,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: selectedSkills.length >= 10 ? null : addSkill,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                icon: const Icon(Icons.add, color: Colors.white),
+              OutlinedButton.icon(
+                onPressed: addSkill,
+                icon: const Icon(Icons.add),
                 label: Text(
-                  selectedSkills.length >= 10 ? S.t('limitReached') : S.t('addSkill'),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                  selectedSkills.length >= 10
+                      ? S.t('limitReached')
+                      : S.t('addSkill'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -629,12 +614,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              menuButton(Icons.lock, S.t('changePassword'), AppColors.blue, changePassword),
-              menuButton(Icons.block, S.t('blocked'), AppColors.purple, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen()))),
-              menuButton(Icons.description, S.t('terms'), const Color(0xFF1F4E79), () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen()))),
-              menuButton(Icons.support_agent, S.t('support'), AppColors.coral, () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()))),
-              menuButton(Icons.logout, S.t('logOut'), const Color(0xFF5D6D7E), logout),
-              menuButton(Icons.delete_forever, S.t('deleteAccount'), const Color(0xFFB42318), deleteAccount),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: changePassword, child: Text(S.t('changePassword')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())), child: Text(S.t('terms')))),
+              const SizedBox(height: 8),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support')))),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: logout,
+                  child: Text(S.t('logOut')),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 52,
+                child: OutlinedButton(
+                  onPressed: deleteAccount,
+                  child: Text(S.t('deleteAccount')),
+                ),
+              ),
             ],
           ),
         ),

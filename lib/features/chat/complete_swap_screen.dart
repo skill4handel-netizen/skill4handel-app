@@ -106,7 +106,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       context: context,
       initialDate: (when ?? min).isAfter(min) ? (when ?? min) : min,
       firstDate: DateTime(min.year, min.month, min.day),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 60)),
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
@@ -176,14 +176,6 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
-      return;
-    }
-    final tokenAmount = useTokens ? (int.tryParse(extraTokens.text) ?? 0) : 0;
-    final available = Session.available > 0 ? Session.available : Session.balance;
-    if (tokenAmount > available) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You cannot offer more tokens than your available balance.')),
-      );
       return;
     }
     if (!widget.isAccept && (when == null || when!.isBefore(minWhen))) {
@@ -421,7 +413,8 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           ],
           if (!widget.isAccept &&
               ((!widget.isCounter) || useSkill) &&
-              !volunteer) ...[
+              !volunteer &&
+              payMode != 'tokens') ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -593,13 +586,62 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             value: acceptedQuality,
             onChanged: (value) =>
                 setState(() => acceptedQuality = value ?? false),
-            title: Text(S.t('quality')),
+            title: const Text(
+              'I accept responsibility for the quality of the work and the fairness of the exchange value. *',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           SizedBox(
             height: 52,
             child: ElevatedButton(
-              onPressed: working ? null : submit,
-              style: AppTheme.solid(AppColors.green),
+              onPressed: working
+                  ? null
+                  : () {
+                      final missing = <String>[];
+                      final requested = widget.isCounter
+                          ? widget.initialSkillRequested.trim()
+                          : selectedSkill;
+                      if (!widget.isAccept &&
+                          !widget.isCounter &&
+                          requested.isEmpty &&
+                          payMode != 'tokens' &&
+                          !volunteer) {
+                        missing.add('Skill');
+                      }
+                      if (widget.isCounter &&
+                          useSkill &&
+                          !volunteer &&
+                          selectedSkill.isEmpty) {
+                        missing.add('Skill you ask');
+                      }
+                      if (useTokens &&
+                          (int.tryParse(extraTokens.text) ?? 0) <= 0) {
+                        missing.add('Tokens');
+                      }
+                      if (!widget.isAccept &&
+                          (when == null || when!.isBefore(minWhen))) {
+                        missing.add('Date and time');
+                      }
+                      if (!acceptedQuality) {
+                        missing.add('Quality and value confirmation');
+                      }
+                      if (missing.isNotEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Please complete: ${missing.join(', ')}',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      submit();
+                    },
+              style: AppTheme.solid(
+                acceptedQuality && !working
+                    ? AppColors.green
+                    : AppColors.muted,
+              ),
               child: Text(
                 working
                     ? S.t('sending')

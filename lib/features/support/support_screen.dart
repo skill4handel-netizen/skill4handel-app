@@ -6,8 +6,6 @@ import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../home/demo_screen.dart';
-import 'guide_screen.dart';
-import '../chat/history_screen.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key, this.initialType, this.initialOtherName});
@@ -24,24 +22,6 @@ class _SupportScreenState extends State<SupportScreen> {
   final text = TextEditingController();
   late String type = widget.initialType ?? 'support';
   bool sending = false;
-  List<Map<String, dynamic>> tickets = [];
-  int section = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    loadTickets();
-  }
-
-  Future<void> loadTickets() async {
-    try {
-      final response = await dio.get('/auth/tickets', queryParameters: {'userId': Session.id});
-      tickets = ((response.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
-    } catch (_) {
-      tickets = [];
-    }
-    if (mounted) setState(() {});
-  }
 
   String cleanError(Object error) {
     if (error is DioException) {
@@ -76,7 +56,6 @@ class _SupportScreenState extends State<SupportScreen> {
       );
       text.clear();
       type = widget.initialType ?? 'support';
-      await loadTickets();
       if (!mounted) return;
       setState(() {});
       ScaffoldMessenger.of(
@@ -220,124 +199,6 @@ class _SupportScreenState extends State<SupportScreen> {
     );
   }
 
-  Widget chatBubble(String text, {required bool mine}) {
-    return Align(
-      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 280),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: mine ? AppColors.blue : const Color(0xFFF3F6FA),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(mine ? 16 : 4),
-            bottomRight: Radius.circular(mine ? 4 : 16),
-          ),
-        ),
-        child: Text(text, style: TextStyle(color: mine ? Colors.white : AppColors.text, height: 1.3)),
-      ),
-    );
-  }
-
-  List<String> adminMessages(String reply) {
-    return reply
-        .split(RegExp(r'\[Admin [^\]]+\]'))
-        .map((item) => item.trim())
-        .where((item) => item.isNotEmpty)
-        .toList();
-  }
-
-
-  Widget ticketTab(int value, String label, IconData icon) {
-    final selected = section == value;
-    return InkWell(
-      onTap: () => setState(() => section = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.blue : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? AppColors.blue : const Color(0xFFE4E7EC)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: selected ? Colors.white : AppColors.blue, size: 18),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: selected ? Colors.white : AppColors.ink, fontWeight: FontWeight.w800)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget ticketCard(Map<String, dynamic> ticket) {
-    final status = (ticket['status'] ?? 'open').toString();
-    final open = status != 'closed';
-    final reply = (ticket['adminReply'] ?? '').toString().trim();
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: AppTheme.card(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text((ticket['type'] ?? 'support').toString(), style: const TextStyle(fontWeight: FontWeight.w800))),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: open ? const Color(0xFFFFF4D6) : const Color(0xFFE8F8EF),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(open ? 'Open' : 'Closed', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(ticket['text']?.toString() ?? ''),
-          const SizedBox(height: 10),
-          Text('Support reply', style: const TextStyle(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(reply.isEmpty ? 'No reply yet.' : reply, style: const TextStyle(color: AppColors.muted)),
-        ],
-      ),
-    );
-  }
-
-  Widget ticketChat(Map<String, dynamic> ticket) {
-    final replies = adminMessages(ticket['adminReply']?.toString() ?? '');
-    final status = ticket['status']?.toString() ?? 'open';
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(12),
-      decoration: AppTheme.card(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(radius: 16, backgroundColor: AppColors.blue, child: Icon(Icons.support_agent, color: Colors.white, size: 18)),
-              const SizedBox(width: 8),
-              Expanded(child: Text('${ticket['type'] ?? 'support'} · $status', style: const TextStyle(fontWeight: FontWeight.w800))),
-            ],
-          ),
-          const SizedBox(height: 10),
-          chatBubble(ticket['text']?.toString() ?? '', mine: true),
-          if (replies.isEmpty)
-            chatBubble('Support has received your message and will reply here.', mine: false)
-          else
-            ...replies.map((reply) => chatBubble(reply, mine: false)),
-        ],
-      ),
-    );
-  }
-
   Widget faq(IconData icon, String title, String body) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -382,67 +243,69 @@ class _SupportScreenState extends State<SupportScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
-
-          Row(
-            children: [
-              Expanded(child: ticketTab(0, 'My tickets', Icons.confirmation_number_outlined)),
-              const SizedBox(width: 8),
-              Expanded(child: ticketTab(1, 'New request', Icons.edit_outlined)),
-            ],
-          ),
+          sectionTitle(S.t('faq'), Icons.help_outline),
+          faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),
+          faq(Icons.payments_outlined, S.t('faq2q'), S.t('faq2a')),
+          faq(Icons.swap_horiz, S.t('faq3q'), S.t('faq3a')),
+          faq(Icons.videocam_outlined, S.t('faq4q'), S.t('faq4a')),
+          faq(Icons.badge_outlined, S.t('faq5q'), S.t('faq5a')),
+          faq(Icons.block, S.t('faq6q'), S.t('faq6a')),
+          faq(Icons.verified_user_outlined, S.t('faq7q'), S.t('faq7a')),
+          faq(Icons.event_busy, S.t('faq8q'), S.t('faq8a')),
+          faq(Icons.gavel, S.t('faq9q'), S.t('faq9a')),
           const SizedBox(height: 16),
-          if (section == 0) ...[
-            if (tickets.isEmpty)
-              const Text('No tickets yet. Use New request to contact support.', style: TextStyle(color: AppColors.muted)),
-            ...tickets.map(ticketCard),
-          ],
-          if (section == 1) ...[
-          sectionTitle(S.t('helpSection'), Icons.menu_book_outlined),
+          sectionTitle('Guide', Icons.menu_book_outlined),
           Material(
-            color: const Color(0xFFE8F8EA),
+            color: const Color(0xFFF4F7FB),
             borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.green,
-                child: Icon(Icons.rule, color: Colors.white),
-              ),
-              title: Text(S.t('rulesGuide'), style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(S.t('rulesGuideHint')),
+              leading: const Icon(Icons.play_circle_outline, color: AppColors.blue),
+              title: Text(S.t('howItWorks')),
+              subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const GuideScreen())),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DemoScreen()),
+                );
+              },
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 16),
+          sectionTitle(S.t('contact'), Icons.phone_in_talk),
+          contactCard(
+            Icons.email_outlined,
+            S.t('email'),
+            'info@skill4handel.com',
+            () => openLink('mailto:info@skill4handel.com'),
+          ),
+          const SizedBox(height: 16),
+          sectionTitle('New ticket', Icons.confirmation_number_outlined),
+
           Material(
             color: const Color(0xFFE8F1FF),
             borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
               leading: const CircleAvatar(
                 backgroundColor: AppColors.blue,
                 child: Icon(Icons.play_circle_outline, color: Colors.white),
               ),
-              title: Text(S.t('productTour'), style: const TextStyle(fontWeight: FontWeight.w800)),
+              title: Text(
+                S.t('howItWorks'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
               subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DemoScreen())),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Material(
-            color: const Color(0xFFFFF4D6),
-            borderRadius: BorderRadius.circular(16),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFCA8A04),
-                child: Icon(Icons.history, color: Colors.white),
-              ),
-              title: Text(S.t('exchangeHistory'), style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(S.t('exchangeHistoryHint')),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen())),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DemoScreen()),
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),
@@ -518,7 +381,7 @@ class _SupportScreenState extends State<SupportScreen> {
             height: 56,
             child: ElevatedButton.icon(
               onPressed: sending ? null : sendTicket,
-              style: AppTheme.solid(AppColors.green),
+              style: AppTheme.solid(AppColors.blue),
               icon: const Icon(Icons.send, color: Colors.white, size: 26),
               label: Text(
                 sending ? S.t('sending') : S.t('submitTicket'),
@@ -526,18 +389,8 @@ class _SupportScreenState extends State<SupportScreen> {
               ),
             ),
           ),
-          ],
           const SizedBox(height: 24),
-          sectionTitle(S.t('faq'), Icons.help_outline),
-          faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),
-          faq(Icons.payments_outlined, S.t('faq2q'), S.t('faq2a')),
-          faq(Icons.swap_horiz, S.t('faq3q'), S.t('faq3a')),
-          faq(Icons.videocam_outlined, S.t('faq4q'), S.t('faq4a')),
-          faq(Icons.badge_outlined, S.t('faq5q'), S.t('faq5a')),
-          faq(Icons.block, S.t('faq6q'), S.t('faq6a')),
-          faq(Icons.verified_user_outlined, S.t('faq7q'), S.t('faq7a')),
-          faq(Icons.event_busy, S.t('faq8q'), S.t('faq8a')),
-          faq(Icons.gavel, S.t('faq9q'), S.t('faq9a')),
+
         ],
       ),
     );

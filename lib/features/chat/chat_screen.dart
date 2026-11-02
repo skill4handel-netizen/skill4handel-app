@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
@@ -34,24 +33,24 @@ class _ChatScreenState extends State<ChatScreen> {
   final controller = TextEditingController();
   final scrollController = ScrollController();
   final dio = Api.client;
-  Timer? poll;
   int? chatId;
   Map<String, dynamic>? pendingSwap;
   List<Map<String, dynamic>> messages = [];
+  final expandedSystem = <int>{};
   bool loading = true;
-  bool sending = false;
 
   @override
   void initState() {
     super.initState();
     chatId = widget.chatId;
+    if (widget.name.trim().isNotEmpty) {
+      controller.text = 'Hello ${widget.name.trim()}';
+    }
     openChat();
-    poll = Timer.periodic(const Duration(seconds: 3), (_) => refreshChat());
   }
 
   @override
   void dispose() {
-    poll?.cancel();
     controller.dispose();
     scrollController.dispose();
     super.dispose();
@@ -101,25 +100,6 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     if (mounted) setState(() => loading = false);
     jumpToEnd();
-  }
-
-  Future<void> refreshChat() async {
-    if (!mounted || chatId == null || sending) return;
-    try {
-      final response = await dio.get('/chats/$chatId', queryParameters: {'userId': Session.id});
-      final next = ((response.data['messages'] as List?) ?? [])
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
-      final oldLast = messages.isEmpty ? '' : '${messages.last['id'] ?? messages.last['text']}';
-      final newLast = next.isEmpty ? '' : '${next.last['id'] ?? next.last['text']}';
-      final changed = next.length != messages.length || oldLast != newLast;
-      if (!changed) return;
-      final nearBottom = !scrollController.hasClients ||
-          scrollController.position.pixels >= scrollController.position.maxScrollExtent - 120;
-      if (!mounted) return;
-      setState(() => applyChat(response.data));
-      if (nearBottom) jumpToEnd();
-    } catch (_) {}
   }
 
   void jumpToEnd() {
@@ -206,13 +186,53 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> reportUser() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            SupportScreen(initialType: 'report', initialOtherName: widget.name),
+    final reason = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.t('report')),
+        content: TextField(
+          controller: reason,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Write the reason for this report',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(S.t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(S.t('send')),
+          ),
+        ],
       ),
     );
+    final text = reason.text.trim();
+    reason.dispose();
+    if (ok != true || text.isEmpty) return;
+    try {
+      await dio.post(
+        '/auth/ticket',
+        data: {
+          'userId': Session.id,
+          'type': 'report',
+          'message': text,
+          'otherName': widget.name,
+        },
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report sent.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not send the report.')),
+      );
+    }
   }
 
   Future<void> blockUser() async {
@@ -337,21 +357,18 @@ class _ChatScreenState extends State<ChatScreen> {
     await openChat();
   }
 
-  Future<void> send([String? preset]) async {
-    final text = (preset ?? controller.text).trim();
-    if (text.isEmpty || chatId == null || sending) return;
+  Future<void> send() async {
+    final text = controller.text.trim();
+    if (text.isEmpty || chatId == null) return;
     controller.clear();
-    sending = true;
     try {
       final response = await dio.post(
         '/chats/$chatId/messages',
         data: {'fromId': Session.id, 'text': text},
       );
-      if (!mounted) return;
       setState(() => applyChat(response.data));
       jumpToEnd();
     } catch (_) {
-      if (!mounted) return;
       setState(
         () => messages.add({
           'type': 'text',
@@ -361,8 +378,6 @@ class _ChatScreenState extends State<ChatScreen> {
         }),
       );
       jumpToEnd();
-    } finally {
-      sending = false;
     }
   }
 
@@ -402,12 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => HistoryScreen(
-                    otherId: widget.otherId,
-                    otherName: widget.name,
-                  ),
-                ),
+                MaterialPageRoute(builder: (context) => const HistoryScreen()),
               );
             },
             icon: const Icon(Icons.history, size: 26),
@@ -466,40 +476,61 @@ class _ChatScreenState extends State<ChatScreen> {
                                 S.isSystem(rawText);
                             final isMe = fromId == Session.id;
                             if (isSystem) {
+                              final open = expandedSystem.contains(index);
+                              final short = prettyText(rawText, fromId: fromId);
                               return Center(
                                 child: Container(
                                   width: double.infinity,
                                   margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(14),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     border: Border.all(
-                                      color: AppColors.blue,
-                                      width: 1.5,
+                                      color: AppColors.blue.withValues(alpha: 0.35),
                                     ),
                                     borderRadius: BorderRadius.circular(16),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color(0x22000000),
-                                        blurRadius: 6,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
                                   ),
                                   child: Column(
                                     children: [
-                                      const Icon(
-                                        Icons.info_outline,
-                                        color: AppColors.blue,
+                                      InkWell(
+                                        onTap: () => setState(() {
+                                          if (open) {
+                                            expandedSystem.remove(index);
+                                          } else {
+                                            expandedSystem.add(index);
+                                          }
+                                        }),
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              open
+                                                  ? Icons.keyboard_arrow_up
+                                                  : Icons.keyboard_arrow_down,
+                                              color: AppColors.blue,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              open ? 'Hide' : 'Show',
+                                              style: const TextStyle(
+                                                color: AppColors.blue,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
+                                      if (open) ...[
                                       const SizedBox(height: 6),
                                       Text(
-                                        prettyText(rawText, fromId: fromId),
+                                        short,
                                         textAlign: TextAlign.center,
                                         style: const TextStyle(
                                           color: Color(0xFF1F2937),
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w700,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       if (when(message['createdAt']).isNotEmpty)
@@ -515,6 +546,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                             ),
                                           ),
                                         ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -568,28 +600,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             );
                           },
                         ),
-                ),
-                SizedBox(
-                  height: 44,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                    children: [
-                      for (final starter in [
-                        S.t('starterHello'),
-                        S.t('starterSkill'),
-                        S.t('starterSchedule'),
-                        S.t('starterOffer'),
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ActionChip(
-                            label: Text(starter, style: const TextStyle(fontSize: 12)),
-                            onPressed: () => send(starter),
-                          ),
-                        ),
-                    ],
-                  ),
                 ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(12, 0, 12, 12 + bottomPad),

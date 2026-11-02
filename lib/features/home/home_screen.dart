@@ -13,7 +13,6 @@ import '../chat/chat_screen.dart';
 import '../chat/history_screen.dart';
 import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
-import '../notifications/notifications_screen.dart';
 import 'favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -40,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> history = [];
   List<SafePlace> places = [];
   int unread = 0;
-  int unreadAlerts = 0;
 
   @override
   void initState() {
@@ -86,13 +84,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .toList();
     } catch (_) {
       history = [];
-    }
-    try {
-      final alertResponse = await dio.get('/auth/alerts', queryParameters: {'userId': Session.id});
-      final alerts = ((alertResponse.data as List?) ?? []).map((item) => Map<String, dynamic>.from(item as Map)).toList();
-      unreadAlerts = alerts.where((item) => item['is_read'] != true).length;
-    } catch (_) {
-      unreadAlerts = 0;
     }
     try {
       places = await PlacesService.load(Session.city);
@@ -187,54 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
     return items;
-  }
-
-
-  List<Map<String, dynamic>> dutyWarnings() {
-    final out = <Map<String, dynamic>>[];
-    for (final chat in chats) {
-      final swap = chat['pendingSwap'];
-      if (swap is! Map) continue;
-      final status = swap['status']?.toString();
-      final doneBy = swap['doneBy'];
-      final mineDone = doneBy is List && doneBy.any((value) => value.toString() == Session.id.toString());
-      final name = (chat['name'] ?? 'the other member').toString();
-      if (status == 'accepted' && !mineDone) {
-        out.add({
-          'text': 'Confirm completion with $name within 72 hours. New exchanges stay blocked until you confirm completion and write the review.',
-          'chat': chat,
-        });
-      }
-      if (status == 'disputed') {
-        out.add({
-          'text': 'The exchange with $name is in arbitration. Tokens will not move until an admin decides.',
-          'chat': chat,
-        });
-      }
-    }
-    for (final item in history) {
-      if (item['status']?.toString() == 'completed' && !reviewedByMe(item)) {
-        final name = (item['otherName'] ?? 'the other member').toString();
-        out.add({
-          'text': 'Write your review for $name. Tap to open the review.',
-          'review': item,
-        });
-      }
-    }
-    return out;
-  }
-
-  void openReview(Map item) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ReviewScreen(
-          otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-          otherName: item['otherName']?.toString() ?? 'Member',
-          skill: item['skillRequested']?.toString() ?? '',
-        ),
-      ),
-    ).then((_) => refresh());
   }
 
   void openChatFrom(Map<String, dynamic> item) {
@@ -384,17 +327,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () async {
-                    await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-                    refresh();
-                  },
-                  icon: Badge(
-                    isLabelVisible: unreadAlerts > 0,
-                    label: Text('$unreadAlerts'),
-                    child: const Icon(Icons.notifications_none, color: Colors.white),
-                  ),
-                ),
-                IconButton(
                   onPressed: refresh,
                   icon: const Icon(Icons.refresh, color: Colors.white),
                 ),
@@ -426,160 +358,61 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
-                ...dutyWarnings().map(
-                  (warning) => InkWell(
-                    onTap: () {
-                      if (warning['review'] is Map) {
-                        openReview(Map<String, dynamic>.from(warning['review'] as Map));
-                        return;
-                      }
-                      if (warning['chat'] is Map) {
-                        openChatFrom({'chat': warning['chat']});
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE8E8),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        warning['text']?.toString() ?? '',
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                ),
                 Container(
                   decoration: AppTheme.card(),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
                     children: [
-                      Stack(
-                        children: [
-                          AspectRatio(
-                            aspectRatio: 4 / 3,
-                            child: image != null
-                                ? Image(image: image, fit: BoxFit.cover)
-                                : Container(
-                                    color: AppColors.soft,
-                                    child: Center(
-                                      child: Text(
-                                        name[0].toUpperCase(),
-                                        style: const TextStyle(
-                                          fontSize: 72,
-                                          color: AppColors.blue,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Material(
-                              color: Colors.white,
-                              shape: const CircleBorder(),
-                              child: IconButton(
-                                onPressed: widget.onProfileTap,
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: AppColors.blue,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      UserPhoto(
+                        url: Session.photoUrl,
+                        radius: 28,
+                        letter: (Session.name.isEmpty ? '?' : Session.name[0]),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              Session.name.isEmpty
-                                  ? S.t('profile')
-                                  : Session.name,
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                              ),
+                              Session.name.isEmpty ? S.t('profile') : Session.name,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                             ),
-                            if (Session.email.isNotEmpty)
-                              Text(
-                                Session.email,
-                                style: const TextStyle(color: AppColors.muted),
-                              ),
                             if (Session.city.isNotEmpty)
-                              Text(
-                                Session.city,
-                                style: const TextStyle(color: AppColors.muted),
-                              ),
-                            const SizedBox(height: 10),
-                            Text(
-                              Session.bio.trim().isEmpty
-                                  ? S.t('bioHint')
-                                  : Session.bio,
-                              style: const TextStyle(height: 1.35),
-                            ),
-                            if (skills.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(
-                                S.t('skillsOffer'),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                S.t('tapSkill'),
-                                style: const TextStyle(
-                                  color: AppColors.muted,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                children: [
-                                  for (final skill in skills)
-                                    GestureDetector(
-                                      onTap: () => showSkill(skill),
-                                      child: Container(
-                                        margin: const EdgeInsets.only(
-                                          right: 8,
-                                          bottom: 8,
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFEEE8FF),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: AppColors.purple,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          skill.name,
-                                          style: const TextStyle(
-                                            color: Color(0xFF3D2BB3),
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
+                              Text(Session.city, style: const TextStyle(color: AppColors.muted)),
                           ],
                         ),
+                      ),
+                      IconButton(
+                        onPressed: widget.onProfileTap,
+                        icon: const Icon(Icons.edit_outlined, color: AppColors.blue),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.soft,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Complete your profile and start an exchange',
+                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                      ),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Add your skills, then search for the skill you need.',
+                        style: TextStyle(color: AppColors.muted),
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton(
+                        onPressed: widget.onSearchTap,
+                        child: const Text('Search a skill'),
                       ),
                     ],
                   ),
@@ -767,12 +600,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  S.t('activity'),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        S.t('activity'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        chats = [];
+                        history = [];
+                        unread = 0;
+                      }),
+                      child: const Text('Clear'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 if (live.isEmpty)
