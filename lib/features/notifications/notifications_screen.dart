@@ -40,6 +40,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     load();
   }
 
+  Future<void> deleteOne(Map<String, dynamic> item) async {
+    try {
+      await dio.post('/auth/alerts/delete', data: {'id': item['id'], 'userId': Session.id});
+    } catch (_) {}
+    load();
+  }
+
   Future<void> markRead(Map<String, dynamic> item) async {
     try {
       await dio.post('/auth/alerts/read', data: {'id': item['id'], 'userId': Session.id});
@@ -96,6 +103,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   subtitle: Text('${when(item['createdAt'])}\n${item['body'] ?? ''}'.trim()),
                   isThreeLine: true,
                   onTap: () => markRead(item),
+                  trailing: IconButton(onPressed: () => deleteOne(item), icon: const Icon(Icons.delete_outline, color: Color(0xFFD92D20))),
                 ),
               );
             }),

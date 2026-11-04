@@ -19,6 +19,7 @@ class Session {
   static String token = '';
   static String language = 'en';
   static String phone = '';
+  static String birthDate = '';
   static bool accessibility = false;
   static bool willingVolunteer = false;
   static bool emailVerified = false;
@@ -43,6 +44,7 @@ class Session {
     'token': token,
     'language': language,
     'phone': phone,
+    'birthDate': birthDate,
     'accessibility': accessibility,
     'willingVolunteer': willingVolunteer,
     'emailVerified': emailVerified,
@@ -79,6 +81,7 @@ class Session {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
     }
+    birthDate = pickText(user, ['birthDate', 'birth_date'], birthDate);
     if (user['accessibility'] != null) {
       accessibility =
           user['accessibility'] == true || user['accessibility'] == 'true';

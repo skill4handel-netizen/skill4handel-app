@@ -6,6 +6,7 @@ import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
 import '../home/demo_screen.dart';
+import '../auth/terms_screen.dart';
 
 class SupportScreen extends StatefulWidget {
   const SupportScreen({super.key, this.initialType, this.initialOtherName});
@@ -267,6 +268,24 @@ class _SupportScreenState extends State<SupportScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const DemoScreen()),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          sectionTitle('Rules and privacy', Icons.gavel),
+          Material(
+            color: const Color(0xFFF4F7FB),
+            borderRadius: BorderRadius.circular(16),
+            child: ListTile(
+              leading: const Icon(Icons.description_outlined, color: AppColors.blue),
+              title: const Text('Terms, rules and privacy'),
+              subtitle: const Text('Exchange rules and GDPR notice'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TermsScreen()),
                 );
               },
             ),

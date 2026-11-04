@@ -12,7 +12,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/skill_picker.dart';
 import '../../core/widgets/city_picker.dart';
 import '../auth/login_screen.dart';
-import '../auth/terms_screen.dart';
 import '../chat/blocked_screen.dart';
 import '../support/support_screen.dart';
 
@@ -59,6 +58,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    final birth = DateTime.tryParse(Session.birthDate);
+    if (birth != null) {
+      day = birth.day;
+      month = birth.month;
+      year = birth.year;
+    }
     baseline = snapshot();
     for (final c in [name, city, bio]) {
       c.addListener(() => setState(() => dirty = snapshot() != baseline));
@@ -755,8 +760,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SizedBox(height: 52, child: OutlinedButton(onPressed: changePassword, child: Text(S.t('changePassword')))),
               const SizedBox(height: 8),
               SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked')))),
-              const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TermsScreen())), child: Text(S.t('terms')))),
               const SizedBox(height: 8),
               SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen())), child: Text(S.t('support')))),
               const SizedBox(height: 8),
