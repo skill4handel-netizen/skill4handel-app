@@ -160,11 +160,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         ? widget.initialSkillRequested.trim()
         : selectedSkill;
     final offered = useSkill ? selectedSkill : '';
-    if (!widget.isAccept &&
-        !widget.isCounter &&
-        requested.isEmpty &&
-        payMode != 'tokens' &&
-        !volunteer) {
+    if (!widget.isAccept && !widget.isCounter && requested.isEmpty) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
@@ -212,7 +208,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           data: {
             'userId': Session.id,
             'proposedByName': Session.name,
-            'skillRequested': requested.isEmpty ? (volunteer ? 'Volunteer help' : (payMode == 'tokens' ? 'Tokens only' : requested)) : requested,
+            'skillRequested': requested,
             'skillOffered': volunteer ? '' : (widget.isCounter ? offered : ''),
             'payWithTokens': useTokens,
             'volunteer': volunteer,
@@ -416,9 +412,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
             ),
           ],
           if (!widget.isAccept &&
-              ((!widget.isCounter) || useSkill) &&
-              !volunteer &&
-              payMode != 'tokens' && !volunteer) ...[
+              (widget.isCounter ? (useSkill && !volunteer && payMode != 'tokens') : true)) ...[
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: otherSkills.contains(selectedSkill)
@@ -607,9 +601,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                           : selectedSkill;
                       if (!widget.isAccept &&
                           !widget.isCounter &&
-                          requested.isEmpty &&
-                          payMode != 'tokens' && !volunteer &&
-                          !volunteer) {
+                          requested.isEmpty) {
                         missing.add('Skill');
                       }
                       if (widget.isCounter &&
