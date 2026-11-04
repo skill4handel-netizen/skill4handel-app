@@ -429,9 +429,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Add your skills, then search for the skill you need.',
-                        style: TextStyle(color: AppColors.muted),
+                      Text(
+                        Session.profileMissing.isEmpty
+                            ? 'Add your skills, then search for the skill you need.'
+                            : 'Missing: ${Session.profileMissing}',
+                        style: const TextStyle(color: AppColors.muted),
                       ),
                       const SizedBox(height: 10),
                       OutlinedButton(

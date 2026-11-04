@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool editing = false;
   String baseline = '';
 
-  String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), gender, Session.language, encodeSkills(selectedSkills), Session.photoUrl].join('|');
+  String snapshot() => [name.text.trim(), city.text.trim(), bio.text.trim(), phone.text.trim(), gender, Session.language, encodeSkills(selectedSkills), Session.photoUrl, accessibility, willingVolunteer, day, month, year].join('|');
 
 
   int get customCount =>
@@ -65,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       year = birth.year;
     }
     baseline = snapshot();
-    for (final c in [name, city, bio]) {
+    for (final c in [name, city, bio, phone]) {
       c.addListener(() => setState(() => dirty = snapshot() != baseline));
     }
   }
@@ -236,6 +236,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() => saving = false);
       }
+    }
+  }
+
+  Future<void> setPassword() async {
+    final next = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set a password'),
+        content: TextField(
+          controller: next,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'New password'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(S.t('cancel'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(S.t('save'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await dio.post('/auth/set-password', data: {'userId': Session.id, 'newPassword': next.text});
+      Session.passwordSet = true;
+      await Session.save();
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password saved. You can now sign in with your email and this password.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
@@ -593,7 +624,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       initialValue: day,
                       decoration: InputDecoration(labelText: S.t('day')),
                       items: [for (var i = 1; i <= 31; i++) DropdownMenuItem(value: i, child: Text('$i'))],
-                      onChanged: (value) => setState(() => day = value),
+                      onChanged: (value) => setState(() { day = value; dirty = snapshot() != baseline; }),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -603,7 +634,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       initialValue: month,
                       decoration: InputDecoration(labelText: S.t('month')),
                       items: [for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(months[i - 1]))],
-                      onChanged: (value) => setState(() => month = value),
+                      onChanged: (value) => setState(() { month = value; dirty = snapshot() != baseline; }),
                     ),
                   ),
                 ],
@@ -613,7 +644,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 initialValue: year,
                 decoration: InputDecoration(labelText: S.t('year')),
                 items: [for (var i = DateTime.now().year - 18; i >= DateTime.now().year - 90; i--) DropdownMenuItem(value: i, child: Text('$i'))],
-                onChanged: (value) => setState(() => year = value),
+                onChanged: (value) => setState(() { year = value; dirty = snapshot() != baseline; }),
               ),
               const SizedBox(height: 6),
               const Text('18 years or older', style: TextStyle(color: AppColors.muted)),
@@ -626,13 +657,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: accessibility,
-                onChanged: (value) => setState(() => accessibility = value ?? false),
+                onChanged: (value) => setState(() { accessibility = value ?? false; dirty = snapshot() != baseline; }),
                 title: Text(S.t('accessNeed')),
               ),
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
                 value: willingVolunteer,
-                onChanged: (value) => setState(() => willingVolunteer = value ?? false),
+                onChanged: (value) => setState(() { willingVolunteer = value ?? false; dirty = snapshot() != baseline; }),
                 title: const Text('I am willing to offer voluntary help'),
               ),
               const SizedBox(height: 12),
@@ -757,7 +788,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 8),
-              SizedBox(height: 52, child: OutlinedButton(onPressed: changePassword, child: Text(S.t('changePassword')))),
+              SizedBox(height: 52, child: OutlinedButton(onPressed: Session.passwordSet ? changePassword : setPassword, child: Text(Session.passwordSet ? S.t('changePassword') : 'Set a password'))),
               const SizedBox(height: 8),
               SizedBox(height: 52, child: OutlinedButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BlockedScreen())), child: Text(S.t('blocked')))),
               const SizedBox(height: 8),

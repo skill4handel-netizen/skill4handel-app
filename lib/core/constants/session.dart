@@ -23,6 +23,7 @@ class Session {
   static bool accessibility = false;
   static bool willingVolunteer = false;
   static bool emailVerified = false;
+  static bool passwordSet = true;
   static bool demoSeen = false;
   static List<Map<String, dynamic>> reviews = [];
   static List<Map<String, dynamic>> history = [];
@@ -48,6 +49,7 @@ class Session {
     'accessibility': accessibility,
     'willingVolunteer': willingVolunteer,
     'emailVerified': emailVerified,
+    'passwordSet': passwordSet,
     'demoSeen': demoSeen,
     'theme': themeMode.value == ThemeMode.dark ? 'dark' : 'light',
   };
@@ -77,6 +79,9 @@ class Session {
     if (user['token'] != null) token = user['token'].toString();
     final nextLang = user['language']?.toString();
     if (nextLang == 'nl' || nextLang == 'en') language = nextLang!;
+    if (user['passwordSet'] != null) {
+      passwordSet = user['passwordSet'] == true || user['passwordSet'] == 'true';
+    }
     if (user['emailVerified'] != null) {
       emailVerified =
           user['emailVerified'] == true || user['emailVerified'] == 'true';
