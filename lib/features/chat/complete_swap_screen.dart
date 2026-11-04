@@ -160,7 +160,11 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
         ? widget.initialSkillRequested.trim()
         : selectedSkill;
     final offered = useSkill ? selectedSkill : '';
-    if (!widget.isAccept && !widget.isCounter && requested.isEmpty) {
+    if (!widget.isAccept &&
+        !widget.isCounter &&
+        requested.isEmpty &&
+        payMode != 'tokens' &&
+        !volunteer) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
@@ -208,7 +212,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
           data: {
             'userId': Session.id,
             'proposedByName': Session.name,
-            'skillRequested': requested,
+            'skillRequested': requested.isEmpty ? (volunteer ? 'Volunteer help' : (payMode == 'tokens' ? 'Tokens only' : requested)) : requested,
             'skillOffered': volunteer ? '' : (widget.isCounter ? offered : ''),
             'payWithTokens': useTokens,
             'volunteer': volunteer,
