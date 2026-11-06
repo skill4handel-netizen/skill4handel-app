@@ -560,7 +560,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircleAvatar(child: Text((person['name']?.toString().isNotEmpty == true ? person['name'].toString()[0] : 'M'))),
+                                  UserPhoto(url: person['photoUrl']?.toString(), radius: 28, letter: (person['name']?.toString().isNotEmpty == true ? person['name'].toString()[0] : 'M')),
                                   const SizedBox(height: 8),
                                   Text(person['name']?.toString() ?? 'Member', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
                                   Text(person['city']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
