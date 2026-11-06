@@ -127,6 +127,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Text('Your conversations. If this is empty, you have not started or received a chat yet.', style: TextStyle(color: AppColors.muted)),
+            ),
             if (loading) const LinearProgressIndicator(),
             if (!loading && chats.isEmpty)
               Padding(

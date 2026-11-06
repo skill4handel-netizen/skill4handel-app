@@ -147,6 +147,21 @@ class _DemoScreenState extends State<DemoScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      if (page > 0)
+                        TextButton(
+                          onPressed: () => setState(() => page--),
+                          child: const Text('Back', style: TextStyle(color: Colors.white)),
+                        ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: finish,
+                        child: const Text('Skip', style: TextStyle(color: Colors.white70)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     height: 52,

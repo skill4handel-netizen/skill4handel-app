@@ -99,11 +99,16 @@ class _WalletScreenState extends State<WalletScreen> {
                         ),
                       ),
                       const Text(
-                        'tokens',
+                        'S4H',
                         style: TextStyle(color: Colors.white70),
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'S4H is an in-app unit only. It is not money and not crypto. It is used to balance a skill exchange inside the app. It cannot be bought, sold, withdrawn, or transferred outside Skill4Handel.',
+                  style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 20),
                 Text(

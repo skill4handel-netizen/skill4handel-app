@@ -10,6 +10,7 @@ import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/user_photo.dart';
 import '../chat/chat_screen.dart';
+import '../profile/user_profile_screen.dart';
 import '../chat/history_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../reviews/review_screen.dart';
@@ -39,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> chats = [];
   List<Map<String, dynamic>> history = [];
   List<SafePlace> places = [];
+  List<Map<String, dynamic>> suggested = [];
   int unread = 0;
   int unreadAlerts = 0;
 
@@ -75,6 +77,16 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       chats = [];
       unread = 0;
+    }
+    try {
+      final users = await dio.get('/users', queryParameters: {'userId': Session.id});
+      suggested = ((users.data as List?) ?? [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .where((item) => '${item['id']}' != '${Session.id}')
+          .take(6)
+          .toList();
+    } catch (_) {
+      suggested = [];
     }
     try {
       final alertResponse = await dio.get('/auth/alerts', queryParameters: {'userId': Session.id});
@@ -481,6 +493,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
+                const Text(
+                  'Need a skill or some help? Start a conversation and send a request.',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: widget.onSearchTap,
+                    style: AppTheme.solid(AppColors.green),
+                    icon: const Icon(Icons.search, color: Colors.white),
+                    label: const Text('Find a skill now', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Suggested members', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                const Text('Members you can open and contact.', style: TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 8),
+                if (suggested.isEmpty)
+                  const Text('No suggestions yet. Complete your profile and search.', style: TextStyle(color: AppColors.muted))
+                else
+                  ...suggested.map((person) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.person_outline),
+                    title: Text(person['name']?.toString() ?? 'Member'),
+                    subtitle: Text(person['city']?.toString() ?? ''),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen(
+                        name: person['name']?.toString() ?? 'Member',
+                        email: person['email']?.toString() ?? '',
+                        city: person['city']?.toString() ?? '',
+                        offers: person['offers']?.toString() ?? '',
+                        needs: person['needs']?.toString() ?? '',
+                        otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
+                        rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
+                        photoUrl: person['photoUrl']?.toString(),
+                      )));
+                    },
+                  )),
+                const SizedBox(height: 8),
+                const Text('Shortcuts', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                const Text('Quick ways to search, save favourites, review history, or open help.', style: TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -544,12 +601,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 20),
                 Text(
                   Session.city.isEmpty
-                      ? S.t('suggestedPlaces')
-                      : '${S.t('suggestedPlacesCity')} ${Session.city}',
+                      ? 'Safe public places'
+                      : 'Safe public places in ${Session.city}',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'These are public places suggested for in-person exchanges.',
+                  style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 4),
                 Text(

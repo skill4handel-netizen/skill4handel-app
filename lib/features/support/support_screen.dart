@@ -24,11 +24,24 @@ class _SupportScreenState extends State<SupportScreen> {
   late String type = widget.initialType ?? 'support';
   bool sending = false;
 
+  @override
+  void initState() {
+    super.initState();
+    text.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    text.dispose();
+    super.dispose();
+  }
+
   String cleanError(Object error) {
     if (error is DioException) {
       final data = error.response?.data;
-      if (data is Map && data['message'] != null)
+      if (data is Map && data['message'] != null) {
         return data['message'].toString();
+      }
       if (error.response?.statusCode != null) {
         return S.t('ticketFail');
       }
@@ -37,6 +50,7 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 
   Future<void> sendTicket() async {
+    if (text.text.trim().length < 20) return;
     if (text.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -244,6 +258,8 @@ class _SupportScreenState extends State<SupportScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
+          const Text('Help answers common questions. Support tickets are reviewed by the team.', style: TextStyle(color: AppColors.muted)),
+          const SizedBox(height: 12),
           sectionTitle(S.t('faq'), Icons.help_outline),
           faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),
           faq(Icons.payments_outlined, S.t('faq2q'), S.t('faq2a')),
@@ -260,7 +276,7 @@ class _SupportScreenState extends State<SupportScreen> {
             color: const Color(0xFFF4F7FB),
             borderRadius: BorderRadius.circular(16),
             child: ListTile(
-              leading: const Icon(Icons.play_circle_outline, color: AppColors.blue),
+              leading: const Icon(Icons.menu_book_outlined, color: AppColors.blue),
               title: Text(S.t('howItWorks')),
               subtitle: Text(S.t('productGuide')),
               trailing: const Icon(Icons.chevron_right),
@@ -320,34 +336,19 @@ class _SupportScreenState extends State<SupportScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
-          typeCard(
-            'support',
-            Icons.support_agent,
-            S.t('support'),
-            S.t('supportHint'),
-            AppColors.blue,
+          DropdownButtonFormField<String>(
+            initialValue: type,
+            decoration: const InputDecoration(labelText: 'Ticket type'),
+            items: const [
+              DropdownMenuItem(value: 'support', child: Text('Support')),
+              DropdownMenuItem(value: 'arbitration', child: Text('Arbitration')),
+              DropdownMenuItem(value: 'report', child: Text('Report a member')),
+              DropdownMenuItem(value: 'fraud', child: Text('Fraud')),
+            ],
+            onChanged: (value) => setState(() => type = value ?? 'support'),
           ),
-          typeCard(
-            'arbitration',
-            Icons.gavel,
-            S.t('arbitration'),
-            S.t('arbitrationHint'),
-            const Color(0xFFE3A008),
-          ),
-          typeCard(
-            'report',
-            Icons.flag_outlined,
-            S.t('reportMember'),
-            S.t('reportHint'),
-            const Color(0xFFD92D20),
-          ),
-          typeCard(
-            'fraud',
-            Icons.warning_amber_rounded,
-            S.t('fraud'),
-            S.t('fraudHint'),
-            const Color(0xFFB42318),
-          ),
+          const SizedBox(height: 8),
+          const Text('Write at least 20 characters.', style: TextStyle(color: AppColors.muted)),
           const SizedBox(height: 8),
           TextField(
             controller: text,
@@ -361,7 +362,7 @@ class _SupportScreenState extends State<SupportScreen> {
           SizedBox(
             height: 56,
             child: ElevatedButton.icon(
-              onPressed: sending ? null : sendTicket,
+              onPressed: sending || text.text.trim().length < 20 ? null : sendTicket,
               style: AppTheme.solid(AppColors.blue),
               icon: const Icon(Icons.send, color: Colors.white, size: 26),
               label: Text(

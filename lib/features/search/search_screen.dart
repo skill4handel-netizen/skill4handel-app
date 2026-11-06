@@ -144,6 +144,8 @@ class _SearchScreenState extends State<SearchScreen> {
               MediaQuery.of(context).padding.bottom + 24,
             ),
             children: [
+              const Text('Search members by name, city, or skill. An empty result means no one matches those words.', style: TextStyle(color: AppColors.muted)),
+              const SizedBox(height: 12),
               TextField(
                 controller: controller,
                 onChanged: (_) { applyFilters(); setState(() {}); },

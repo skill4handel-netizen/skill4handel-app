@@ -3,6 +3,9 @@ import '../../core/api/api_client.dart';
 import '../../core/constants/session.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_page.dart';
+import '../chat/chat_screen.dart';
+import '../chat/history_screen.dart';
+import '../support/support_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -45,6 +48,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await dio.post('/auth/alerts/delete', data: {'id': item['id'], 'userId': Session.id});
     } catch (_) {}
     load();
+  }
+
+  Future<void> openItem(Map<String, dynamic> item) async {
+    await markRead(item);
+    final data = item['data'] is Map ? Map<String, dynamic>.from(item['data'] as Map) : <String, dynamic>{};
+    final type = '${data['type'] ?? ''}';
+    final chatId = int.tryParse('${data['chatId'] ?? 0}') ?? 0;
+    if (!mounted) return;
+    if (type == 'chat' || type == 'offer') {
+      if (chatId <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This notice has no chat to open.')));
+        return;
+      }
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(name: 'Chat', otherId: 0, chatId: chatId)));
+      return;
+    }
+    if (type == 'support' || type == 'ticket') {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const SupportScreen()));
+      return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
   }
 
   Future<void> markRead(Map<String, dynamic> item) async {
@@ -102,7 +126,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   title: Text(item['title']?.toString() ?? 'Notice', style: const TextStyle(fontWeight: FontWeight.w800)),
                   subtitle: Text('${when(item['createdAt'])}\n${item['body'] ?? ''}'.trim()),
                   isThreeLine: true,
-                  onTap: () => markRead(item),
+                  onTap: () => openItem(item),
                   trailing: IconButton(onPressed: () => deleteOne(item), icon: const Icon(Icons.delete_outline, color: Color(0xFFD92D20))),
                 ),
               );

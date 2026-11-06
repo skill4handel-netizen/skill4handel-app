@@ -185,13 +185,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void openChat(Map item) {
+    final chatId = int.tryParse('${item['chatId'] ?? 0}') ?? 0;
+    if (chatId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This log has no chat to open. The chat may have been deleted.')),
+      );
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChatScreen(
           name: (item['name'] ?? item['otherName'] ?? S.t('member')).toString(),
           otherId: int.tryParse('${item['otherId'] ?? 0}') ?? 0,
-          chatId: int.tryParse('${item['id'] ?? item['chatId'] ?? 0}'),
+          chatId: chatId,
           photoUrl: item['photoUrl']?.toString(),
         ),
       ),
@@ -327,6 +334,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
             MediaQuery.of(context).padding.bottom + 24,
           ),
           children: [
+            const Text(
+              'This page is an activity log. It shows past offers and sessions so you can review what happened. It does not start a new exchange.',
+              style: TextStyle(color: AppColors.muted),
+            ),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(

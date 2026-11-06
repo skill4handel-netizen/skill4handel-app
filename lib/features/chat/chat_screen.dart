@@ -43,9 +43,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     chatId = widget.chatId;
-    if (widget.name.trim().isNotEmpty) {
-      controller.text = 'Hello ${widget.name.trim()}. I would like to exchange a skill.';
-    }
     openChat();
   }
 
@@ -73,6 +70,9 @@ class _ChatScreenState extends State<ChatScreen> {
     messages = ((data['messages'] as List?) ?? [])
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList();
+    if (messages.isEmpty && controller.text.trim().isEmpty && widget.name.trim().isNotEmpty) {
+      controller.text = 'Hello ${widget.name.trim()}. I would like to exchange a skill.';
+    }
   }
 
   Future<void> openChat() async {
