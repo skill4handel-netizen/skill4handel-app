@@ -258,7 +258,7 @@ class _SupportScreenState extends State<SupportScreen> {
       body: ListView(
         padding: EdgeInsets.fromLTRB(20, 16, 20, bottom),
         children: [
-          const Text('Help answers common questions. Support tickets are reviewed by the team.', style: TextStyle(color: AppColors.muted)),
+          const Text('Questions, rules, and support.', style: TextStyle(color: AppColors.muted)),
           const SizedBox(height: 12),
           sectionTitle(S.t('faq'), Icons.help_outline),
           faq(Icons.info_outline, S.t('faq1q'), S.t('faq1a')),

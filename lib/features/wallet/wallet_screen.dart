@@ -107,7 +107,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'S4H is an in-app unit only. It is not money and not crypto. It is used to balance a skill exchange inside the app. It cannot be bought, sold, withdrawn, or transferred outside Skill4Handel.',
+                  'S4H is an in-app unit, not money or crypto. It balances exchanges inside the app only.',
                   style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 20),

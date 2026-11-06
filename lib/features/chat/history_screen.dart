@@ -127,9 +127,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
       final user = me.data is Map ? (me.data['user'] ?? me.data) : null;
       if (user is Map) Session.apply(Map<String, dynamic>.from(user));
-      walletItems = List<Map<String, dynamic>>.from(Session.history);
+      walletItems = List<Map<String, dynamic>>.from(Session.history)
+          .where((row) => !Session.hiddenWallet.contains('${row['id'] ?? row['title'] ?? ''}'))
+          .toList();
     } catch (_) {
-      walletItems = List<Map<String, dynamic>>.from(Session.history);
+      walletItems = List<Map<String, dynamic>>.from(Session.history)
+          .where((row) => !Session.hiddenWallet.contains('${row['id'] ?? row['title'] ?? ''}'))
+          .toList();
     }
     try {
       final tickets = await dio.get(
@@ -235,6 +239,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } catch (_) {}
   }
 
+  Future<void> hideWallet(Map item) async {
+    final id = '${item['id'] ?? item['title'] ?? ''}';
+    if (id.isEmpty) return;
+    Session.hiddenWallet = [...Session.hiddenWallet, id];
+    await Session.saveHiddenWallet();
+    if (!mounted) return;
+    setState(() => walletItems = walletItems.where((row) => '${row['id'] ?? row['title'] ?? ''}' != id).toList());
+  }
+
   Future<void> deleteWallet(Map item) async {
     final id = item['id'];
     final ok = await showDialog<bool>(
@@ -334,9 +347,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
             MediaQuery.of(context).padding.bottom + 24,
           ),
           children: [
-            const Text(
-              'This page is an activity log. It shows past offers and sessions so you can review what happened. It does not start a new exchange.',
-              style: TextStyle(color: AppColors.muted),
+            Text(
+              tab == 0
+                  ? 'Exchange requests and their status.'
+                  : tab == 1
+                      ? 'S4H movements. Hide removes an item from this list only.'
+                      : 'Support and report tickets you sent.',
+              style: const TextStyle(color: AppColors.muted),
             ),
             const SizedBox(height: 12),
             Row(
@@ -396,6 +413,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     const Color(0xFFD92D20),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                filter == 'pending'
+                    ? 'Offers waiting for a reply.'
+                    : filter == 'open'
+                        ? 'Accepted offers that are not finished.'
+                        : filter == 'closed'
+                            ? 'Cancelled, expired, or completed offers.'
+                            : 'All offers.',
+                style: const TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 12),
               if (visible.isEmpty)
@@ -505,8 +533,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         IconButton(
-                          onPressed: () => deleteWallet(item),
-                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () => hideWallet(item),
+                          icon: const Icon(Icons.visibility_off_outlined),
                         ),
                       ],
                     ),

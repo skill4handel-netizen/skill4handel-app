@@ -5,6 +5,8 @@ import '../../core/constants/places_service.dart';
 import '../../core/constants/safe_places.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
+import '../../core/constants/skills.dart';
+import '../search/search_screen.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
@@ -16,6 +18,22 @@ import '../notifications/notifications_screen.dart';
 import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
 import 'favorites_screen.dart';
+
+IconData skillIcon(String skill) {
+  switch (skill) {
+    case 'Languages': return Icons.translate;
+    case 'Basic computers': return Icons.computer;
+    case 'Cooking': return Icons.restaurant;
+    case 'Light sports': return Icons.sports_soccer;
+    case 'Music': return Icons.music_note;
+    case 'Art and crafts': return Icons.palette;
+    case 'Study support': return Icons.menu_book;
+    case 'Photography': return Icons.photo_camera;
+    case 'Gardening': return Icons.yard;
+    case 'Home organisation': return Icons.home_work;
+    default: return Icons.category;
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -456,41 +474,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: stat(
-                        Icons.chat_bubble_rounded,
-                        '$unread',
-                        S.t('messages'),
-                        widget.onChatTap ?? () {},
-                        AppColors.soft,
-                        AppColors.blue,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: stat(
-                        Icons.star_rounded,
-                        Session.rating.toStringAsFixed(1),
-                        S.t('reviews'),
-                        refresh,
-                        AppColors.cream,
-                        AppColors.gold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: stat(
-                        Icons.account_balance_wallet_rounded,
-                        '${Session.balance}',
-                        S.t('wallet'),
-                        widget.onWalletTap ?? () {},
-                        AppColors.mint,
-                        AppColors.green,
-                      ),
-                    ),
-                  ],
+                const Text('Skill categories', style: TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                const Text('Tap a skill to see members who offer it.', style: TextStyle(color: AppColors.muted)),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 92,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      for (final skill in allowedSkills)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: InkWell(
+                            onTap: () {
+                              SearchScreen.pendingQuery = skill;
+                              (widget.onSearchTap ?? () {})();
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              width: 108,
+                              padding: const EdgeInsets.all(10),
+                              decoration: AppTheme.card(),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(skillIcon(skill), color: AppColors.blue),
+                                  const SizedBox(height: 6),
+                                  Text(skill, maxLines: 2, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -510,42 +528,67 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 const Text('Suggested members', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                const Text('Members you can open and contact.', style: TextStyle(color: AppColors.muted)),
+                const Text('Members you can open.', style: TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 8),
                 if (suggested.isEmpty)
-                  const Text('No suggestions yet. Complete your profile and search.', style: TextStyle(color: AppColors.muted))
+                  const Text('No suggestions yet.', style: TextStyle(color: AppColors.muted))
                 else
-                  ...suggested.map((person) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.person_outline),
-                    title: Text(person['name']?.toString() ?? 'Member'),
-                    subtitle: Text(person['city']?.toString() ?? ''),
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen(
-                        name: person['name']?.toString() ?? 'Member',
-                        email: person['email']?.toString() ?? '',
-                        city: person['city']?.toString() ?? '',
-                        offers: person['offers']?.toString() ?? '',
-                        needs: person['needs']?.toString() ?? '',
-                        otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
-                        rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
-                        photoUrl: person['photoUrl']?.toString(),
-                      )));
-                    },
-                  )),
+                  SizedBox(
+                    height: 150,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        for (final person in suggested)
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(context, MaterialPageRoute(builder: (context) => UserProfileScreen(
+                                name: person['name']?.toString() ?? 'Member',
+                                email: person['email']?.toString() ?? '',
+                                city: person['city']?.toString() ?? '',
+                                offers: person['offers']?.toString() ?? '',
+                                needs: person['needs']?.toString() ?? '',
+                                otherId: int.tryParse('${person['id'] ?? 0}') ?? 0,
+                                rating: double.tryParse('${person['rating'] ?? 0}') ?? 0,
+                                photoUrl: person['photoUrl']?.toString(),
+                              )));
+                            },
+                            child: Container(
+                              width: 140,
+                              margin: const EdgeInsets.only(right: 10),
+                              padding: const EdgeInsets.all(10),
+                              decoration: AppTheme.card(),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircleAvatar(child: Text((person['name']?.toString().isNotEmpty == true ? person['name'].toString()[0] : 'M'))),
+                                  const SizedBox(height: 8),
+                                  Text(person['name']?.toString() ?? 'Member', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                  Text(person['city']?.toString() ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 8),
                 const Text('Shortcuts', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
-                const Text('Quick ways to search, save favourites, review history, or open help.', style: TextStyle(color: AppColors.muted)),
+                const Text('Open reviews, favourites, history, or help.', style: TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
                       child: actionTile(
-                        Icons.search,
-                        S.t('search'),
-                        AppColors.blue,
-                        widget.onSearchTap ?? () {},
+                        Icons.star_rounded,
+                        S.t('reviews'),
+                        AppColors.gold,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                          ).then((_) => refresh());
+                        },
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -610,7 +653,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'These are public places suggested for in-person exchanges.',
+                  'Public places for in-person meetings.',
                   style: TextStyle(color: AppColors.muted),
                 ),
                 const SizedBox(height: 4),

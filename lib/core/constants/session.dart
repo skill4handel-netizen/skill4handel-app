@@ -27,6 +27,7 @@ class Session {
   static bool demoSeen = false;
   static List<Map<String, dynamic>> reviews = [];
   static List<Map<String, dynamic>> history = [];
+  static List<String> hiddenWallet = [];
   static final themeMode = ValueNotifier<ThemeMode>(ThemeMode.light);
 
   static Map<String, dynamic> toJson() => {
@@ -112,6 +113,12 @@ class Session {
     save();
   }
 
+  static Future<void> saveHiddenWallet() async {
+    try {
+      await _storage.write(key: 'hidden_wallet', value: hiddenWallet.join(','));
+    } catch (_) {}
+  }
+
   static Future<void> save() async {
     try {
       await _storage.write(key: 'session', value: jsonEncode(toJson()));
@@ -120,9 +127,16 @@ class Session {
 
   static Future<void> load() async {
     final raw = await _storage.read(key: 'session');
-    if (raw == null || raw.isEmpty) return;
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        apply(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+      } catch (_) {}
+    }
     try {
-      apply(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+      final hidden = await _storage.read(key: 'hidden_wallet');
+      if (hidden != null && hidden.isNotEmpty) {
+        hiddenWallet = hidden.split(',').where((item) => item.isNotEmpty).toList();
+      }
     } catch (_) {}
   }
 

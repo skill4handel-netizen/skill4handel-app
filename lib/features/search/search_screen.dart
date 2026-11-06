@@ -9,6 +9,7 @@ import '../profile/user_profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
+  static String pendingQuery = '';
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -25,6 +26,10 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void initState() {
     super.initState();
+    if (SearchScreen.pendingQuery.isNotEmpty) {
+      controller.text = SearchScreen.pendingQuery;
+      SearchScreen.pendingQuery = '';
+    }
     loadUsers();
   }
 
@@ -144,7 +149,7 @@ class _SearchScreenState extends State<SearchScreen> {
               MediaQuery.of(context).padding.bottom + 24,
             ),
             children: [
-              const Text('Search members by name, city, or skill. An empty result means no one matches those words.', style: TextStyle(color: AppColors.muted)),
+              const Text('Find a member by name, city, or skill.', style: TextStyle(color: AppColors.muted)),
               const SizedBox(height: 12),
               TextField(
                 controller: controller,

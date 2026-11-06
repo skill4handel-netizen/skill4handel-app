@@ -409,7 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               MediaQuery.of(context).padding.bottom + 24,
             ),
             children: [
-              const Text('Your profile. Edit it to update the details other members see.', style: TextStyle(color: AppColors.muted)),
+              const Text('Your profile and settings.', style: TextStyle(color: AppColors.muted)),
               const SizedBox(height: 12),
               if (!editing) ...[
                 Container(
