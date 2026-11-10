@@ -17,6 +17,7 @@ dependencies:
   flutter_secure_storage: ^11.0.0
   intl: ^0.20.3
   image_picker: ^1.2.3
+  image_cropper: ^12.2.1
   url_launcher: ^6.3.2
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0

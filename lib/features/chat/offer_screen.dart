@@ -91,7 +91,17 @@ class _OfferScreenState extends State<OfferScreen> {
   );
   bool get timeReached =>
       scheduledAt != null && !scheduledAt!.isAfter(DateTime.now());
-  bool get pending => pendingSwap?['status']?.toString() == 'pending';
+  bool get expiredByTime {
+    final raw = pendingSwap?['createdAt'] ?? pendingSwap?['created_at'];
+    final created = DateTime.tryParse(raw?.toString() ?? '');
+    final status = pendingSwap?['status']?.toString() ?? '';
+    return created != null &&
+        DateTime.now().difference(created).inHours >= 24 &&
+        (status == 'pending' || status == 'cancelled');
+  }
+
+  bool get pending =>
+      pendingSwap?['status']?.toString() == 'pending' && !expiredByTime;
   bool get accepted => pendingSwap?['status']?.toString() == 'accepted';
   bool get completed =>
       pendingSwap?['status']?.toString() == 'completed' ||
@@ -301,8 +311,10 @@ class _OfferScreenState extends State<OfferScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (pendingSwap == null && !completed)
-                  Text(S.t('noOpenOffer'))
+                if ((pendingSwap == null || expiredByTime) && !completed)
+                  Text(expiredByTime
+                      ? 'This offer expired after 24 hours with no reply. It was cancelled automatically and cannot be edited.'
+                      : S.t('noOpenOffer'))
                 else ...[
                   Container(
                     padding: const EdgeInsets.symmetric(

@@ -271,10 +271,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
         children: [
           Center(
-            child: UserPhoto(
-              url: photo,
-              radius: 48,
-              letter: name.isNotEmpty ? name[0] : '?',
+            child: GestureDetector(
+              onTap: () {
+                final image = userPhoto(photo);
+                if (image == null) return;
+                showDialog(
+                  context: context,
+                  builder: (context) => Dialog(
+                    backgroundColor: Colors.black,
+                    insetPadding: const EdgeInsets.all(12),
+                    child: InteractiveViewer(child: Image(image: image, fit: BoxFit.contain)),
+                  ),
+                );
+              },
+              child: UserPhoto(
+                url: photo,
+                radius: 48,
+                letter: name.isNotEmpty ? name[0] : '?',
+              ),
             ),
           ),
           const SizedBox(height: 16),

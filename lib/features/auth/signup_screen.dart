@@ -235,51 +235,24 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            S.t('dateOfBirth'),
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<int>(
-                  initialValue: day,
-                  decoration: InputDecoration(labelText: '${S.t('day')} *'),
-                  items: [
-                    for (var i = 1; i <= daysInMonth(); i++)
-                      DropdownMenuItem(value: i, child: Text('$i')),
-                  ],
-                  onChanged: (value) => setState(() => day = value),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<int>(
-                  initialValue: month,
-                  decoration: InputDecoration(labelText: '${S.t('month')} *'),
-                  items: [
-                    for (var i = 1; i <= 12; i++)
-                      DropdownMenuItem(value: i, child: Text(months[i - 1])),
-                  ],
-                  onChanged: (value) => setState(() => month = value),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            initialValue: year,
-            decoration: InputDecoration(labelText: '${S.t('year')} *'),
-            items: [
-              for (var i = now.year - 18; i >= now.year - 90; i--)
-                DropdownMenuItem(value: i, child: Text('$i')),
-            ],
-            onChanged: (value) => setState(() => year = value),
+          TextField(
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Age *'),
+            onChanged: (value) {
+              final age = int.tryParse(value.trim());
+              setState(() {
+                if (age == null) {
+                  year = null;
+                  return;
+                }
+                year = now.year - age;
+                month = 1;
+                day = 1;
+              });
+            },
           ),
           const SizedBox(height: 6),
-          Text('18 years or older', style: TextStyle(color: AppColors.muted)),
+          const Text('Enter your age. You must be 18 or older.', style: TextStyle(color: AppColors.muted)),
           Text(
             S.t('requiredMark'),
             style: TextStyle(color: AppColors.muted, fontSize: 12),

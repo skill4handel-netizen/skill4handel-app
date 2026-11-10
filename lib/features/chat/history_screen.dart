@@ -90,6 +90,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           merged.add({
             ...item,
             ...swap,
+            'chatId': item['id'],
             'otherName': item['name'],
             'group': 'closed',
             'status': 'expired',
@@ -98,6 +99,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           merged.add({
             ...item,
             ...?swap,
+            'chatId': item['id'],
             'otherName': item['name'],
             'group': status == 'accepted' ? 'open' : 'pending',
           });
@@ -189,7 +191,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void openChat(Map item) {
-    final chatId = int.tryParse('${item['chatId'] ?? 0}') ?? 0;
+    final chatId = int.tryParse('${item['chatId'] ?? item['id'] ?? 0}') ?? 0;
     if (chatId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This log has no chat to open. The chat may have been deleted.')),

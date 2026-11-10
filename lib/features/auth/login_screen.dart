@@ -57,13 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final created = DateTime.tryParse(
       '${user?['createdAt'] ?? user?['created_at'] ?? ''}',
     );
-    if (created != null && DateTime.now().difference(created).inHours >= 24) {
-      await Session.markDemoSeen();
-    }
     final seen = await Session.hasSeenDemo();
     if (!mounted) return;
     if (!seen) {
-      await Session.markDemoSeen();
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -122,9 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
         serverClientId:
             '763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com',
       );
-      await google.signOut();
       try {
-        await google.disconnect();
+        await google.signOut();
       } catch (_) {}
       final account = await google.signIn();
       if (account == null) return;
@@ -150,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Google sign-in failed: $error'),
+          content: Text('Google sign-in failed. Please try again.'),
         ),
       );
     } finally {

@@ -1,6 +1,7 @@
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
+import '../../core/constants/skill_items.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/l10n/skill_labels.dart';
 import '../../core/theme/app_theme.dart';
@@ -123,7 +124,8 @@ class _SearchScreenState extends State<SearchScreen> {
     results = all.where((person) {
       final city = (person['city'] ?? '').toString();
       final mode = (person['meetingMode'] ?? person['meeting_mode'] ?? 'both').toString();
-      final hay = '${person['name']} ${person['city']} ${person['offers']} ${person['needs']}'.toLowerCase();
+      final notes = parseSkills(person['offers']?.toString() ?? '').map((item) => '${item.name} ${item.note}').join(' ');
+      final hay = '${person['name']} ${person['city']} ${person['offers']} $notes ${person['needs']}'.toLowerCase();
       if (q.isNotEmpty && !hay.contains(q)) return false;
       if (cityFilter != 'all' && city != cityFilter) return false;
       if (modeFilter != 'all' && mode != 'both' && mode != modeFilter) return false;

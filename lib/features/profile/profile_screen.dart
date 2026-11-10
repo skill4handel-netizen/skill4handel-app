@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../../core/constants/session.dart';
 import '../../core/constants/skill_items.dart';
 import '../../core/constants/skills.dart';
@@ -70,6 +72,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void showPhoto(ImageProvider image) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: InteractiveViewer(child: Image(image: image, fit: BoxFit.contain)),
+      ),
+    );
+  }
+
   ImageProvider? photoOf(String url) {
     if (url.isEmpty) return null;
     if (url.startsWith('data:')) {
@@ -108,13 +121,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     final picked = await ImagePicker().pickImage(
       source: source,
-      imageQuality: 45,
-      maxWidth: 600,
+      imageQuality: 70,
+      maxWidth: 1600,
     );
     if (picked == null) {
       return;
     }
-    final bytes = await picked.readAsBytes();
+    String path = picked.path;
+    try {
+      final cropped = await ImageCropper().cropImage(
+        sourcePath: path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(toolbarTitle: 'Crop photo', lockAspectRatio: false),
+          IOSUiSettings(title: 'Crop photo'),
+        ],
+      );
+      if (cropped != null) path = cropped.path;
+    } catch (_) {}
+    final bytes = await File(path).readAsBytes();
     final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
     Session.photoUrl = dataUrl;
     await Session.save();
@@ -423,7 +448,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           AspectRatio(
                             aspectRatio: 4 / 3,
                             child: photo != null
-                                ? Image(image: photo!, fit: BoxFit.cover)
+                                ? GestureDetector(onTap: () => showPhoto(photo!), child: Image(image: photo!, fit: BoxFit.cover))
                                 : Container(
                                     color: AppColors.soft,
                                     child: Center(
@@ -619,37 +644,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 12),
               Text(S.t('dateOfBirth'), style: const TextStyle(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      initialValue: day,
-                      decoration: InputDecoration(labelText: S.t('day')),
-                      items: [for (var i = 1; i <= 31; i++) DropdownMenuItem(value: i, child: Text('$i'))],
-                      onChanged: (value) => setState(() { day = value; dirty = snapshot() != baseline; }),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<int>(
-                      initialValue: month,
-                      decoration: InputDecoration(labelText: S.t('month')),
-                      items: [for (var i = 1; i <= 12; i++) DropdownMenuItem(value: i, child: Text(months[i - 1]))],
-                      onChanged: (value) => setState(() { month = value; dirty = snapshot() != baseline; }),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<int>(
-                initialValue: year,
-                decoration: InputDecoration(labelText: S.t('year')),
-                items: [for (var i = DateTime.now().year - 18; i >= DateTime.now().year - 90; i--) DropdownMenuItem(value: i, child: Text('$i'))],
-                onChanged: (value) => setState(() { year = value; dirty = snapshot() != baseline; }),
+              TextFormField(
+                initialValue: Session.age > 0 ? '${Session.age}' : '',
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Age'),
+                onChanged: (value) {
+                  final age = int.tryParse(value.trim());
+                  if (age == null) return;
+                  setState(() {
+                    Session.age = age;
+                    year = DateTime.now().year - age;
+                    month = 1;
+                    day = 1;
+                    dirty = snapshot() != baseline;
+                  });
+                },
               ),
               const SizedBox(height: 6),
-              const Text('18 years or older', style: TextStyle(color: AppColors.muted)),
+              const Text('Enter your age. You must be 18 or older.', style: TextStyle(color: AppColors.muted)),
               const SizedBox(height: 12),
               TextField(
                 controller: phone,

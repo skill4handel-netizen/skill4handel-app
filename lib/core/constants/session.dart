@@ -165,14 +165,13 @@ class Session {
   static bool get profileComplete =>
       name.trim().isNotEmpty &&
       city.trim().isNotEmpty &&
-      photoUrl.trim().isNotEmpty &&
       offers.trim().isNotEmpty;
 
   static String get profileMissing {
     final missing = <String>[];
     if (name.trim().isEmpty) missing.add('name');
     if (city.trim().isEmpty) missing.add('city');
-    if (photoUrl.trim().isEmpty) missing.add('photo');
+    if (photoUrl.trim().isEmpty) missing.add('photo (optional)');
     if (offers.trim().isEmpty) missing.add('skill');
     return missing.join(', ');
   }
@@ -180,9 +179,10 @@ class Session {
   static String demoKey([int? userId]) => 'demo_seen_${userId ?? id}';
 
   static Future<bool> hasSeenDemo() async {
+    demoSeen = false;
     try {
       final flag = await _storage.read(key: demoKey());
-      if (flag == '1') demoSeen = true;
+      demoSeen = flag == '1';
     } catch (_) {}
     return demoSeen;
   }

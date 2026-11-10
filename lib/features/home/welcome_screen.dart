@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/session.dart';
 import '../../core/l10n/app_strings.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/api/api_client.dart';
 import '../auth/login_screen.dart';
+import '../../app/main_shell.dart';
 import '../auth/signup_screen.dart';
 import 'demo_screen.dart';
 
@@ -15,6 +18,41 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool loading = false;
+
+  Future<void> loginWithGoogle() async {
+    setState(() => loading = true);
+    try {
+      final google = GoogleSignIn(
+        scopes: const ['email', 'profile'],
+        serverClientId: '763138708802-6u4jkck7da0uvbdehdl9pi68b2iaol1j.apps.googleusercontent.com',
+      );
+      try { await google.signOut(); } catch (_) {}
+      final account = await google.signIn();
+      if (account == null) return;
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) throw Exception('missing-token');
+      final response = await Api.client.post('/auth/google', data: {'idToken': idToken});
+      final user = Map<String, dynamic>.from(response.data['user'] as Map);
+      Session.apply(user);
+      if (response.data['token'] != null) Session.token = response.data['token'].toString();
+      await Session.save();
+      if (!mounted) return;
+      final seen = await Session.hasSeenDemo();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => seen ? MainShell(userName: Session.name) : DemoScreen(userName: Session.name)),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google sign-in failed. Please try again.')));
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
   Future<void> openUrl(String url) async {
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
@@ -231,6 +269,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: OutlinedButton.icon(
+                      onPressed: loading ? null : loginWithGoogle,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white),
+                      ),
+                      icon: const Icon(Icons.g_mobiledata, size: 28),
+                      label: const Text('Continue with Google', style: TextStyle(fontWeight: FontWeight.w800)),
                     ),
                   ),
                   const SizedBox(height: 10),

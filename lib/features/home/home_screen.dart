@@ -19,6 +19,22 @@ import '../reviews/review_screen.dart';
 import '../support/support_screen.dart';
 import 'favorites_screen.dart';
 
+Color skillColor(String skill) {
+  switch (skill) {
+    case 'Languages': return const Color(0xFF2F6FED);
+    case 'Basic computers': return const Color(0xFF7A5AF8);
+    case 'Cooking': return const Color(0xFFE35D2A);
+    case 'Light sports': return const Color(0xFF12B76A);
+    case 'Music': return const Color(0xFFD92D20);
+    case 'Art and crafts': return const Color(0xFFE3A008);
+    case 'Study support': return const Color(0xFF1570EF);
+    case 'Photography': return const Color(0xFF6941C6);
+    case 'Gardening': return const Color(0xFF039855);
+    case 'Home organisation': return const Color(0xFFDC6803);
+    default: return AppColors.blue;
+  }
+}
+
 IconData skillIcon(String skill) {
   switch (skill) {
     case 'Languages': return Icons.translate;
@@ -495,11 +511,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Container(
                               width: 108,
                               padding: const EdgeInsets.all(10),
-                              decoration: AppTheme.card(),
+                              decoration: BoxDecoration(
+                                color: skillColor(skill).withValues(alpha: 0.16),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: skillColor(skill).withValues(alpha: 0.5)),
+                              ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(skillIcon(skill), color: AppColors.blue),
+                                  Icon(skillIcon(skill), color: skillColor(skill)),
                                   const SizedBox(height: 6),
                                   Text(skill, maxLines: 2, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                 ],
