@@ -69,10 +69,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final level = '${item['level']}'.toLowerCase();
     final tokens = int.tryParse('${item['extraTokens'] ?? 0}') ?? 0;
     if (item['volunteer'] == true || level.contains('volunteer')) return 'Volunteer';
-    if (level.contains('skill+tokens') || level.contains('skill plus') || level.contains('plus s4h') || (tokens > 0 && '${item['skillRequested'] ?? ''}'.trim().isNotEmpty && level != 'tokens')) {
-      return 'Skill + tokens';
-    }
-    if (tokens > 0 || level.contains('tokens')) return 'Tokens only';
+    final both = level.contains('skill+tokens') || level.contains('skill plus') || level.contains('plus s4h') || level == 'both';
+    final tokensOnly = level == 'tokens' || level.contains('tokens only');
+    if (both) return 'Skill + tokens';
+    if (tokensOnly || (tokens > 0 && !both)) return 'Tokens only';
     return 'Skill for skill';
   }
 

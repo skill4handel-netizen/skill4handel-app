@@ -130,13 +130,13 @@ class _OfferScreenState extends State<OfferScreen> {
     final tokens = int.tryParse('${offer['extraTokens'] ?? 0}') ?? 0;
     final requested = '${offer['skillRequested'] ?? ''}'.trim();
     if (volunteer) return 'Volunteer';
-    if (level.contains('skill+tokens') ||
+    final both = level.contains('skill+tokens') ||
         level.contains('skill plus') ||
         level.contains('plus s4h') ||
-        (tokens > 0 && requested.isNotEmpty && level != 'tokens')) {
-      return 'Skill + tokens';
-    }
-    if (tokens > 0 || level.contains('tokens')) return 'Tokens only';
+        level == 'both';
+    final tokensOnly = level == 'tokens' || level.contains('tokens only');
+    if (both) return 'Skill + tokens';
+    if (tokensOnly || (tokens > 0 && !both)) return 'Tokens only';
     return 'Skill for skill';
   }
 
