@@ -185,10 +185,17 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseSelectSkill'))));
       return;
     }
-    if (useTokens && (int.tryParse(extraTokens.text) ?? 0) <= 0) {
+    final tokenAmount = int.tryParse(extraTokens.text) ?? 0;
+    if (useTokens && tokenAmount <= 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(S.t('pleaseTokens'))));
+      return;
+    }
+    if (useTokens && tokenAmount > Session.balance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You have ${Session.balance.toInt()} S4H. You cannot offer more than your balance.')),
+      );
       return;
     }
     if (!widget.isAccept && (when == null || when!.isBefore(minWhen))) {

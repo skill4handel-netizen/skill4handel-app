@@ -138,7 +138,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       );
       if (cropped != null) path = cropped.path;
-    } catch (_) {}
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Photo crop is not available on this build. The original photo was used.')),
+        );
+      }
+    }
     final bytes = await File(path).readAsBytes();
     final dataUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
     Session.photoUrl = dataUrl;
