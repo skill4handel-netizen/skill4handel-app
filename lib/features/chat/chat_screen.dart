@@ -275,10 +275,14 @@ class _ChatScreenState extends State<ChatScreen> {
   String prettyText(String raw, {int fromId = 0}) {
     final mine = fromId == Session.id;
     if (raw.startsWith('An offer has been sent')) {
-      return mine ? S.t('offerSentWait') : S.t('offerReceivedWait');
+      final type = raw.contains('Type:') ? raw.split('Type:').last.split('.').first.trim() : '';
+      final base = mine ? S.t('offerSentWait') : S.t('offerReceivedWait');
+      return type.isEmpty ? base : '$base ($type)';
     }
-    if (raw == 'A counter-offer has been sent.') {
-      return mine ? S.t('counterSent') : S.t('counterReceived');
+    if (raw.startsWith('A counter-offer has been sent')) {
+      final type = raw.contains('Type:') ? raw.split('Type:').last.split('.').first.trim() : '';
+      final base = mine ? S.t('counterSent') : S.t('counterReceived');
+      return type.isEmpty ? base : '$base ($type)';
     }
     if (raw == 'The offer has been accepted. The session is confirmed.') {
       return mine ? S.t('offerAcceptedMine') : S.t('offerAcceptedTheirs');

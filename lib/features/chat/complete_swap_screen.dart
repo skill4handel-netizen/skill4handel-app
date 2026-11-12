@@ -142,6 +142,19 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
     return '${local.day} ${months[local.month - 1]} ${local.year}  •  ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 
+  String typeCode() {
+    switch (payMode) {
+      case 'both':
+        return 'skill+tokens';
+      case 'tokens':
+        return 'tokens';
+      case 'volunteer':
+        return 'volunteer';
+      default:
+        return 'skill';
+    }
+  }
+
   String typeLabel() {
     switch (payMode) {
       case 'both':
@@ -217,7 +230,7 @@ class _CompleteSwapScreenState extends State<CompleteSwapScreen> {
                 : 0,
             'duration': duration,
             'mode': mode,
-            'level': volunteer ? 'Volunteer' : typeLabel(),
+            'level': typeCode(),
             'location': location.text.trim(),
             'when': when!.toUtc().toIso8601String(),
             'scheduledAt': when!.toUtc().toIso8601String(),

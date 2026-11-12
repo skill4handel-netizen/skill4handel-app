@@ -177,7 +177,16 @@ class _LoginScreenState extends State<LoginScreen> {
     } on DioException catch (error) {
       final raw = error.response?.data;
       final message = raw is Map ? raw['message']?.toString() ?? '' : '';
-      if (error.response?.statusCode == 429) {
+      final noNet = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout;
+      if (noNet) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No internet connection. Please check your connection and try again.')),
+          );
+        }
+      } else if (error.response?.statusCode == 429) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -202,9 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(S.t('wrongEmailPassword'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not log in. Please check your connection and try again.')),
+      );
     } finally {
       if (mounted) setState(() => loading = false);
     }

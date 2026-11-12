@@ -65,6 +65,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return noReply || timePassed;
   }
 
+  String exchangeType(Map item) {
+    final level = '${item['level']}'.toLowerCase();
+    final tokens = int.tryParse('${item['extraTokens'] ?? 0}') ?? 0;
+    if (item['volunteer'] == true || level.contains('volunteer')) return 'Volunteer';
+    if (level.contains('skill+tokens') || level.contains('skill plus') || level.contains('plus s4h') || (tokens > 0 && '${item['skillRequested'] ?? ''}'.trim().isNotEmpty && level != 'tokens')) {
+      return 'Skill + tokens';
+    }
+    if (tokens > 0 || level.contains('tokens')) return 'Tokens only';
+    return 'Skill for skill';
+  }
+
   String statusText(Map item) {
     final group = item['group']?.toString() ?? '';
     if (item['status']?.toString() == 'expired') return S.t('expiredSession');
@@ -469,6 +480,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           Text(
                             '${S.t('requested')}: ${skillLabel(item['skillRequested']?.toString() ?? '')}',
                           ),
+                        Text(exchangeType(item)),
                         if ((item['skillOffered'] ?? '').toString().isNotEmpty)
                           Text(
                             '${S.t('inReturn')}: ${skillLabel(item['skillOffered']?.toString() ?? '')}',

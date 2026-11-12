@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../core/api/api_client.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/session.dart';
@@ -50,8 +51,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final now = DateTime.now();
     var age = now.year - date.year;
     if (now.month < date.month ||
-        (now.month == date.month && now.day < date.day))
+        (now.month == date.month && now.day < date.day)) {
       age -= 1;
+    }
     return age;
   }
 
@@ -129,11 +131,27 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         (route) => false,
       );
+    } on DioException catch (error) {
+      if (!mounted) return;
+      final raw = error.response?.data;
+      final message = raw is Map ? raw['message']?.toString() ?? '' : '';
+      final noNet = error.type == DioExceptionType.connectionError ||
+          error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            noNet
+                ? 'No internet connection. Please check your connection and try again.'
+                : (message.isNotEmpty ? message : S.t('signupFail')),
+          ),
+        ),
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(S.t('signupFail'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The account could not be created. Please try again.')),
+      );
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -143,7 +161,6 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom + 24;
     final now = DateTime.now();
-    final months = S.months();
     return Scaffold(
       appBar: AppBar(
         title: Text(S.t('createAccount')),

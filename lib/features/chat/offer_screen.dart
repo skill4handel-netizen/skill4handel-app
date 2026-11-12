@@ -124,17 +124,28 @@ class _OfferScreenState extends State<OfferScreen> {
 
   String exchangeType(Map? offer) {
     if (offer == null) return '';
+    final level = '${offer['level']}'.toLowerCase();
     final volunteer =
-        offer['volunteer'] == true ||
-        '${offer['level']}'.toLowerCase().contains('volunteer');
+        offer['volunteer'] == true || level.contains('volunteer');
     final tokens = int.tryParse('${offer['extraTokens'] ?? 0}') ?? 0;
-    final offered = '${offer['skillOffered'] ?? ''}'.trim();
+    final requested = '${offer['skillRequested'] ?? ''}'.trim();
     if (volunteer) return 'Volunteer';
-    if (tokens > 0 && offered.isNotEmpty) return 'Skill + tokens';
-    if (tokens > 0) return 'Tokens only';
-    if ('${offer['level']}'.contains('Skill +')) return 'Skill + tokens';
-    if ('${offer['level']}'.contains('Tokens')) return 'Tokens only';
+    if (level.contains('skill+tokens') ||
+        level.contains('skill plus') ||
+        level.contains('plus s4h') ||
+        (tokens > 0 && requested.isNotEmpty && level != 'tokens')) {
+      return 'Skill + tokens';
+    }
+    if (tokens > 0 || level.contains('tokens')) return 'Tokens only';
     return 'Skill for skill';
+  }
+
+  String payModeOf(Map? offer) {
+    final type = exchangeType(offer);
+    if (type == 'Volunteer') return 'volunteer';
+    if (type == 'Skill + tokens') return 'both';
+    if (type == 'Tokens only') return 'tokens';
+    return 'skill';
   }
 
   List<Map<String, String>> changes() {
@@ -194,14 +205,7 @@ class _OfferScreenState extends State<OfferScreen> {
         pendingSwap?['volunteer'] == true ||
         '${pendingSwap?['level']}'.toLowerCase().contains('volunteer') ||
         (raw == 'COUNTERED' && offered.isEmpty && tokens <= 0);
-    String payMode = 'skill';
-    if (volunteer) {
-      payMode = 'volunteer';
-    } else if (tokens > 0 && offered.isNotEmpty) {
-      payMode = 'both';
-    } else if (tokens > 0) {
-      payMode = 'tokens';
-    }
+    final payMode = payModeOf(pendingSwap);
     final done = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -241,6 +245,8 @@ class _OfferScreenState extends State<OfferScreen> {
           initialMode: '${pendingSwap?['mode'] ?? 'Online'}',
           initialLocation: '${pendingSwap?['location'] ?? ''}',
           initialWhen: scheduledAt,
+          initialPayMode: payModeOf(pendingSwap),
+          initialTokens: '${pendingSwap?['extraTokens'] ?? 0}',
         ),
       ),
     );
